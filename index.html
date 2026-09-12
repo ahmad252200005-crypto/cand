@@ -303,18 +303,82 @@
 
   <div class="account-content">
     <div class="account-pane active" data-apane="overview">
-      <div class="admin-kpis" id="adminKpis"></div>
-      <div class="admin-split">
-        <div class="admin-card"><div class="admin-card-head"><h4 data-i18n="admin.revenueChart">Revenue Trend</h4><span class="admin-card-tag" data-i18n="admin.last7">Last 7 days</span></div><div class="admin-chart-bars" id="adminChartBars"></div></div>
-        <div class="admin-card"><div class="admin-card-head"><h4 data-i18n="admin.topProducts">Top Selling Products</h4></div><div class="admin-rank" id="adminTopProducts"></div></div>
+
+  <!-- ====== بوابة الحماية ====== -->
+  <div class="overview-gate" id="overviewGate">
+    <div class="overview-gate-card">
+      <div class="overview-gate-icon"><i class='bx bx-shield-quarter'></i></div>
+      <h3>Protected Analytics</h3>
+      <p>This section is restricted. Enter the security password to unlock sales statistics and financial reports.</p>
+      <div class="overview-gate-field">
+        <i class='bx bx-key'></i>
+        <input type="password" id="overviewPassword" placeholder="• • •" inputmode="numeric" maxlength="12" autocomplete="off">
       </div>
-      <div class="admin-card" style="margin-top:16px;">
-        <div class="admin-card-head"><h4 data-i18n="admin.recentOrders">Recent Orders</h4><button class="admin-link-btn" data-goto-orders><span data-i18n="admin.viewAll">View all</span> <i class='bx bx-right-arrow-alt'></i></button></div>
-        <div class="admin-table-wrap" style="box-shadow:none;padding:0;">
-          <table class="admin-table"><thead><tr><th data-i18n="admin.thOrder">Order</th><th data-i18n="admin.thCustomer">Customer</th><th data-i18n="admin.thItems">Items</th><th data-i18n="admin.thTotal">Total</th><th data-i18n="admin.thStatus">Status</th></tr></thead><tbody id="adminRecentOrders"></tbody></table>
-        </div>
+      <button class="overview-gate-btn" id="overviewUnlockBtn">
+        <i class='bx bx-lock-open-alt'></i> Unlock Reports
+      </button>
+      <p class="overview-gate-error" id="overviewGateError"></p>
+      <p class="overview-gate-hint"><i class='bx bx-info-circle'></i> Security password is required for each session</p>
+    </div>
+  </div>
+
+  <!-- ====== المحتوى المحمي ====== -->
+  <div class="overview-content" id="overviewContent" style="display:none;">
+
+    <!-- شريط الأدوات + الفلاتر + الطباعة -->
+    <div class="report-toolbar">
+      <div class="report-filters" id="reportFilters">
+        <button class="report-filter" data-range="daily"><i class='bx bx-sun'></i> Daily</button>
+        <button class="report-filter active" data-range="weekly"><i class='bx bx-calendar-week'></i> Weekly</button>
+        <button class="report-filter" data-range="monthly"><i class='bx bx-calendar'></i> Monthly</button>
+        <button class="report-filter" data-range="all"><i class='bx bx-infinite'></i> All Time</button>
+      </div>
+      <div class="report-toolbar-actions">
+        <button class="report-lock-btn" id="reportLockBtn" title="Lock again"><i class='bx bx-lock-alt'></i></button>
+        <button class="report-print-btn" id="reportPrintBtn"><i class='bx bx-printer'></i> Print Report</button>
       </div>
     </div>
+
+    <div class="admin-kpis" id="adminKpis"></div>
+
+    <div class="admin-split">
+      <div class="admin-card">
+        <div class="admin-card-head">
+          <h4 data-i18n="admin.revenueChart">Revenue Trend</h4>
+          <span class="admin-card-tag" id="adminChartTag">Last 7 Days</span>
+        </div>
+        <div class="admin-chart-bars" id="adminChartBars"></div>
+      </div>
+      <div class="admin-card">
+        <div class="admin-card-head"><h4 data-i18n="admin.topProducts">Top Selling Products</h4></div>
+        <div class="admin-rank" id="adminTopProducts"></div>
+      </div>
+    </div>
+
+    <div class="admin-card" style="margin-top:16px;">
+      <div class="admin-card-head">
+        <h4 data-i18n="admin.recentOrders">Recent Orders</h4>
+        <button class="admin-link-btn" data-goto-orders>
+          <span data-i18n="admin.viewAll">View all</span> <i class='bx bx-right-arrow-alt'></i>
+        </button>
+      </div>
+      <div class="admin-table-wrap" style="box-shadow:none;padding:0;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th data-i18n="admin.thOrder">Order</th>
+              <th data-i18n="admin.thCustomer">Customer</th>
+              <th data-i18n="admin.thItems">Items</th>
+              <th data-i18n="admin.thTotal">Total</th>
+              <th data-i18n="admin.thStatus">Status</th>
+            </tr>
+          </thead>
+          <tbody id="adminRecentOrders"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="account-pane" data-apane="orders">
       <div class="admin-toolbar"><div class="admin-filters" id="adminOrderFilters"></div><button class="admin-export" id="adminExportOrders"><i class='bx bx-download'></i> <span data-i18n="admin.export">Export CSV</span></button></div>
@@ -711,6 +775,10 @@
   <div class="logo">Hat Candy</div>
   <p data-i18n="footer.copy">© 2025 Hat Candy. Every Candy Begins with Magic.</p>
 </footer>
+<!-- =====================================================
+     PRINT REPORT CONTAINER (Hidden — shown only when printing)
+     ===================================================== -->
+<div id="printReport" class="print-report" aria-hidden="true"></div>
 
 <script src="script.js"></script>
 </body>

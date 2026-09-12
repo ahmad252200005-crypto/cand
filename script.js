@@ -276,6 +276,12 @@ let adminOrderFilter = 'all';
 let adminCustomerSearch = '';
 let pendingDeleteId = null;
 let previousSignState = null;
+/* =====================================================
+   SECURED OVERVIEW STATE
+   ===================================================== */
+const OVERVIEW_SECRET = '123';
+let overviewUnlocked = false;
+let reportRange = 'weekly'; // 'daily' | 'weekly' | 'monthly' | 'all'
 
 /* =====================================================
    6. GOOGLE AUTH MODULE
@@ -729,11 +735,16 @@ function renderMixWeights() {
     if (w === 500) tag = `<span class="mix-weight-tag">${t('mix.halfKilo')}</span>`;
     else if (w === 1000) tag = `<span class="mix-weight-tag">${t('mix.fullKilo')}</span>`;
     else if (w === 100) tag = `<span class="mix-weight-tag">${t('mix.min')}</span>`;
+    else tag = `<span class="mix-weight-tag empty"></span>`;   // ← مساحة محجوزة
+
     const label = w === 1000 ? t('mix.kilogram') : t('mix.gramsLabel', { w });
-    return `<div class="mix-weight-pill ${sel ? 'selected' : ''}" data-weight="${w}">${tag}<div class="mix-weight-amount">${w}<small style="font-size:0.55em;">${t('mix.unitG')}</small></div><div class="mix-weight-label">${label}</div></div>`;
+    return `<div class="mix-weight-pill ${sel ? 'selected' : ''}" data-weight="${w}">
+      ${tag}
+      <div class="mix-weight-amount">${w}<small style="font-size:0.55em;">${t('mix.unitG')}</small></div>
+      <div class="mix-weight-label">${label}</div>
+    </div>`;
   }).join('');
 }
-
 function renderMixPackaging() {
   $('mixPackGrid').innerHTML = mixPackaging.map(p => {
     const sel = mixState.packaging && mixState.packaging.id === p.id;
@@ -1277,6 +1288,8 @@ function signOutUser() {
   isOwner = false;
   currentUser = null;
   savedCards = [];
+  overviewUnlocked = false;   // ← جديد
+  reportRange = 'weekly';     // ← جديد
   $('loginBtn').classList.remove('signed-in');
   $('userInitial').textContent = 'H';
   updateMobileAccountUI();
@@ -1285,7 +1298,6 @@ function signOutUser() {
   closeOwnerPage();
   showToast(t('toast.signedOut'), 'bx-log-out');
 }
-
 /* =====================================================
    18. ACCOUNT PAGE
    ===================================================== */
@@ -1495,10 +1507,19 @@ function openAdminPage() {
   $('adminPage').classList.add('show');
   lockBodyScroll();
   $('floatingSign').classList.add('hide');
+
+  // حالة البوابة الأمنية
+  if (overviewUnlocked) {
+    $('overviewGate').style.display = 'none';
+    $('overviewContent').style.display = 'block';
+  } else {
+    $('overviewGate').style.display = 'flex';
+    $('overviewContent').style.display = 'none';
+  }
+
   renderAdmin();
   switchAdminTab(adminTab);
 }
-
 function closeAdminPage() {
   $('adminPage').classList.remove('show');
   if (!$('cartPanel').classList.contains('show') &&
@@ -1536,19 +1557,20 @@ function renderAdmin() {
 }
 
 function renderAdminKpis() {
-  const act = orderHistory.filter(o => o.status !== 'cancelled');
+  const orders = getReportOrders();
+  const act = orders.filter(o => o.status !== 'cancelled');
   const rev = act.reduce((s, o) => s + o.total, 0);
-  const delRev = orderHistory.filter(o => o.status === 'delivered').reduce((s, o) => s + o.total, 0);
-  const pend = orderHistory.filter(o => ['processing', 'packing'].includes(o.status)).length;
+  const delRev = orders.filter(o => o.status === 'delivered').reduce((s, o) => s + o.total, 0);
+  const pend = orders.filter(o => ['processing', 'packing'].includes(o.status)).length;
   const aov = act.length ? rev / act.length : 0;
 
   const cards = [
-    { icon: 'bx-dollar-circle', value: '$' + rev.toFixed(2), label: t('admin.kpiRevenue') },
-    { icon: 'bx-receipt', value: orderHistory.length, label: t('admin.kpiOrders') },
-    { icon: 'bx-group', value: customers.length, label: t('admin.kpiCustomers') },
-    { icon: 'bx-trending-up', value: '$' + aov.toFixed(2), label: t('admin.kpiAov') },
-    { icon: 'bx-time-five', value: pend, label: t('admin.kpiPending') },
-    { icon: 'bx-check-shield', value: '$' + delRev.toFixed(2), label: t('admin.kpiDelivered') }
+    { icon: 'bx-dollar-circle', value: '$' + rev.toFixed(2),      label: t('admin.kpiRevenue') },
+    { icon: 'bx-receipt',       value: orders.length,             label: t('admin.kpiOrders') },
+    { icon: 'bx-group',         value: customers.length,          label: t('admin.kpiCustomers') },
+    { icon: 'bx-trending-up',   value: '$' + aov.toFixed(2),      label: t('admin.kpiAov') },
+    { icon: 'bx-time-five',     value: pend,                      label: t('admin.kpiPending') },
+    { icon: 'bx-check-shield',  value: '$' + delRev.toFixed(2),   label: t('admin.kpiDelivered') }
   ];
 
   $('adminKpis').innerHTML = cards.map(c =>
@@ -1557,28 +1579,60 @@ function renderAdminKpis() {
 }
 
 function renderAdminChart() {
-  const map = {};
-  orderHistory.filter(o => o.status !== 'cancelled').forEach(o => {
-    map[o.date] = (map[o.date] || 0) + o.total;
-  });
+  const orders = orderHistory.filter(o => o.status !== 'cancelled');
+  const now = new Date();
+  let data = [];
 
-  const dates = Object.keys(map).sort().slice(-7);
-  const data = dates.map(d => ({ date: d, value: map[d] }));
+  if (reportRange === 'daily') {
+    const key = now.toISOString().split('T')[0];
+    const value = orders.filter(o => o.date === key).reduce((s, o) => s + o.total, 0);
+    data = [{ label: 'Today', value }];
+  } else if (reportRange === 'weekly') {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      const value = orders.filter(o => o.date === key).reduce((s, o) => s + o.total, 0);
+      data.push({ label: d.toLocaleDateString(lang === 'ar' ? 'ar-JO' : 'en-GB', { day: '2-digit', month: 'short' }), value });
+    }
+  } else if (reportRange === 'monthly') {
+    // 6 buckets of 5 days
+    for (let b = 5; b >= 0; b--) {
+      const end = new Date(now); end.setDate(end.getDate() - b * 5);
+      const start = new Date(end); start.setDate(start.getDate() - 4);
+      const value = orders.filter(o => {
+        const d = new Date(o.date);
+        return d >= start && d <= end;
+      }).reduce((s, o) => s + o.total, 0);
+      data.push({ label: `${start.getDate()}/${start.getMonth() + 1}`, value });
+    }
+  } else {
+    // last 6 months
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      const start = new Date(d);
+      const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      const value = orders.filter(o => {
+        const od = new Date(o.date);
+        return od >= start && od <= end;
+      }).reduce((s, o) => s + o.total, 0);
+      data.push({ label: start.toLocaleDateString(lang === 'ar' ? 'ar-JO' : 'en-GB', { month: 'short' }), value });
+    }
+  }
+
   const el = $('adminChartBars');
-
   if (!data.length) {
     el.innerHTML = `<p class="admin-empty-note">${t('admin.noData')}</p>`;
     return;
   }
-
   const max = Math.max(...data.map(d => d.value), 1);
   el.innerHTML = data.map(d => `
     <div class="admin-bar-col">
       <div class="admin-bar-value">$${d.value.toFixed(0)}</div>
       <div class="admin-bar-track"><div class="admin-bar" style="height:${Math.max(6, Math.round((d.value / max) * 130))}px"></div></div>
-      <div class="admin-bar-label">${new Date(d.date).toLocaleDateString(lang === 'ar' ? 'ar-JO' : 'en-GB', { day: '2-digit', month: 'short' })}</div>
+      <div class="admin-bar-label">${d.label}</div>
     </div>`).join('');
 }
+
 
 function productSales() {
   const map = {};
@@ -1627,8 +1681,15 @@ function orderRowHtml(o, compact) {
 }
 
 function renderAdminRecentOrders() {
-  const recent = [...orderHistory].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  $('adminRecentOrders').innerHTML = recent.map(o => orderRowHtml(o, true)).join('');
+  const recent = getReportOrders()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 5);
+  const tbody = $('adminRecentOrders');
+  if (!recent.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="admin-empty-note">${t('admin.noData')}</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = recent.map(o => orderRowHtml(o, true)).join('');
 }
 
 function renderAdminOrders() {
@@ -1720,7 +1781,193 @@ function renderAdminMessages() {
       <div class="admin-msg-body">${esc(m.message)}</div>
     </div>`).join('');
 }
+/* =====================================================
+   SECURED REPORTS — Range helpers, Gate, Print
+   ===================================================== */
+function getRangeStart(range) {
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (range === 'daily') return start;
+  if (range === 'weekly')  { start.setDate(start.getDate() - 6);  return start; }
+  if (range === 'monthly') { start.setDate(start.getDate() - 29); return start; }
+  return null; // 'all'
+}
 
+function getReportOrders() {
+  const start = getRangeStart(reportRange);
+  if (!start) return orderHistory.slice();
+  return orderHistory.filter(o => new Date(o.date) >= start);
+}
+
+function getReportRangeLabel(range) {
+  const labels = {
+    daily:   { en: 'Today',           ar: 'اليوم' },
+    weekly:  { en: 'Last 7 Days',     ar: 'آخر ٧ أيام' },
+    monthly: { en: 'Last 30 Days',    ar: 'آخر ٣٠ يوماً' },
+    all:     { en: 'All Time',        ar: 'كل الفترات' }
+  };
+  const l = labels[range] || labels.weekly;
+  return lang === 'ar' ? l.ar : l.en;
+}
+
+/* ===== Password Gate ===== */
+function tryUnlockOverview() {
+  const input = $('overviewPassword');
+  const error = $('overviewGateError');
+  const value = (input.value || '').trim();
+
+  if (value === OVERVIEW_SECRET) {
+    overviewUnlocked = true;
+    $('overviewGate').style.display = 'none';
+    $('overviewContent').style.display = 'block';
+    input.value = '';
+    input.classList.remove('error');
+    error.textContent = '';
+    refreshOverviewReports();
+    showToast(lang === 'ar' ? 'تم فتح التقارير' : 'Reports unlocked', 'bx-lock-open-alt');
+  } else {
+    error.textContent = lang === 'ar' ? 'كلمة المرور غير صحيحة' : 'Incorrect password. Please try again.';
+    input.classList.add('error');
+    input.value = '';
+    setTimeout(() => input.classList.remove('error'), 550);
+    input.focus();
+  }
+}
+
+function lockOverview() {
+  overviewUnlocked = false;
+  $('overviewGate').style.display = 'flex';
+  $('overviewContent').style.display = 'none';
+  $('overviewPassword').value = '';
+  $('overviewGateError').textContent = '';
+  showToast(lang === 'ar' ? 'تم قفل التقارير' : 'Reports locked', 'bx-lock-alt');
+}
+
+function refreshOverviewReports() {
+  if (!overviewUnlocked) return;
+  renderAdminKpis();
+  renderAdminChart();
+  renderAdminTopProducts();
+  renderAdminRecentOrders();
+  const tag = $('adminChartTag');
+  if (tag) tag.textContent = getReportRangeLabel(reportRange);
+}
+
+/* ===== Dynamic Print Report ===== */
+function buildPrintReportHTML() {
+  const orders = getReportOrders();
+  const act = orders.filter(o => o.status !== 'cancelled');
+  const revenue = act.reduce((s, o) => s + o.total, 0);
+  const deliveredRev = orders.filter(o => o.status === 'delivered').reduce((s, o) => s + o.total, 0);
+  const pending = orders.filter(o => ['processing', 'packing'].includes(o.status)).length;
+  const aov = act.length ? revenue / act.length : 0;
+  const now = new Date();
+
+  // المنتجات الأكثر مبيعاً
+  const salesMap = {};
+  act.forEach(o => o.itemsList.forEach(it => {
+    const key = it.name;
+    if (!salesMap[key]) salesMap[key] = { name: it.name, qty: 0, revenue: 0 };
+    salesMap[key].qty += it.qty;
+    salesMap[key].revenue += it.qty * it.price;
+  }));
+  const topProducts = Object.values(salesMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+
+  // الطلبات (مرتبة تنازلياً)
+  const recent = [...orders].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 25);
+
+  const rangeLabel = getReportRangeLabel(reportRange);
+
+  return `
+    <div class="print-header">
+      <div class="print-brand">Hat Candy<span>.</span></div>
+      <div class="print-tagline">Every Candy Begins with Magic</div>
+      <h1 class="print-title">SALES &amp; OPERATIONS REPORT</h1>
+      <div class="print-meta">
+        <span><strong>Range:</strong> ${esc(rangeLabel)}</span>
+        <span><strong>Generated:</strong> ${now.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+        <span><strong>Orders:</strong> ${orders.length}</span>
+      </div>
+    </div>
+
+    <div class="print-kpis">
+      <div class="print-kpi"><div class="print-kpi-value">$${revenue.toFixed(2)}</div><div class="print-kpi-label">Total Revenue</div></div>
+      <div class="print-kpi"><div class="print-kpi-value">${orders.length}</div><div class="print-kpi-label">Total Orders</div></div>
+      <div class="print-kpi"><div class="print-kpi-value">${customers.length}</div><div class="print-kpi-label">Customers</div></div>
+      <div class="print-kpi"><div class="print-kpi-value">$${aov.toFixed(2)}</div><div class="print-kpi-label">Avg. Order Value</div></div>
+      <div class="print-kpi"><div class="print-kpi-value">${pending}</div><div class="print-kpi-label">Pending Orders</div></div>
+      <div class="print-kpi"><div class="print-kpi-value">$${deliveredRev.toFixed(2)}</div><div class="print-kpi-label">Delivered Revenue</div></div>
+    </div>
+
+    <div class="print-section">
+      <h2>Top Selling Products</h2>
+      <table class="print-table">
+        <thead><tr><th style="width:40px;">#</th><th>Product</th><th style="width:90px;">Units</th><th style="width:110px;">Revenue</th></tr></thead>
+        <tbody>
+          ${topProducts.length
+            ? topProducts.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}</td><td>${p.qty}</td><td>$${p.revenue.toFixed(2)}</td></tr>`).join('')
+            : `<tr><td colspan="4" class="print-empty">No sales data in this range</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="print-section">
+      <h2>Order Details</h2>
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th style="width:110px;">Order ID</th>
+            <th style="width:90px;">Date</th>
+            <th>Customer</th>
+            <th style="width:60px;">Items</th>
+            <th style="width:90px;">Total</th>
+            <th style="width:110px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${recent.length
+            ? recent.map(o => {
+                const c = custById(o.customerId);
+                const qty = o.itemsList.reduce((s, i) => s + i.qty, 0);
+                return `<tr>
+                  <td><strong>${o.id}</strong></td>
+                  <td>${formatDate(o.date)}</td>
+                  <td>${esc(c.name)}</td>
+                  <td>${qty}</td>
+                  <td>$${o.total.toFixed(2)}</td>
+                  <td>${t('account.status_' + o.status)}</td>
+                </tr>`;
+              }).join('')
+            : `<tr><td colspan="6" class="print-empty">No orders in this range</td></tr>`}
+        </tbody>
+      </table>
+      <div class="print-total-row"><span>REPORT TOTAL</span><span>$${revenue.toFixed(2)}</span></div>
+    </div>
+
+    <div class="print-signature">
+      <div><span class="line"></span>Prepared By</div>
+      <div><span class="line"></span>Reviewed By</div>
+      <div><span class="line"></span>Authorized Signature</div>
+    </div>
+
+    <div class="print-footer">
+      <strong>Hat Candy</strong> — Amman, Jordan · Magic Avenue<br>
+      Every Candy Begins with Magic ✨<br>
+      Generated ${now.toLocaleString('en-GB')} · Computer-generated report
+    </div>
+  `;
+}
+
+function printReport() {
+  const el = $('printReport');
+  if (!el) return;
+  el.innerHTML = buildPrintReportHTML();
+  // ننتظر قليلاً حتى تُرسم العناصر ثم نطبع
+  setTimeout(() => {
+    window.print();
+  }, 120);
+}
 function setOrderStatus(id, status) {
   const o = orderHistory.find(x => x.id === id);
   if (!o) return;
@@ -2683,8 +2930,11 @@ document.addEventListener('DOMContentLoaded', () => {
         date: new Date().toISOString().split('T')[0],
         read: false
       });
-      if ($('adminPage').classList.contains('show')) renderAdmin();
-      showToast(t('toast.thanks', { name }), 'bx-check-circle');
+if ($('adminPage').classList.contains('show')) {
+  renderAdmin();
+  const tag = $('adminChartTag');
+  if (tag && overviewUnlocked) tag.textContent = getReportRangeLabel(reportRange);
+}      showToast(t('toast.thanks', { name }), 'bx-check-circle');
       e.target.reset();
       btn.textContent = orig;
       btn.disabled = false;
@@ -3301,7 +3551,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (shouldClose) closeAllPanels();
     });
   });
+/* ==== SECURED OVERVIEW GATE & REPORTS ==== */
+$('overviewUnlockBtn').addEventListener('click', tryUnlockOverview);
+$('overviewPassword').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); tryUnlockOverview(); }
+});
+$('reportLockBtn').addEventListener('click', lockOverview);
+$('reportPrintBtn').addEventListener('click', printReport);
 
+$('reportFilters').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-range]');
+  if (!btn) return;
+  reportRange = btn.dataset.range;
+  document.querySelectorAll('.report-filter').forEach(b =>
+    b.classList.toggle('active', b.dataset.range === reportRange)
+  );
+  refreshOverviewReports();
+});
   /* ==== INIT ==== */
   loadAll();
   loadGoogleAccounts();
