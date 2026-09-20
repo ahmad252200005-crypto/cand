@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#e2015d">
+<title>Hat Candy | Every Candy Begins with Magic</title>
+<link href="https://fonts.cdnfonts.com/css/autolova" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- =====================================================
+     FLOATING SIGNBOARD
+     ===================================================== -->
+<div class="floating-sign" id="floatingSign" aria-live="polite">
+  <div class="sign-cycle-inner">
+    <div class="sb-wrapper">
+      <div class="sb-board" id="sbBoard">CLOSED</div>
+      <div class="sb-string"></div>
+      <div class="sb-pin sb-pin1"></div>
+      <div class="sb-pin sb-pin2"></div>
+      <div class="sb-pin sb-pin3"></div>
+    </div>
+    <div class="sb-note" id="sbNote">Order online 24/7 ✨</div>
+  </div>
+</div>
+
+<!-- =====================================================
+     HEADER
+     ===================================================== -->
+<header id="header">
+  <nav class="nav-container" aria-label="Main navigation">
+    <a href="#home" class="logo" aria-label="Hat Candy home">Hat Candy<span>.</span></a>
+
+    <ul class="nav-links" id="navLinks">
+      <li class="nav-account-item">
+        <a href="#" id="mobileAccountBtn" class="mobile-account-btn">
+          <span class="nav-thumb mobile-account-avatar" id="mobileUserAvatar"><i class='bx bx-user'></i></span>
+          <span class="nav-text" id="mobileAccountName">Sign In / My Account</span>
+          <i class='bx bx-chevron-right mobile-account-arrow'></i>
+        </a>
+      </li>
+      <li><a href="#home"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=120&h=120&fit=crop" alt="Home"></span><span class="nav-text" data-i18n="nav.home">Home</span></a></li>
+      <li><a href="#offers" class="nav-offers-link"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=120&h=120&fit=crop" alt="Offers"></span><span class="nav-text" data-i18n="nav.offers">Offers</span><i class='bx bxs-flame nav-flame-icon'></i></a></li>
+      <li><a href="#candies"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=120&h=120&fit=crop" alt="Candies"></span><span class="nav-text" data-i18n="nav.candies">Candies</span></a></li>
+      <li><a href="#about"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=120&h=120&fit=crop" alt="About"></span><span class="nav-text" data-i18n="nav.about">About</span></a></li>
+      <li><a href="#gallery"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1548907040-4baa42d10919?w=120&h=120&fit=crop" alt="Gallery"></span><span class="nav-text" data-i18n="nav.gallery">Gallery</span></a></li>
+      <li><a href="#contact"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1513201099705-a9746e1e201f?w=120&h=120&fit=crop" alt="Contact"></span><span class="nav-text" data-i18n="nav.contact">Contact</span></a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <button class="lang-btn" id="langToggle" aria-label="Switch language"><i class='bx bx-globe'></i><span id="langLabel">AR</span></button>
+      <button class="nav-icon-btn" id="loginBtn" aria-label="Sign In"><i class='bx bx-user'></i><span class="user-initial" id="userInitial">H</span></button>
+      <button class="nav-icon-btn" id="cartBtn" aria-label="Cart"><i class='bx bx-shopping-bag'></i><span class="cart-badge" id="cartBadge">0</span></button>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
+
+<!-- =====================================================
+     CART PANEL
+     ===================================================== -->
+<aside class="cart-panel" id="cartPanel" aria-label="Shopping cart">
+  <div class="cart-header">
+    <div>
+      <h2 data-i18n="cart.title">My Cart</h2>
+      <span class="cart-item-count" id="cartItemCount">0 items</span>
+    </div>
+    <button class="panel-close" id="cartClose" aria-label="Close cart"><i class='bx bx-x'></i></button>
+  </div>
+
+  <div class="cart-items" id="cartItems"></div>
+
+  <div class="delivery-section" id="deliverySection">
+    <div class="delivery-toggle">
+      <button class="delivery-toggle-btn active" data-delivery-method="delivery"><i class='bx bx-cycling'></i> <span data-i18n="delivery.delivery">Delivery</span></button>
+      <button class="delivery-toggle-btn" data-delivery-method="pickup"><i class='bx bx-store'></i> <span data-i18n="delivery.pickup">Pickup</span></button>
+    </div>
+    <div class="delivery-body" id="deliveryBody"></div>
+  </div>
+
+  <div class="payment-section" id="paymentSection">
+    <div class="payment-title"><i class='bx bx-credit-card'></i> <span data-i18n="pay.title">Payment Method</span></div>
+    <div class="payment-toggle">
+      <button class="payment-btn active" data-payment="cash"><i class='bx bx-money'></i> <span data-i18n="pay.cash">Cash</span></button>
+      <button class="payment-btn" data-payment="card"><i class='bx bx-credit-card-front'></i> <span data-i18n="pay.card">Card</span></button>
+    </div>
+    <div class="payment-body" id="paymentBody"></div>
+  </div>
+
+  <div class="cart-footer">
+    <div class="cart-total-row"><span data-i18n="cart.total">Total</span><span class="total-price" id="cartTotal">$0.00</span></div>
+    <button class="checkout-btn" id="checkoutBtn"><i class='bx bx-lock-alt'></i> <span data-i18n="cart.checkout">Proceed to Checkout</span></button>
+  </div>
+</aside>
+
+<!-- =====================================================
+     LOGIN PANEL
+     ===================================================== -->
+<aside class="login-panel" id="loginPanel" aria-label="Sign In">
+  <div class="login-hero">
+    <div class="login-hero-top">
+      <div class="login-brand">Hat Candy<span>.</span></div>
+      <button class="panel-close" id="loginClose" aria-label="Close login"><i class='bx bx-x'></i></button>
+    </div>
+    <h2 id="loginTitle" data-i18n="login.welcome">Welcome Back</h2>
+    <p id="loginSubtitle" data-i18n="login.subtitle">Sign in to your Hat Candy account</p>
+  </div>
+
+  <div class="login-body">
+    <div class="login-callout" id="loginCallout"><i class='bx bxs-magic-wand'></i><p data-i18n-html="login.callout">We need a few details to <strong>complete your checkout</strong> and deliver your magical treats.</p></div>
+
+    <div class="login-success" id="loginSuccess">
+      <div class="success-icon"><i class='bx bx-check'></i></div>
+      <h3 data-i18n="login.successTitle">You're Signed In!</h3>
+      <p id="successMessage" data-i18n="login.successSub">Ready to complete your order ✨</p>
+    </div>
+
+    <div id="loginFormWrapper">
+      <button type="button" class="google-btn" id="googleBtn">
+        <svg viewBox="0 0 46 47" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M46 24.0287C46 22.09 45.8533 20.68 45.5013 19.2112H23.4694V27.9356H36.4069C36.1429 30.1094 34.7347 33.37 31.5957 35.5731L31.5663 35.8669L38.5191 41.2719L38.9885 41.3306C43.4477 37.2181 46 31.1669 46 24.0287Z" fill="#4285F4"/><path d="M23.4694 47C29.8061 47 35.1161 44.9144 39.0179 41.3012L31.625 35.5437C29.6301 36.9244 26.9898 37.8937 23.4987 37.8937C17.2793 37.8937 12.0281 33.7812 10.1505 28.1412L9.88649 28.1706L2.61097 33.7812L2.52296 34.0456C6.36608 41.7125 14.287 47 23.4694 47Z" fill="#34A853"/><path d="M10.1212 28.1413C9.62245 26.6725 9.32908 25.1156 9.32908 23.5C9.32908 21.8844 9.62245 20.3275 10.0918 18.8588V18.5356L2.75765 12.8369L2.52296 12.9544C0.909439 16.1269 0 19.7106 0 23.5C0 27.2894 0.909439 30.8731 2.49362 34.0456L10.1212 28.1413Z" fill="#FBBC05"/><path d="M23.4694 9.07688C27.8699 9.07688 30.8622 10.9863 32.5344 12.5725L39.1645 6.11C35.0867 2.32063 29.8061 0 23.4694 0C14.287 0 6.36607 5.2875 2.49362 12.9544L10.0918 18.8588C11.9987 13.1894 17.25 9.07688 23.4694 9.07688Z" fill="#EB4335"/></svg>
+        <span data-i18n="login.google">Continue with Google</span>
+      </button>
+
+      <div class="google-account-preview" id="googlePreview">
+        <div class="google-avatar" id="googleAvatar">H</div>
+        <div class="google-account-info">
+          <strong id="googleName">Hat Candy User</strong>
+          <span id="googleEmail">user@gmail.com</span>
+        </div>
+        <button type="button" class="google-change" id="googleChange" data-i18n="login.change">Change</button>
+      </div>
+
+      <div class="google-phone-reveal" id="googlePhoneReveal">
+        <div class="login-field">
+          <label data-i18n-html="login.phone">Phone Number <span class="req">*</span></label>
+          <div class="login-field-inner"><span class="phone-prefix">🇯🇴 +962</span><input type="tel" id="googlePhone" class="has-prefix" placeholder="7X XXX XXXX" inputmode="tel"></div>
+        </div>
+        <button type="button" class="login-submit" id="googleContinue" style="margin-top:14px;"><i class='bx bx-check-circle'></i> <span data-i18n="login.continue">Continue</span></button>
+      </div>
+
+      <div class="login-divider" id="loginDivider" data-i18n="login.divider">Or continue with email</div>
+
+      <form class="login-form-panel" id="loginForm">
+        <div class="login-field"><label for="loginEmail" data-i18n-html="login.email">Email Address <span class="req">*</span></label><div class="login-field-inner"><i class='bx bx-envelope field-icon'></i><input type="text" id="loginEmail" placeholder="you@example.com" autocomplete="username"></div></div>
+        <div class="login-field"><label for="loginPassword" data-i18n-html="login.password">Password <span class="req">*</span></label><div class="login-field-inner"><i class='bx bx-lock-alt field-icon'></i><input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password"></div></div>
+        <div class="login-field"><label for="loginPhone" data-i18n-html="login.phone">Phone Number <span class="req">*</span></label><div class="login-field-inner"><span class="phone-prefix">🇯🇴 +962</span><input type="tel" id="loginPhone" class="has-prefix" placeholder="7X XXX XXXX" inputmode="tel"></div></div>
+        <div class="login-checkbox-row"><input type="checkbox" id="rememberMe"><label for="rememberMe" data-i18n="login.remember">Remember me</label><a href="#" id="forgotLink" data-i18n="login.forgot">Forgot password?</a></div>
+        <button type="submit" class="login-submit" id="loginSubmit"><i class='bx bx-log-in-circle'></i> <span data-i18n="login.signin">Sign In</span></button>
+      </form>
+
+      <p class="login-signup-note"><span data-i18n="login.noAccount">Not a member?</span> <a href="#contact" id="signupLink" data-i18n="login.createAccount">Create an account</a></p>
+    </div>
+  </div>
+</aside>
+
+<!-- =====================================================
+     OVERLAY & TOAST
+     ===================================================== -->
+<div class="overlay" id="overlay"></div>
+<div class="toast" id="toast"><i class='bx bx-check-circle'></i><span id="toastMessage">Added to cart</span></div>
+
+<!-- =====================================================
+     MIX BUILDER MODAL
+     ===================================================== -->
+<div class="mix-modal" id="mixModal" role="dialog" aria-modal="true">
+  <div class="mix-backdrop" id="mixBackdrop"></div>
+  <div class="mix-container">
+    <div class="mix-header">
+      <div class="mix-header-top">
+        <div class="mix-title">
+          <i class='bx bxs-magic-wand'></i>
+          <div><h2 data-i18n="mix.title">Build Your Own Mix</h2><p data-i18n="mix.subtitle">Every Candy Begins with Magic</p></div>
+        </div>
+        <button class="mix-close" id="mixClose" aria-label="Close"><i class='bx bx-x'></i></button>
+      </div>
+      <div class="mix-progress">
+        <div class="mix-progress-step active" data-step="1"><div class="mix-progress-num">1</div><span class="mix-progress-label" data-i18n="mix.step1">Weight</span></div>
+        <div class="mix-progress-line"></div>
+        <div class="mix-progress-step" data-step="2"><div class="mix-progress-num">2</div><span class="mix-progress-label" data-i18n="mix.step2">Packaging</span></div>
+        <div class="mix-progress-line"></div>
+        <div class="mix-progress-step" data-step="3"><div class="mix-progress-num">3</div><span class="mix-progress-label" data-i18n="mix.step3">Candy Types</span></div>
+        <div class="mix-progress-line"></div>
+        <div class="mix-progress-step" data-step="4"><div class="mix-progress-num">4</div><span class="mix-progress-label" data-i18n="mix.step4">Review</span></div>
+      </div>
+    </div>
+
+    <div class="mix-body">
+      <div class="mix-pane active" data-pane="1"><h3 class="mix-pane-title" data-i18n="mix.weightTitle">Choose Your Weight</h3><p class="mix-pane-subtitle" data-i18n="mix.weightSub">From 100 g up to 1 kg — pick the perfect size for your magic mix.</p><div class="mix-weight-grid" id="mixWeightGrid"></div></div>
+
+      <div class="mix-pane" data-pane="2"><h3 class="mix-pane-title" data-i18n="mix.packTitle">Choose Packaging</h3><p class="mix-pane-subtitle" data-i18n="mix.packSub">How would you like your candy mix packaged?</p><div class="mix-pack-grid" id="mixPackGrid"></div></div>
+
+      <div class="mix-pane" data-pane="3">
+        <h3 class="mix-pane-title" data-i18n="mix.typesTitle">Choose Your Candy Types</h3>
+        <p class="mix-pane-subtitle" data-i18n="mix.typesSub">How many different candy types would you like to mix?</p>
+        <div class="mix-type-counter">
+          <button class="mix-count-btn" id="mixCountMinus"><i class='bx bx-minus'></i></button>
+          <div class="mix-count-display"><div class="mix-count-number" id="mixCountNumber">1</div><div class="mix-count-label" data-i18n="mix.typesLabel">Types</div></div>
+          <button class="mix-count-btn" id="mixCountPlus"><i class='bx bx-plus'></i></button>
+        </div>
+        <div class="mix-slots" id="mixSlots"></div>
+        <p class="mix-types-section-title" data-i18n="mix.pickTypes">Now pick your candy types</p>
+        <div class="mix-types-grid" id="mixTypesGrid"></div>
+      </div>
+
+      <div class="mix-pane" data-pane="4"><h3 class="mix-pane-title" data-i18n="mix.reviewTitle">Review Your Custom Mix</h3><p class="mix-pane-subtitle" data-i18n="mix.reviewSub">One last look before we add it to your cart.</p><div class="mix-review" id="mixReview"></div></div>
+    </div>
+
+    <div class="mix-footer">
+      <button class="mix-back-btn" id="mixBackBtn"><i class='bx bx-left-arrow-alt' id="mixBackIcon"></i> <span data-i18n="mix.back">Back</span></button>
+      <button class="mix-next-btn" id="mixNextBtn"><span data-i18n="mix.next">Next</span> <i class='bx bx-right-arrow-alt'></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     ACCOUNT PAGE
+     ===================================================== -->
+<div class="account-page" id="accountPage">
+  <div class="account-topbar">
+    <button class="account-back" id="accountBack"><i class='bx bx-arrow-back'></i> <span data-i18n="account.back">Back to Store</span></button>
+    <div class="account-brand">Hat Candy<span>.</span></div>
+    <button class="account-signout" id="accountSignout"><i class='bx bx-log-out'></i> <span data-i18n="account.signout">Sign Out</span></button>
+  </div>
+
+  <div class="account-hero">
+    <div class="account-avatar" id="accountAvatar">H</div>
+    <div class="account-hero-info">
+      <h1 id="accountName">Hat Candy User</h1>
+      <p id="accountEmail">user@gmail.com</p>
+      <div class="account-hero-meta">
+        <span><i class='bx bx-calendar-check'></i> <span data-i18n="account.memberSince">Member since 2025</span></span>
+        <span><i class='bx bx-map'></i> <span id="accountAddressCount">0</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="account-tabs">
+    <button class="account-tab active" data-tab="orders"><i class='bx bx-receipt'></i> <span data-i18n="account.tabOrders">Orders</span><span class="tab-count" id="ordersCount">0</span></button>
+    <button class="account-tab" data-tab="tracking"><i class='bx bx-package'></i> <span data-i18n="account.tabTracking">Tracking</span><span class="tab-count" id="trackingCount">0</span></button>
+    <button class="account-tab" data-tab="addresses"><i class='bx bx-map-alt'></i> <span data-i18n="account.tabAddresses">Addresses</span></button>
+  </div>
+
+  <div class="account-content">
+    <div class="account-pane active" data-pane="orders"><div id="accountNotice"></div><div class="account-stats" id="accountStats"></div><div id="ordersList"></div></div>
+    <div class="account-pane" data-pane="tracking"><div id="trackingList"></div></div>
+    <div class="account-pane" data-pane="addresses">
+      <div class="address-form" id="addressForm">
+        <h3 class="address-form-title" id="addressFormTitle" data-i18n="account.addAddressTitle">Add New Address</h3>
+        <p class="address-form-sub" data-i18n="account.addAddressSub">Where should we deliver your magical treats?</p>
+        <form id="addressFormEl">
+          <input type="hidden" id="addressId">
+          <div class="address-form-grid">
+            <div class="form-group full"><label for="addressLabelInput" data-i18n="account.fieldLabel">Label</label><select id="addressLabelInput"><option value="home" data-i18n="account.labelHome">Home</option><option value="work" data-i18n="account.labelWork">Work</option><option value="other" data-i18n="account.labelOther">Other</option></select></div>
+            <div class="form-group"><label for="addressNameInput" data-i18n="account.fieldName">Full Name</label><input type="text" id="addressNameInput" required></div>
+            <div class="form-group"><label for="addressPhoneInput" data-i18n="account.fieldPhone">Phone</label><input type="tel" id="addressPhoneInput" required></div>
+            <div class="form-group"><label for="addressCityInput" data-i18n="account.fieldCity">City</label><input type="text" id="addressCityInput" required></div>
+            <div class="form-group"><label for="addressAreaInput" data-i18n="account.fieldArea">Area</label><input type="text" id="addressAreaInput" required></div>
+            <div class="form-group full"><label for="addressLineInput" data-i18n="account.fieldLine">Street, Building, Floor, Apt</label><textarea id="addressLineInput" required></textarea></div>
+          </div>
+          <div class="address-form-actions"><button type="button" class="cancel" id="addressCancel" data-i18n="account.cancel">Cancel</button><button type="submit" class="save" data-i18n="account.save">Save Address</button></div>
+        </form>
+      </div>
+      <div class="addresses-grid" id="addressesGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     ADMIN PAGE
+     ===================================================== -->
+<div class="admin-page" id="adminPage">
+  <div class="account-topbar">
+    <button class="account-back" id="adminBack"><i class='bx bx-arrow-back'></i> <span data-i18n="admin.back">Back to Store</span></button>
+    <div class="account-brand">Hat Candy<span>.</span> <span class="admin-pill" data-i18n="admin.badge">Admin</span></div>
+    <button class="account-signout" id="adminSignout"><i class='bx bx-log-out'></i> <span data-i18n="account.signout">Sign Out</span></button>
+  </div>
+
+  <div class="account-hero admin-hero">
+    <div class="account-avatar"><i class='bx bx-shield-quarter'></i></div>
+    <div class="account-hero-info">
+      <h1 data-i18n="admin.heroName">Store Administration</h1>
+      <p data-i18n="admin.heroSub">Full control over orders, customers & revenue</p>
+      <div class="account-hero-meta">
+        <span><i class='bx bx-calendar-check'></i> <span id="adminToday">—</span></span>
+        <span><i class='bx bx-time-five'></i> <span id="adminClock">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="account-tabs">
+    <button class="account-tab active" data-atab="overview"><i class='bx bx-grid-alt'></i> <span data-i18n="admin.tabOverview">Overview</span></button>
+    <button class="account-tab" data-atab="orders"><i class='bx bx-receipt'></i> <span data-i18n="admin.tabOrders">Orders</span><span class="tab-count" id="adminOrdersCount">0</span></button>
+    <button class="account-tab" data-atab="customers"><i class='bx bx-group'></i> <span data-i18n="admin.tabCustomers">Customers</span><span class="tab-count" id="adminCustomersCount">0</span></button>
+    <button class="account-tab" data-atab="products"><i class='bx bx-package'></i> <span data-i18n="admin.tabProducts">Products</span></button>
+    <button class="account-tab" data-atab="employees"><i class='bx bx-id-card'></i> <span>Employees</span><span class="tab-count" id="adminEmployeesCount">0</span></button>
+    <button class="account-tab" data-atab="messages"><i class='bx bx-envelope'></i> <span data-i18n="admin.tabMessages">Messages</span><span class="tab-count" id="adminMessagesCount">0</span></button>
+  </div>
+
+  <div class="account-content">
+    <div class="account-pane active" data-apane="overview">
+
+      <!-- ====== بوابة الحماية ====== -->
+      <div class="overview-gate" id="overviewGate">
+        <div class="overview-gate-card">
+          <div class="overview-gate-icon"><i class='bx bx-shield-quarter'></i></div>
+          <h3>Protected Analytics</h3>
+          <p>This section is restricted. Enter the security password to unlock sales statistics and financial reports.</p>
+          <div class="overview-gate-field">
+            <i class='bx bx-key'></i>
+            <input type="password" id="overviewPassword" placeholder="• • •" inputmode="numeric" maxlength="12" autocomplete="off">
+          </div>
+          <button class="overview-gate-btn" id="overviewUnlockBtn">
+            <i class='bx bx-lock-open-alt'></i> Unlock Reports
+          </button>
+          <p class="overview-gate-error" id="overviewGateError"></p>
+          <p class="overview-gate-hint"><i class='bx bx-info-circle'></i> Security password is required for each session</p>
+        </div>
+      </div>
+
+      <!-- ====== المحتوى المحمي ====== -->
+      <div class="overview-content" id="overviewContent" style="display:none;">
+
+        <div class="report-toolbar">
+          <div class="report-filters" id="reportFilters">
+            <button class="report-filter" data-range="daily"><i class='bx bx-sun'></i> Daily</button>
+            <button class="report-filter active" data-range="weekly"><i class='bx bx-calendar-week'></i> Weekly</button>
+            <button class="report-filter" data-range="monthly"><i class='bx bx-calendar'></i> Monthly</button>
+            <button class="report-filter" data-range="all"><i class='bx bx-infinite'></i> All Time</button>
+          </div>
+          <div class="report-toolbar-actions">
+            <button class="report-lock-btn" id="reportLockBtn" title="Lock again"><i class='bx bx-lock-alt'></i></button>
+            <button class="report-print-btn" id="reportPrintBtn"><i class='bx bx-printer'></i> Print Report</button>
+          </div>
+        </div>
+
+        <div class="admin-kpis" id="adminKpis"></div>
+
+        <div class="admin-split">
+          <div class="admin-card">
+            <div class="admin-card-head">
+              <h4 data-i18n="admin.revenueChart">Revenue Trend</h4>
+              <span class="admin-card-tag" id="adminChartTag">Last 7 Days</span>
+            </div>
+            <div class="admin-chart-bars" id="adminChartBars"></div>
+          </div>
+          <div class="admin-card">
+            <div class="admin-card-head"><h4 data-i18n="admin.topProducts">Top Selling Products</h4></div>
+            <div class="admin-rank" id="adminTopProducts"></div>
+          </div>
+        </div>
+
+        <div class="admin-card" style="margin-top:16px;">
+          <div class="admin-card-head">
+            <h4 data-i18n="admin.recentOrders">Recent Orders</h4>
+            <button class="admin-link-btn" data-goto-orders>
+              <span data-i18n="admin.viewAll">View all</span> <i class='bx bx-right-arrow-alt'></i>
+            </button>
+          </div>
+          <div class="admin-table-wrap" style="box-shadow:none;padding:0;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin.thOrder">Order</th>
+                  <th data-i18n="admin.thCustomer">Customer</th>
+                  <th data-i18n="admin.thItems">Items</th>
+                  <th data-i18n="admin.thTotal">Total</th>
+                  <th data-i18n="admin.thStatus">Status</th>
+                </tr>
+              </thead>
+              <tbody id="adminRecentOrders"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="account-pane" data-apane="orders">
+      <div class="admin-toolbar"><div class="admin-filters" id="adminOrderFilters"></div><button class="admin-export" id="adminExportOrders"><i class='bx bx-download'></i> <span data-i18n="admin.export">Export CSV</span></button></div>
+      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th data-i18n="admin.thOrder">Order</th><th data-i18n="admin.thCustomer">Customer</th><th data-i18n="admin.thItems">Items</th><th data-i18n="admin.thTotal">Total</th><th data-i18n="admin.thStatus">Status</th><th data-i18n="admin.thActions">Actions</th></tr></thead><tbody id="adminOrdersBody"></tbody></table></div>
+    </div>
+
+    <div class="account-pane" data-apane="customers">
+      <div class="admin-toolbar"><div class="admin-search"><i class='bx bx-search'></i><input type="text" id="adminCustomerSearch" data-i18n-placeholder="admin.searchCustomers" placeholder="Search customers…"></div></div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th data-i18n="admin.thCustomer">Customer</th>
+              <th data-i18n="admin.thPhone">Phone</th>
+              <th data-i18n="admin.thCity">City</th>
+              <th data-i18n="admin.thOrders">Orders</th>
+              <th data-i18n="admin.thSpent">Total Spent</th>
+              <th data-i18n="admin.thTier">Tier</th>
+              <th data-i18n="admin.thJoined">Joined</th>
+              <th data-i18n="admin.thActions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminCustomersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="account-pane" data-apane="products">
+      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th data-i18n="admin.thProduct">Product</th><th data-i18n="admin.thPrice">Price</th><th data-i18n="admin.thSold">Sold</th><th data-i18n="admin.thRevenue">Revenue</th><th data-i18n="admin.thStock">Stock</th></tr></thead><tbody id="adminProductsBody"></tbody></table></div>
+    </div>
+
+    <!-- ===== EMPLOYEES PANE ===== -->
+    <div class="account-pane" data-apane="employees">
+      <div class="admin-toolbar">
+        <div></div>
+        <button class="admin-export" id="adminAddEmployee"><i class='bx bx-user-plus'></i> Add Employee</button>
+      </div>
+      <div class="admin-kpis" id="adminEmployeeKpis"></div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Username</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Sales</th>
+              <th>Revenue</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminEmployeesBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="account-pane" data-apane="messages"><div id="adminMessagesList"></div></div>
+  </div>
+</div>
+
+<!-- =====================================================
+     OWNER PAGE
+     ===================================================== -->
+<div class="owner-page" id="ownerPage">
+  <div class="account-topbar">
+    <button class="account-back" id="ownerBack"><i class='bx bx-arrow-back'></i> <span data-i18n="admin.back">Back to Store</span></button>
+    <div class="account-brand">Hat Candy<span>.</span> <span class="owner-pill">Developer</span></div>
+    <button class="account-signout" id="ownerSignout"><i class='bx bx-log-out'></i> <span data-i18n="account.signout">Sign Out</span></button>
+  </div>
+
+  <div class="owner-hero">
+    <div class="account-avatar"><i class='bx bx-code-alt'></i></div>
+    <div class="owner-hero-info">
+      <h1>Developer Control Center</h1>
+      <p>Full programmatic control — add, edit and remove anything in the store.</p>
+      <div class="owner-hero-meta">
+        <span><i class='bx bx-package'></i> <span id="ownerProductsCount">0</span> products</span>
+        <span><i class='bx bx-purchase-tag'></i> <span id="ownerOffersCount">0</span> offers</span>
+        <span><i class='bx bx-image'></i> <span id="ownerGalleryCount">0</span> gallery items</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="account-tabs">
+    <button class="account-tab active" data-otab="dashboard"><i class='bx bx-grid-alt'></i> Dashboard</button>
+    <button class="account-tab" data-otab="products"><i class='bx bx-package'></i> Products</button>
+    <button class="account-tab" data-otab="offers"><i class='bx bx-purchase-tag'></i> Offers</button>
+    <button class="account-tab" data-otab="gallery"><i class='bx bx-image'></i> Gallery</button>
+    <button class="account-tab" data-otab="mixbuilder"><i class='bx bx-slider'></i> Mix Builder</button>
+    <button class="account-tab" data-otab="delivery"><i class='bx bx-cycling'></i> Delivery</button>
+    <button class="account-tab" data-otab="hours"><i class='bx bx-time'></i> Store Hours</button>
+    <button class="account-tab" data-otab="content"><i class='bx bx-edit'></i> Content</button>
+    <button class="account-tab" data-otab="data"><i class='bx bx-data'></i> Data</button>
+  </div>
+
+  <div class="account-content">
+    <div class="account-pane active" data-opane="dashboard">
+      <div class="owner-stats" id="ownerStats"></div>
+      <div class="owner-card">
+        <div class="owner-card-head"><div><h3>Quick Actions</h3><p>Jump straight to the most common tasks.</p></div></div>
+        <div class="owner-toolbar-row">
+          <button class="owner-btn primary" data-owner-add="product"><i class='bx bx-plus'></i> Add Product</button>
+          <button class="owner-btn primary" data-owner-add="offer"><i class='bx bx-plus'></i> Add Offer</button>
+          <button class="owner-btn ghost" data-owner-goto="gallery"><i class='bx bx-image-add'></i> Add Gallery Image</button>
+          <button class="owner-btn ghost" data-owner-goto="content"><i class='bx bx-edit'></i> Edit Site Content</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="account-pane" data-opane="products">
+      <div class="owner-toolbar-row"><div><h3 class="owner-h3">Products</h3><p class="owner-p">Add, edit or remove products.</p></div><button class="owner-btn primary" id="ownerAddProduct"><i class='bx bx-plus'></i> Add Product</button></div>
+      <div class="owner-table-wrap"><table class="owner-table"><thead><tr><th>Product</th><th>Price</th><th>Old Price</th><th>Badge</th><th>Stock</th><th>Actions</th></tr></thead><tbody id="ownerProductsBody"></tbody></table></div>
+    </div>
+
+    <div class="account-pane" data-opane="offers">
+      <div class="owner-toolbar-row"><div><h3 class="owner-h3">Offers</h3><p class="owner-p">Create limited-time offers and bundles.</p></div><button class="owner-btn primary" id="ownerAddOffer"><i class='bx bx-plus'></i> Add Offer</button></div>
+      <div class="owner-table-wrap"><table class="owner-table"><thead><tr><th>Offer</th><th>Category</th><th>Price</th><th>Discount</th><th>Active</th><th>Actions</th></tr></thead><tbody id="ownerOffersBody"></tbody></table></div>
+    </div>
+
+    <div class="account-pane" data-opane="gallery">
+      <div class="owner-toolbar-row"><div><h3 class="owner-h3">Gallery</h3><p class="owner-p">Images shown in "Magic in Every Detail".</p></div><button class="owner-btn primary" id="ownerAddGallery"><i class='bx bx-image-add'></i> Add Image</button></div>
+      <div class="owner-gallery-grid" id="ownerGalleryGrid"></div>
+    </div>
+
+    <div class="account-pane" data-opane="mixbuilder">
+      <div class="owner-subsection"><div class="owner-subsection-head"><h4><i class='bx bx-weight'></i> Weights (grams)</h4><button class="owner-btn primary" id="ownerAddWeight"><i class='bx bx-plus'></i> Add Weight</button></div><div class="owner-list" id="ownerWeightsList"></div></div>
+      <div class="owner-subsection"><div class="owner-subsection-head"><h4><i class='bx bx-package'></i> Packaging</h4><button class="owner-btn primary" id="ownerAddPackaging"><i class='bx bx-plus'></i> Add Packaging</button></div><div class="owner-list" id="ownerPackagingList"></div></div>
+      <div class="owner-subsection"><div class="owner-subsection-head"><h4><i class='bx bx-candy'></i> Candy Types</h4><button class="owner-btn primary" id="ownerAddCandyType"><i class='bx bx-plus'></i> Add Candy Type</button></div><div class="owner-list" id="ownerCandyTypesList"></div></div>
+    </div>
+
+    <div class="account-pane" data-opane="delivery">
+      <div class="owner-subsection"><div class="owner-subsection-head"><h4><i class='bx bx-map-pin'></i> Delivery Zones</h4><button class="owner-btn primary" id="ownerAddZone"><i class='bx bx-plus'></i> Add Zone</button></div><div class="owner-list" id="ownerZonesList"></div></div>
+    </div>
+
+    <div class="account-pane" data-opane="hours">
+      <div class="owner-subsection">
+        <div class="owner-subsection-head"><h4><i class='bx bx-time-five'></i> Opening Hours</h4><button class="owner-btn primary" id="ownerSaveHours"><i class='bx bx-save'></i> Save Hours</button></div>
+        <p class="owner-p" style="margin-bottom:14px;">Controls the floating signboard on the storefront.</p>
+        <div class="owner-form"><div class="owner-form-grid">
+          <div class="form-group"><label>Opens at (hour 0–23)</label><input type="number" min="0" max="23" id="ownerOpenHour" value="8"></div>
+          <div class="form-group"><label>Closes at (hour 0–23)</label><input type="number" min="0" max="23" id="ownerCloseHour" value="17"></div>
+        </div><div class="owner-form-hint">Example: 8 = 8 AM, 17 = 5 PM.</div></div>
+      </div>
+    </div>
+
+    <div class="account-pane" data-opane="content">
+      <div class="owner-cms-section">
+        <div class="owner-cms-title"><i class='bx bx-star'></i> Hero Section</div>
+        <div class="owner-lang-switch" data-lang-switch><button type="button" data-lang="en" class="active">English</button><button type="button" data-lang="ar">العربية</button></div>
+        <div class="owner-form" data-cms-lang="en"><div class="owner-form-grid"><div class="form-group full"><label>Hero Badge</label><input type="text" data-cms="hero.badge"></div><div class="form-group full"><label>Hero Text</label><textarea data-cms="hero.text"></textarea></div></div></div>
+        <div class="owner-form" data-cms-lang="ar" style="display:none;"><div class="owner-form-grid"><div class="form-group full"><label>شارة الهيرو</label><input type="text" data-cms="hero.badge"></div><div class="form-group full"><label>نص الهيرو</label><textarea data-cms="hero.text"></textarea></div></div></div>
+      </div>
+
+      <div class="owner-cms-section">
+        <div class="owner-cms-title"><i class='bx bx-heart'></i> About Section</div>
+        <div class="owner-lang-switch" data-lang-switch><button type="button" data-lang="en" class="active">English</button><button type="button" data-lang="ar">العربية</button></div>
+        <div class="owner-form" data-cms-lang="en"><div class="owner-form-grid"><div class="form-group full"><label>About Title</label><input type="text" data-cms="about.title"></div><div class="form-group full"><label>Paragraph 1</label><textarea data-cms="about.p1"></textarea></div><div class="form-group full"><label>Paragraph 2</label><textarea data-cms="about.p2"></textarea></div></div></div>
+        <div class="owner-form" data-cms-lang="ar" style="display:none;"><div class="owner-form-grid"><div class="form-group full"><label>عنوان القسم</label><input type="text" data-cms="about.title"></div><div class="form-group full"><label>الفقرة 1</label><textarea data-cms="about.p1"></textarea></div><div class="form-group full"><label>الفقرة 2</label><textarea data-cms="about.p2"></textarea></div></div></div>
+      </div>
+
+      <div class="owner-cms-section">
+        <div class="owner-cms-title"><i class='bx bx-image-alt'></i> Gallery Section</div>
+        <div class="owner-lang-switch" data-lang-switch><button type="button" data-lang="en" class="active">English</button><button type="button" data-lang="ar">العربية</button></div>
+        <div class="owner-form" data-cms-lang="en"><div class="owner-form-grid"><div class="form-group full"><label>Gallery Title</label><input type="text" data-cms="gallery.title"></div><div class="form-group full"><label>Gallery Subtitle</label><textarea data-cms="gallery.subtitle"></textarea></div></div></div>
+        <div class="owner-form" data-cms-lang="ar" style="display:none;"><div class="owner-form-grid"><div class="form-group full"><label>عنوان المعرض</label><input type="text" data-cms="gallery.title"></div><div class="form-group full"><label>وصف المعرض</label><textarea data-cms="gallery.subtitle"></textarea></div></div></div>
+      </div>
+
+      <div class="owner-cms-section">
+        <div class="owner-cms-title"><i class='bx bx-map'></i> Contact Section</div>
+        <div class="owner-form"><div class="owner-form-grid"><div class="form-group full"><label>Phone</label><input type="text" data-cms-contact="phone"></div><div class="form-group full"><label>Email</label><input type="text" data-cms-contact="email"></div></div></div>
+      </div>
+
+      <div class="owner-toolbar-row" style="justify-content:flex-end;"><button class="owner-btn ghost" id="ownerResetContent"><i class='bx bx-reset'></i> Reset</button><button class="owner-btn primary" id="ownerSaveContent"><i class='bx bx-save'></i> Save Content</button></div>
+    </div>
+
+    <div class="account-pane" data-opane="data">
+      <div class="owner-card">
+        <div class="owner-card-head"><div><h3>Backup & Restore</h3><p>Export your data as JSON or import a backup.</p></div></div>
+        <div class="owner-toolbar-row">
+          <button class="owner-btn primary" id="ownerExportData"><i class='bx bx-download'></i> Export JSON</button>
+          <button class="owner-btn ghost" id="ownerImportData"><i class='bx bx-upload'></i> Import JSON</button>
+          <button class="owner-btn danger" id="ownerResetAll"><i class='bx bx-trash'></i> Reset All</button>
+        </div>
+        <input type="file" id="ownerImportFile" accept=".json" style="display:none;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     OWNER MODALS
+     ===================================================== -->
+<div class="owner-modal" id="ownerProductModal">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card">
+    <div class="owner-modal-head"><div><h3 id="ownerProductModalTitle">Add Product</h3><p>Product details</p></div><button class="owner-modal-close" data-close-owner-modal><i class='bx bx-x'></i></button></div>
+    <div class="owner-modal-body"><form id="ownerProductForm" class="owner-form">
+      <input type="hidden" data-field="id">
+      <div class="owner-form-grid">
+        <div class="form-group full"><label>Name (English) *</label><input type="text" data-field="name" required></div>
+        <div class="form-group full"><label>Name (Arabic) *</label><input type="text" data-field="name_ar" required></div>
+        <div class="form-group full"><label>Description (English)</label><textarea data-field="desc"></textarea></div>
+        <div class="form-group full"><label>Description (Arabic)</label><textarea data-field="desc_ar"></textarea></div>
+        <div class="form-group"><label>Price ($) *</label><input type="number" step="0.01" min="0" data-field="price" required></div>
+        <div class="form-group"><label>Old Price ($)</label><input type="number" step="0.01" min="0" data-field="oldPrice"></div>
+        <div class="form-group"><label>Badge (EN)</label><input type="text" data-field="badge"></div>
+        <div class="form-group"><label>Badge (AR)</label><input type="text" data-field="badge_ar"></div>
+        <div class="form-group"><label>Stock</label><input type="number" min="0" data-field="stock" value="50"></div>
+        <div class="form-group full"><label>Image URL</label><input type="text" data-field="img" placeholder="https://..."></div>
+      </div>
+    </form></div>
+    <div class="owner-modal-foot"><button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button><button type="submit" form="ownerProductForm" class="owner-btn primary"><i class='bx bx-save'></i> Save Product</button></div>
+  </div>
+</div>
+
+<div class="owner-modal" id="ownerOfferModal">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card">
+    <div class="owner-modal-head"><div><h3 id="ownerOfferModalTitle">Add Offer</h3><p>Limited-time offer details</p></div><button class="owner-modal-close" data-close-owner-modal><i class='bx bx-x'></i></button></div>
+    <div class="owner-modal-body"><form id="ownerOfferForm" class="owner-form">
+      <input type="hidden" data-field="id">
+      <div class="owner-form-grid">
+        <div class="form-group full"><label>Title (English) *</label><input type="text" data-field="name" required></div>
+        <div class="form-group full"><label>Title (Arabic) *</label><input type="text" data-field="name_ar" required></div>
+        <div class="form-group full"><label>Description (English)</label><textarea data-field="desc"></textarea></div>
+        <div class="form-group full"><label>Description (Arabic)</label><textarea data-field="desc_ar"></textarea></div>
+        <div class="form-group"><label>Category (EN)</label><input type="text" data-field="category"></div>
+        <div class="form-group"><label>Category (AR)</label><input type="text" data-field="category_ar"></div>
+        <div class="form-group"><label>Discount Label (EN)</label><input type="text" data-field="discount"></div>
+        <div class="form-group"><label>Discount Label (AR)</label><input type="text" data-field="discount_ar"></div>
+        <div class="form-group"><label>Price ($) *</label><input type="number" step="0.01" min="0" data-field="price" required></div>
+        <div class="form-group"><label>Old Price ($)</label><input type="number" step="0.01" min="0" data-field="oldPrice"></div>
+        <div class="form-group"><label>Ends (EN)</label><input type="text" data-field="ends"></div>
+        <div class="form-group"><label>Ends (AR)</label><input type="text" data-field="ends_ar"></div>
+        <div class="form-group full"><label>Image URL</label><input type="text" data-field="img"></div>
+        <div class="form-group full" style="display:flex;align-items:center;gap:10px;"><input type="checkbox" data-field="isActive" checked style="width:auto;"><label style="margin:0;text-transform:none;">Active</label></div>
+      </div>
+    </form></div>
+    <div class="owner-modal-foot"><button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button><button type="submit" form="ownerOfferForm" class="owner-btn primary"><i class='bx bx-save'></i> Save Offer</button></div>
+  </div>
+</div>
+
+<div class="owner-modal" id="ownerGalleryModal">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card" style="max-width:520px;">
+    <div class="owner-modal-head"><div><h3>Add Gallery Image</h3><p>Shown in the gallery grid</p></div><button class="owner-modal-close" data-close-owner-modal><i class='bx bx-x'></i></button></div>
+    <div class="owner-modal-body"><form id="ownerGalleryForm" class="owner-form"><div class="owner-form-grid"><div class="form-group full"><label>Image URL *</label><input type="text" data-field="img" required placeholder="https://..."></div><div class="form-group full"><label>Alt Text</label><input type="text" data-field="alt"></div></div></form></div>
+    <div class="owner-modal-foot"><button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button><button type="submit" form="ownerGalleryForm" class="owner-btn primary"><i class='bx bx-save'></i> Add Image</button></div>
+  </div>
+</div>
+
+<div class="owner-modal" id="ownerWeightModal">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card" style="max-width:460px;">
+    <div class="owner-modal-head"><div><h3 id="ownerWeightModalTitle">Add Weight</h3><p>In grams</p></div><button class="owner-modal-close" data-close-owner-modal><i class='bx bx-x'></i></button></div>
+    <div class="owner-modal-body"><form id="ownerWeightForm" class="owner-form"><input type="hidden" data-wfield="old"><div class="owner-form-grid"><div class="form-group full"><label>Weight (grams) *</label><input type="number" min="1" step="1" data-wfield="value" required></div></div></form></div>
+    <div class="owner-modal-foot"><button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button><button type="submit" form="ownerWeightForm" class="owner-btn primary"><i class='bx bx-save'></i> Save</button></div>
+  </div>
+</div>
+
+<div class="owner-modal" id="ownerPackagingModal">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card">
+    <div class="owner-modal-head"><div><h3 id="ownerPackagingModalTitle">Add Packaging</h3><p>Name, icon or image, and extra cost</p></div><button class="owner-modal-close" data-close-owner-modal><i class='bx bx-x'></i></button></div>
+    <div class="owner-modal-body"><form id="ownerPackagingForm" class="owner-form">
+      <input type="hidden" data-pfield="id">
+      <div class="owner-form-grid">
+        <div class="form-group full"><label>Name (EN) *</label><input type="text" data-pfield="name" required></div>
+        <div class="form-group full"><label>Name (AR) *</label><input type="text" data-pfield="name_ar" required></div>
+        <div class="form-group full"><label>Description (EN)</label><input type="text" data-pfield="desc"></div>
+        <div class="form-group full"><label>Description (AR)</label><input type="text" data-pfield="desc_ar"></div>
+        <div class="form-group"><label>Boxicon Class</label><input type="text" data-pfield="icon" placeholder="bx-shopping-bag"></div>
+        <div class="form-group"><label>Extra Cost ($)</label><input type="number" step="0.01" min="0" data-pfield="extra" value="0"></div>
+        <div class="form-group full"><label>Image URL (optional)</label><input type="text" data-pfield="img" placeholder="https://..."></div>
+      </div>
+    </form></div>
+    <div class="owner-modal-foot"><button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button><button type="submit" form="ownerPackagingForm" class="owner-btn primary"><i class='bx bx-save'></i> Save</button></div>
+  </div>
+</div>
+
+<div class="owner-modal" id="ownerCandyTypeModal">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card">
+    <div class="owner-modal-head"><div><h3 id="ownerCandyTypeModalTitle">Add Candy Type</h3><p>Name, image, color and pricing</p></div><button class="owner-modal-close" data-close-owner-modal><i class='bx bx-x'></i></button></div>
+    <div class="owner-modal-body"><form id="ownerCandyTypeForm" class="owner-form">
+      <input type="hidden" data-cfield="id">
+      <div class="owner-form-grid">
+        <div class="form-group full"><label>Name (EN) *</label><input type="text" data-cfield="name" required></div>
+        <div class="form-group full"><label>Name (AR) *</label><input type="text" data-cfield="name_ar" required></div>
+        <div class="form-group"><label>Price per KG ($) *</label><input type="number" step="0.01" min="0" data-cfield="price_per_kg" required></div>
+        <div class="form-group"><label>Sale Price per KG ($) <small style="opacity:.6">optional</small></label><input type="number" step="0.01" min="0" data-cfield="sale_price_per_kg" placeholder="Empty = no discount"></div>
+        <div class="form-group"><label>Color</label><input type="color" data-cfield="color" value="#e2015d" style="padding:4px;height:46px;"></div>
+        <div class="form-group full"><label>Image URL *</label><input type="text" data-cfield="img" required placeholder="https://..."></div>
+      </div>
+    </form></div>
+    <div class="owner-modal-foot"><button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button><button type="submit" form="ownerCandyTypeForm" class="owner-btn primary"><i class='bx bx-save'></i> Save</button></div>
+  </div>
+</div>
+
+<div class="owner-modal" id="ownerZoneModal">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card" style="max-width:520px;">
+    <div class="owner-modal-head"><div><h3 id="ownerZoneModalTitle">Add Delivery Zone</h3><p>Area name and delivery fee</p></div><button class="owner-modal-close" data-close-owner-modal><i class='bx bx-x'></i></button></div>
+    <div class="owner-modal-body"><form id="ownerZoneForm" class="owner-form">
+      <input type="hidden" data-zfield="id">
+      <div class="owner-form-grid">
+        <div class="form-group full"><label>Area Name (EN) *</label><input type="text" data-zfield="name" required placeholder="Amman"></div>
+        <div class="form-group full"><label>Area Name (AR) *</label><input type="text" data-zfield="name_ar" required placeholder="عمان"></div>
+        <div class="form-group full"><label>Delivery Fee ($) *</label><input type="number" step="0.01" min="0" data-zfield="price" required></div>
+        <div class="form-group full" style="display:flex;align-items:center;gap:10px;"><input type="checkbox" data-zfield="active" checked style="width:auto;"><label style="margin:0;text-transform:none;">Active</label></div>
+      </div>
+    </form></div>
+    <div class="owner-modal-foot"><button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button><button type="submit" form="ownerZoneForm" class="owner-btn primary"><i class='bx bx-save'></i> Save</button></div>
+  </div>
+</div>
+
+<!-- =====================================================
+     GOOGLE ACCOUNT CHOOSER MODAL
+     ===================================================== -->
+<div class="gchooser" id="gChooser" role="dialog" aria-modal="true" aria-labelledby="gChooserTitle">
+  <div class="gchooser-backdrop" id="gChooserBackdrop"></div>
+  <div class="gchooser-card">
+    <header class="gchooser-head">
+      <svg viewBox="0 0 46 47" width="28" height="28" aria-hidden="true">
+        <path d="M46 24.0287C46 22.09 45.8533 20.68 45.5013 19.2112H23.4694V27.9356H36.4069C36.1429 30.1094 34.7347 33.37 31.5957 35.5731L31.5663 35.8669L38.5191 41.2719L38.9885 41.3306C43.4477 37.2181 46 31.1669 46 24.0287Z" fill="#4285F4"/>
+        <path d="M23.4694 47C29.8061 47 35.1161 44.9144 39.0179 41.3012L31.625 35.5437C29.6301 36.9244 26.9898 37.8937 23.4987 37.8937C17.2793 37.8937 12.0281 33.7812 10.1505 28.1412L9.88649 28.1706L2.61097 33.7812L2.52296 34.0456C6.36608 41.7125 14.287 47 23.4694 47Z" fill="#34A853"/>
+        <path d="M10.1212 28.1413C9.62245 26.6725 9.32908 25.1156 9.32908 23.5C9.32908 21.8844 9.62245 20.3275 10.0918 18.8588V18.5356L2.75765 12.8369L2.52296 12.9544C0.909439 16.1269 0 19.7106 0 23.5C0 27.2894 0.909439 30.8731 2.49362 34.0456L10.1212 28.1413Z" fill="#FBBC05"/>
+        <path d="M23.4694 9.07688C27.8699 9.07688 30.8622 10.9863 32.5344 12.5725L39.1645 6.11C35.0867 2.32063 29.8061 0 23.4694 0C14.287 0 6.36607 5.2875 2.49362 12.9544L10.0918 18.8588C11.9987 13.1894 17.25 9.07688 23.4694 9.07688Z" fill="#EB4335"/>
+      </svg>
+      <h3 id="gChooserTitle">Choose an account</h3>
+      <p>to continue to <strong>Hat Candy</strong></p>
+    </header>
+    <div class="gchooser-list" id="gChooserList" role="listbox"></div>
+    <footer class="gchooser-foot">
+      <button type="button" id="gChooserUseOther" class="gchooser-action">
+        <i class='bx bx-user-plus'></i>
+        <span>Use another account</span>
+      </button>
+      <button type="button" id="gChooserCancel" class="gchooser-action muted">Cancel</button>
+    </footer>
+  </div>
+</div>
+
+<!-- =====================================================
+     ADMIN — CUSTOMER DETAILS MODAL
+     ===================================================== -->
+<div class="owner-modal" id="adminCustomerModal" role="dialog" aria-modal="true">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card" style="max-width:720px;">
+    <header class="owner-modal-head admin-modal-head">
+      <div>
+        <h3 id="adminCustomerName">Customer</h3>
+        <p id="adminCustomerEmail">email@example.com</p>
+      </div>
+      <button class="owner-modal-close" data-close-owner-modal aria-label="Close"><i class='bx bx-x'></i></button>
+    </header>
+    <div class="owner-modal-body" id="adminCustomerBody"></div>
+  </div>
+</div>
+
+<!-- =====================================================
+     ADMIN — EMPLOYEE MODAL
+     ===================================================== -->
+<div class="owner-modal" id="adminEmployeeModal" role="dialog" aria-modal="true">
+  <div class="owner-modal-backdrop" data-close-owner-modal></div>
+  <div class="owner-modal-card" style="max-width:600px;">
+    <header class="owner-modal-head admin-modal-head">
+      <div>
+        <h3 id="adminEmployeeModalTitle">Add Employee</h3>
+        <p>Employee details</p>
+      </div>
+      <button class="owner-modal-close" data-close-owner-modal aria-label="Close"><i class='bx bx-x'></i></button>
+    </header>
+    <div class="owner-modal-body">
+      <form id="adminEmployeeForm" class="owner-form">
+        <input type="hidden" id="empId">
+        <div class="owner-form-grid">
+          <div class="form-group full"><label>Full Name *</label><input type="text" id="empName" required></div>
+          <div class="form-group"><label>Username *</label><input type="text" id="empUsername" required></div>
+          <div class="form-group"><label>Password *</label><input type="text" id="empPassword" required></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="empPhone"></div>
+          <div class="form-group"><label>Role</label><input type="text" id="empRole" value="Cashier"></div>
+          <div class="form-group full"><label>Address</label><input type="text" id="empAddress"></div>
+        </div>
+      </form>
+    </div>
+    <div class="owner-modal-foot">
+      <button type="button" class="owner-btn ghost" data-close-owner-modal>Cancel</button>
+      <button type="submit" form="adminEmployeeForm" class="owner-btn primary"><i class='bx bx-save'></i> Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     MAIN PAGE SECTIONS
+     ===================================================== -->
+<section class="hero" id="home">
+  <div class="hero-content">
+    <span class="hero-badge" data-i18n="hero.badge">Luxury Candy Brand</span>
+    <h1>Hat Candy</h1>
+    <p data-i18n="hero.text">Every Candy Begins with Magic.</p>
+    <div class="hero-buttons">
+      <a href="#offers" class="btn btn-outline"><i class='bx bxs-flame'></i> <span data-i18n="hero.seeOffers">See Offers</span></a>
+      <button class="btn btn-mix" id="heroMixBtn"><i class='bx bxs-magic-wand'></i> <span data-i18n="hero.buildMix">Build Your Mix</span></button>
+    </div>
+  </div>
+</section>
+
+<section class="offers" id="offers"><div class="container"><h2 class="section-title reveal" data-i18n="offers.title">Limited-Time Offers</h2><p class="section-subtitle reveal" data-i18n="offers.subtitle">Sweet deals!</p><div class="offers-grid" id="offersGrid"></div></div></section>
+
+<section class="mix-banner" id="mix-banner"><div class="container"><div class="mix-banner-inner"><div class="mix-banner-text"><h2 data-i18n-html="banner.title">Mix It <span>Your Way</span> ✨</h2><p data-i18n="banner.text">Choose your weight, pick your packaging.</p></div><button class="mix-banner-cta" id="bannerMixBtn"><i class='bx bxs-magic-wand'></i> <span data-i18n="banner.cta">Start Building</span></button></div></div></section>
+
+<section class="candies" id="candies"><div class="container"><h2 class="section-title reveal" data-i18n="candies.title">Signature Collection</h2><p class="section-subtitle reveal" data-i18n="candies.subtitle">Indulge in our curated selection</p><div class="candy-grid" id="candyGrid"></div></div></section>
+
+<section class="about" id="about"><div class="container"><div class="about-wrapper">
+  <div class="about-img reveal"><img src="https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=800" alt="About"></div>
+  <div class="about-text reveal">
+    <h2 data-i18n="about.title">Our Magical Story</h2>
+    <p data-i18n="about.p1">Hat Candy is a luxury candy brand.</p>
+    <p data-i18n="about.p2">Every Candy Begins with Magic.</p>
+    <div class="about-features">
+      <div class="feature"><div class="feature-icon">🌿</div><span data-i18n="about.f1">Premium Ingredients</span></div>
+      <div class="feature"><div class="feature-icon">✨</div><span data-i18n="about.f2">Elegant Presentation</span></div>
+      <div class="feature"><div class="feature-icon">🎁</div><span data-i18n="about.f3">Luxury Gift Boxes</span></div>
+      <div class="feature"><div class="feature-icon">❤️</div><span data-i18n="about.f4">Made with Love</span></div>
+    </div>
+  </div>
+</div></div></section>
+
+<section class="gallery" id="gallery"><div class="container"><h2 class="section-title reveal" data-i18n="gallery.title">Magic in Every Detail</h2><p class="section-subtitle reveal" data-i18n="gallery.subtitle">A glimpse into our world</p><div class="gallery-grid" id="galleryGrid"></div></div></section>
+
+<section class="contact" id="contact"><div class="container"><h2 class="section-title reveal" data-i18n="contact.title">Get in Touch</h2><p class="section-subtitle reveal" data-i18n="contact.subtitle">Order your magical treats</p>
+  <div class="contact-wrapper">
+    <div class="contact-info reveal">
+      <h3 data-i18n="contact.infoTitle">Contact Information</h3>
+      <p data-i18n="contact.infoText">We'd love to hear from you!</p>
+      <div class="contact-detail"><div class="contact-detail-icon">📍</div><div class="contact-detail-text"><strong data-i18n="contact.addressLabel">Boutique Address</strong><span data-i18n="contact.address">Amman, Jordan</span></div></div>
+      <div class="contact-detail"><div class="contact-detail-icon">📞</div><div class="contact-detail-text"><strong data-i18n="contact.phoneLabel">Phone</strong><span data-contact-phone>+962 7 9876 5432</span></div></div>
+      <div class="contact-detail"><div class="contact-detail-icon">✉️</div><div class="contact-detail-text"><strong data-i18n="contact.emailLabel">Email</strong><span data-contact-email>hello@hatcandy.com</span></div></div>
+      <div class="contact-detail"><div class="contact-detail-icon">🕐</div><div class="contact-detail-text"><strong data-i18n="contact.hoursLabel">Hours</strong><span id="contactHoursText">08:00 – 17:00</span></div></div>
+    </div>
+    <form class="contact-form reveal" id="contactForm">
+      <div class="form-group"><label for="name" data-i18n="contact.formName">Full Name</label><input type="text" id="name" placeholder="Enter your name" required></div>
+      <div class="form-group"><label for="email" data-i18n="contact.formEmail">Email</label><input type="email" id="email" placeholder="Enter your email" required></div>
+      <div class="form-group"><label for="message" data-i18n="contact.formMessage">Message</label><textarea id="message" placeholder="Tell us about your order..." required></textarea></div>
+      <button type="submit" class="btn btn-primary" data-i18n="contact.send">Send Message</button>
+    </form>
+  </div>
+</div></section>
+
+<footer>
+  <div class="logo">Hat Candy</div>
+  <p data-i18n="footer.copy">© 2025 Hat Candy. Every Candy Begins with Magic.</p>
+</footer>
+
+<!-- =====================================================
+     PRINT REPORT CONTAINER
+     ===================================================== -->
+<div id="printReport" class="print-report" aria-hidden="true"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
