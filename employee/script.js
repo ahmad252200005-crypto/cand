@@ -1,5 +1,6 @@
 /* =====================================================
    HAT CANDY — EMPLOYEE POS SYSTEM (Complete)
+   With Camera Barcode/QR Scanner
    ===================================================== */
 
 // ============ STORAGE KEYS ============
@@ -27,15 +28,9 @@ const STORE_INFO = {
     phone: '+962 7 9876 5432'
 };
 const STATUS_FLOW = ['processing', 'packing', 'shipped', 'out_for_delivery', 'delivered'];
-
-// Barcode prefix → category code mapping
 const CATEGORY_CODES = {
-    candy:       '100',
-    chocolate:   '200',
-    gummy:       '300',
-    lollipop:    '400',
-    marshmallow: '500',
-    other:       '900'
+    candy: '100', chocolate: '200', gummy: '300',
+    lollipop: '400', marshmallow: '500', other: '900'
 };
 
 // ============ DEFAULTS ============
@@ -75,28 +70,13 @@ let activeDeliveryTab = 'online';
 let currentOrderType = 'in-store';
 let autoPrint = true;
 let lastReceiptData = null;
-
-// Manual order draft
-let manualDraft = {
-    items: [],           // { kind: 'item'|'offer'|'box', data: {...}, qty }
-    deliveryMethod: 'delivery',
-    paymentMethod: 'cash'
-};
-
-// Box builder state (for pick box modal)
-let boxBuilderState = {
-    boxType: null,
-    items: []
-};
-
-// Edit state
+let manualDraft = { items: [], deliveryMethod: 'delivery', paymentMethod: 'cash' };
+let boxBuilderState = { boxType: null, items: [] };
 let editingOrder = null;
 let editingOrderOriginal = null;
 let editingDraft = null;
 let editingIsUnlocked = false;
 let editTimerInterval = null;
-
-// Inventory state
 let invItems = [];
 let invMovements = [];
 let invReceiveBatch = [];
@@ -106,6 +86,16 @@ let invHistoryFilter = 'all';
 let invEditingItemId = null;
 let barcodeLookupTarget = null;
 let labelPrintItem = null;
+
+// Scanner state
+let html5QrCode = null;
+let scannerMode = null; // 'receive' | 'transfer' | 'item-add'
+let scannerCameras = [];
+let currentCameraIndex = 0;
+let scannerRunning = false;
+let lastScannedBarcode = null;
+let lastScanTimestamp = 0;
+const SCAN_COOLDOWN_MS = 1800; // prevent same scan twice
 
 // ============ DOM ============
 const loginScreen = document.getElementById('loginScreen');
@@ -120,14 +110,8 @@ function esc(s) {
     );
 }
 function fmtMoney(n) { return '$' + (Number(n) || 0).toFixed(2); }
-function fmtDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-function fmtDateTime(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-}
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+function fmtDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
 function statusIcon(s) {
     return {
         processing: 'bx bx-time-five', packing: 'bx bx-archive',
@@ -142,10 +126,10 @@ function statusLabel(s) {
     }[s] || s;
 }
 function sourceIcon(s) {
-    return { phone: '📞', whatsapp: '💬', instagram: '📷', facebook: '👍', 'walk-in': '🏬', other: '✨', 'pos-delivery': '🏪' }[s] || '📦';
+    return { phone: '📞', whatsapp: '💬', instagram: '📷', facebook: '👍', 'walk-in': '🏬', other: '✨' }[s] || '📦';
 }
 function sourceLabel(s) {
-    return { phone: 'Phone Call', whatsapp: 'WhatsApp', instagram: 'Instagram', facebook: 'Facebook', 'walk-in': 'Walk-in', other: 'Other', 'pos-delivery': 'POS Delivery' }[s] || 'Other';
+    return { phone: 'Phone Call', whatsapp: 'WhatsApp', instagram: 'Instagram', facebook: 'Facebook', 'walk-in': 'Walk-in', other: 'Other' }[s] || 'Other';
 }
 function showToast(msg, icon = 'bx-check-circle') {
     let toast = document.getElementById('posToast');
@@ -153,15 +137,15 @@ function showToast(msg, icon = 'bx-check-circle') {
         toast = document.createElement('div');
         toast.id = 'posToast';
         toast.style.cssText = `
-            position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(120px);
-            background:#9f0b3b;color:#fff;padding:14px 22px;border-radius:50px;
-            box-shadow:0 10px 30px rgba(159,11,59,.35);z-index:9999;
+            position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+            background:#9f0b3b;color:#fff;padding:12px 20px;border-radius:50px;
+            box-shadow:0 10px 30px rgba(159,11,59,.35);z-index:99999;
             display:flex;align-items:center;gap:10px;font-family:'Montserrat',sans-serif;
-            font-size:.88rem;font-weight:500;transition:transform .4s cubic-bezier(.4,0,.2,1);
-            max-width:90%;`;
+            font-size:.85rem;font-weight:500;transition:transform .4s cubic-bezier(.4,0,.2,1);
+            max-width:calc(100vw - 32px);`;
         document.body.appendChild(toast);
     }
-    toast.innerHTML = `<i class='bx ${icon}' style="color:#facc43;font-size:1.3rem;"></i><span>${esc(msg)}</span>`;
+    toast.innerHTML = `<i class='bx ${icon}' style="color:#facc43;font-size:1.2rem;flex-shrink:0;"></i><span>${esc(msg)}</span>`;
     toast.style.transform = 'translateX(-50%) translateY(0)';
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => {
@@ -171,10 +155,7 @@ function showToast(msg, icon = 'bx-check-circle') {
 
 // ============ LOADERS ============
 function loadEmployeesFromAdmin() {
-    try {
-        const raw = localStorage.getItem(LS_KEYS.employees);
-        if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) return arr; }
-    } catch (e) {}
+    try { const raw = localStorage.getItem(LS_KEYS.employees); if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) return arr; } } catch (e) {}
     return [];
 }
 function loadProductsFromAdmin() {
@@ -183,114 +164,32 @@ function loadProductsFromAdmin() {
         if (raw) {
             const arr = JSON.parse(raw);
             if (Array.isArray(arr) && arr.length) {
-                PRODUCTS = arr.map(p => ({
-                    id: p.id, name: p.name,
-                    price: Number(p.price) || 0,
-                    img: p.img || '',
-                    stock: Number(p.stock) || 0
-                }));
+                PRODUCTS = arr.map(p => ({ id: p.id, name: p.name, price: Number(p.price) || 0, img: p.img || '', stock: Number(p.stock) || 0 }));
                 return;
             }
         }
     } catch (e) {}
     PRODUCTS = DEFAULT_PRODUCTS.map(p => ({ ...p }));
 }
-function loadOnlineOrders() {
-    try {
-        const raw = localStorage.getItem(LS_KEYS.onlineOrders);
-        const arr = raw ? JSON.parse(raw) : [];
-        onlineOrders = Array.isArray(arr) ? arr : [];
-    } catch (e) { onlineOrders = []; }
-}
-function saveOnlineOrders() {
-    try { localStorage.setItem(LS_KEYS.onlineOrders, JSON.stringify(onlineOrders)); } catch (e) {}
-}
-function loadEmployeeOrders() {
-    try {
-        const raw = localStorage.getItem(LS_KEYS.employeeOrders);
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-    } catch (e) { return []; }
-}
-function saveEmployeeOrders(list) {
-    try { localStorage.setItem(LS_KEYS.employeeOrders, JSON.stringify(list)); } catch (e) {}
-}
-function loadManualOrders() {
-    manualOrders = loadEmployeeOrders().filter(o => o.channel === 'manual');
-}
-function loadSettings() {
-    try {
-        const raw = localStorage.getItem(LS_KEYS.posSettings);
-        if (raw) {
-            const obj = JSON.parse(raw);
-            if (typeof obj.autoPrint === 'boolean') autoPrint = obj.autoPrint;
-        }
-    } catch (e) {}
-}
-function saveSettings() {
-    try { localStorage.setItem(LS_KEYS.posSettings, JSON.stringify({ autoPrint })); } catch (e) {}
-}
-function loadInventoryItems() {
-    try {
-        const raw = localStorage.getItem(LS_KEYS.inventoryItems);
-        const arr = raw ? JSON.parse(raw) : [];
-        invItems = Array.isArray(arr) ? arr : [];
-    } catch (e) { invItems = []; }
-}
-function saveInventoryItems() {
-    try { localStorage.setItem(LS_KEYS.inventoryItems, JSON.stringify(invItems)); } catch (e) {}
-}
-function loadInventoryMovements() {
-    try {
-        const raw = localStorage.getItem(LS_KEYS.inventoryMoves);
-        const arr = raw ? JSON.parse(raw) : [];
-        invMovements = Array.isArray(arr) ? arr : [];
-    } catch (e) { invMovements = []; }
-}
-function saveInventoryMovements() {
-    try {
-        const trimmed = invMovements.slice(0, 1000);
-        localStorage.setItem(LS_KEYS.inventoryMoves, JSON.stringify(trimmed));
-    } catch (e) {}
-}
+function loadOnlineOrders() { try { const raw = localStorage.getItem(LS_KEYS.onlineOrders); const arr = raw ? JSON.parse(raw) : []; onlineOrders = Array.isArray(arr) ? arr : []; } catch (e) { onlineOrders = []; } }
+function saveOnlineOrders() { try { localStorage.setItem(LS_KEYS.onlineOrders, JSON.stringify(onlineOrders)); } catch (e) {} }
+function loadEmployeeOrders() { try { const raw = localStorage.getItem(LS_KEYS.employeeOrders); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; } catch (e) { return []; } }
+function saveEmployeeOrders(list) { try { localStorage.setItem(LS_KEYS.employeeOrders, JSON.stringify(list)); } catch (e) {} }
+function loadManualOrders() { manualOrders = loadEmployeeOrders().filter(o => o.channel === 'manual'); }
+function loadSettings() { try { const raw = localStorage.getItem(LS_KEYS.posSettings); if (raw) { const obj = JSON.parse(raw); if (typeof obj.autoPrint === 'boolean') autoPrint = obj.autoPrint; } } catch (e) {} }
+function saveSettings() { try { localStorage.setItem(LS_KEYS.posSettings, JSON.stringify({ autoPrint })); } catch (e) {} }
+function loadInventoryItems() { try { const raw = localStorage.getItem(LS_KEYS.inventoryItems); const arr = raw ? JSON.parse(raw) : []; invItems = Array.isArray(arr) ? arr : []; } catch (e) { invItems = []; } }
+function saveInventoryItems() { try { localStorage.setItem(LS_KEYS.inventoryItems, JSON.stringify(invItems)); } catch (e) {} }
+function loadInventoryMovements() { try { const raw = localStorage.getItem(LS_KEYS.inventoryMoves); const arr = raw ? JSON.parse(raw) : []; invMovements = Array.isArray(arr) ? arr : []; } catch (e) { invMovements = []; } }
+function saveInventoryMovements() { try { localStorage.setItem(LS_KEYS.inventoryMoves, JSON.stringify(invMovements.slice(0, 1000))); } catch (e) {} }
 
-// ============ BARCODE GENERATION ============
-// Format: HC + CategoryCode(3) + Weight(4) + Seq(5) + Check(1) = 14 characters
-// Example: HC100050000013
-function generateBarcode(category, weight, sequence) {
-    const catCode = CATEGORY_CODES[category] || '900';
-    const wStr = String(Math.min(9999, Math.max(0, parseInt(weight) || 0))).padStart(4, '0');
-    let seq = sequence;
-    if (seq === undefined || seq === null) {
-        // Auto-increment based on existing items
-        const existing = invItems
-            .map(i => {
-                const match = (i.barcode || '').match(/HC\d{3}\d{4}(\d{5})/);
-                return match ? parseInt(match[1]) : 0;
-            });
-        const maxSeq = existing.length ? Math.max(...existing) : 0;
-        seq = maxSeq + 1;
-    }
-    const seqStr = String(seq).padStart(5, '0');
-    // Simple checksum: sum of digits mod 10
-    const base = `${catCode}${wStr}${seqStr}`;
-    const sum = base.split('').reduce((s, d) => s + parseInt(d), 0);
-    const check = String(sum % 10);
-    return `HC${base}${check}`;
+// ============ VIEWPORT FIX ============
+function setVH() {
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
 }
-
-// Parse barcode info
-function parseBarcode(barcode) {
-    if (!barcode || barcode.length < 14) return null;
-    const m = barcode.match(/^HC(\d{3})(\d{4})(\d{5})(\d)$/);
-    if (!m) return null;
-    return {
-        categoryCode: m[1],
-        weight: parseInt(m[2]),
-        sequence: parseInt(m[3]),
-        check: m[4]
-    };
-}
+setVH();
+window.addEventListener('resize', setVH);
+window.addEventListener('orientationchange', () => setTimeout(setVH, 200));
 
 // ============ INIT ============
 document.addEventListener('DOMContentLoaded', () => {
@@ -305,16 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
     posApp.classList.remove('active');
 
     const empList = loadEmployeesFromAdmin();
-    if (!empList.length) {
-        loginError.textContent = 'No employees registered yet. Ask the administrator to add one.';
-    }
+    if (!empList.length) loginError.textContent = 'No employees registered yet. Ask the administrator to add one.';
 
-    setTimeout(() => {
-        const u = document.getElementById('username');
-        if (u) u.focus();
-    }, 100);
+    setTimeout(() => { const u = document.getElementById('username'); if (u) u.focus(); }, 100);
 
-    // Bind all
     bindLoginForm();
     bindTopBar();
     bindGramModal();
@@ -337,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindInventoryItemModal();
     bindBarcodeLookupModal();
     bindLabelPrintModal();
+    bindScannerEvents();
 
     refreshDeliveryBadge();
     updateInventoryBadge();
@@ -344,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('beforeunload', () => {
     if (currentEmployee && currentShiftId) recordShiftEnd(currentEmployee.username);
+    stopScanner();
 });
 
 // ============ LOGIN ============
@@ -353,14 +248,8 @@ function bindLoginForm() {
         const user = document.getElementById('username').value.trim();
         const pass = document.getElementById('password').value.trim();
         const employees = loadEmployeesFromAdmin();
-
-        if (!employees.length) {
-            loginError.textContent = 'No employees registered. Ask the administrator.';
-            return;
-        }
-        const emp = employees.find(x =>
-            (x.username || '').toLowerCase() === user.toLowerCase() && x.password === pass
-        );
+        if (!employees.length) { loginError.textContent = 'No employees registered. Ask the administrator.'; return; }
+        const emp = employees.find(x => (x.username || '').toLowerCase() === user.toLowerCase() && x.password === pass);
         if (!emp) {
             loginError.textContent = 'Invalid username or password.';
             document.getElementById('password').value = '';
@@ -434,9 +323,8 @@ window.navigateTo = function(viewId) {
     const target = document.getElementById('view-' + viewId);
     if (target) target.classList.add('active');
 
-    if (viewId !== 'products') {
-        document.getElementById('floatingBoxSummary').classList.remove('active');
-    }
+    if (viewId !== 'products') document.getElementById('floatingBoxSummary').classList.remove('active');
+
     if (viewId === 'offers') renderOffers();
     if (viewId === 'box-types') renderBoxTypes();
     if (viewId === 'products') { renderProducts(); updateCurrentBoxStats(); }
@@ -445,35 +333,15 @@ window.navigateTo = function(viewId) {
     if (viewId === 'home') renderRecentOrders();
     if (viewId === 'inventory') renderInventory();
 };
-
-window.openDeliveryView = function() {
-    loadOnlineOrders();
-    loadManualOrders();
-    navigateTo('delivery');
-    renderDeliveryCenter();
-};
-
-window.openInventoryView = function() {
-    loadInventoryItems();
-    loadInventoryMovements();
-    navigateTo('inventory');
-    renderInventory();
-};
-
-window.startNewBoxFlow = function() {
-    currentBox = null;
-    updateCurrentBoxStats();
-    navigateTo('box-types');
-};
+window.openDeliveryView = function() { loadOnlineOrders(); loadManualOrders(); navigateTo('delivery'); renderDeliveryCenter(); };
+window.openInventoryView = function() { loadInventoryItems(); loadInventoryMovements(); navigateTo('inventory'); renderInventory(); };
+window.startNewBoxFlow = function() { currentBox = null; updateCurrentBoxStats(); navigateTo('box-types'); };
 
 // ============ RENDERERS ============
 function renderOffers() {
     const grid = document.getElementById('offersGrid');
     if (!grid) return;
-    if (!OFFERS.length) {
-        grid.innerHTML = `<div class="delivery-empty"><i class='bx bx-purchase-tag'></i><h3>No offers available</h3></div>`;
-        return;
-    }
+    if (!OFFERS.length) { grid.innerHTML = `<div class="delivery-empty"><i class='bx bx-purchase-tag'></i><h3>No offers available</h3></div>`; return; }
     grid.innerHTML = OFFERS.map(o => `
         <div class="card" data-offer-id="${esc(o.id)}" onclick="addOfferToOrder('${esc(o.id)}')">
             <div class="badge-discount">${esc(o.discount)}</div>
@@ -511,22 +379,17 @@ function renderProducts() {
     }).join('');
 }
 
-// ============ OFFERS + BOXES (MAIN POS) ============
+// ============ OFFERS + BOXES ============
 window.addOfferToOrder = function(offerId) {
     const offer = OFFERS.find(o => o.id === offerId);
     if (!offer) { showToast('Offer not found', 'bx-error-circle'); return; }
     currentOrder.items.push({ type: 'offer', data: offer });
-    showToast(`${offer.name} added to order`, 'bx-cart-add');
+    showToast(`${offer.name} added`, 'bx-cart-add');
     const card = document.querySelector(`[data-offer-id="${offerId}"]`);
-    if (card) {
-        card.style.transform = 'scale(.96)';
-        card.style.borderColor = '#22c55e';
-        setTimeout(() => { card.style.transform = ''; card.style.borderColor = ''; }, 350);
-    }
+    if (card) { card.style.transform = 'scale(.96)'; card.style.borderColor = '#22c55e'; setTimeout(() => { card.style.transform = ''; card.style.borderColor = ''; }, 350); }
     renderCheckout();
     setTimeout(() => navigateTo('checkout'), 250);
 };
-
 window.startNewBox = function(boxTypeId) {
     const boxType = BOX_TYPES.find(b => b.id === boxTypeId);
     if (!boxType) { showToast('Box type not found', 'bx-error-circle'); return; }
@@ -537,13 +400,7 @@ window.startNewBox = function(boxTypeId) {
     showToast(`Started: ${boxType.name}`, 'bx-box');
     navigateTo('products');
 };
-
-window.removeOrderItem = function(index) {
-    currentOrder.items.splice(index, 1);
-    renderCheckout();
-    updateCheckoutFeeDisplay();
-    showToast('Item removed', 'bx-trash');
-};
+window.removeOrderItem = function(index) { currentOrder.items.splice(index, 1); renderCheckout(); updateCheckoutFeeDisplay(); showToast('Item removed', 'bx-trash'); };
 
 // ============ GRAM MODAL ============
 function bindGramModal() {
@@ -566,10 +423,7 @@ function bindGramModal() {
         input.value = val + 50; updateGramPrice();
         document.querySelectorAll('.gram-presets button').forEach(b => b.classList.remove('active'));
     });
-    document.getElementById('gramInput').addEventListener('input', () => {
-        updateGramPrice();
-        document.querySelectorAll('.gram-presets button').forEach(b => b.classList.remove('active'));
-    });
+    document.getElementById('gramInput').addEventListener('input', () => { updateGramPrice(); document.querySelectorAll('.gram-presets button').forEach(b => b.classList.remove('active')); });
     document.getElementById('closeGramModal').addEventListener('click', closeGramModal);
     document.getElementById('cancelGram').addEventListener('click', closeGramModal);
     document.getElementById('confirmGram').addEventListener('click', () => {
@@ -579,15 +433,13 @@ function bindGramModal() {
         const price = (selectedProductForGram.price / 100) * grams;
         const existing = currentBox.items.find(i => i.id === selectedProductForGram.id && i.grams === grams);
         if (existing) existing.qty += 1;
-        else currentBox.items.push({ id: selectedProductForGram.id, name: selectedProductForGram.name, grams: grams, price: price, qty: 1, img: selectedProductForGram.img });
+        else currentBox.items.push({ id: selectedProductForGram.id, name: selectedProductForGram.name, grams, price, qty: 1, img: selectedProductForGram.img });
         showToast(`${selectedProductForGram.name} × ${grams}g added`, 'bx-check-circle');
         closeGramModal();
         updateFloatingBoxSummary();
         updateCurrentBoxStats();
     });
-    document.getElementById('gramModal').addEventListener('click', (e) => {
-        if (e.target.id === 'gramModal') closeGramModal();
-    });
+    document.getElementById('gramModal').addEventListener('click', (e) => { if (e.target.id === 'gramModal') closeGramModal(); });
 }
 window.openGramModal = function(productId) {
     if (!currentBox) { showToast('Please select a box type first', 'bx-info-circle'); navigateTo('box-types'); return; }
@@ -602,10 +454,7 @@ window.openGramModal = function(productId) {
     if (dflt) dflt.classList.add('active');
     document.getElementById('gramModal').classList.add('active');
 };
-function closeGramModal() {
-    document.getElementById('gramModal').classList.remove('active');
-    selectedProductForGram = null;
-}
+function closeGramModal() { document.getElementById('gramModal').classList.remove('active'); selectedProductForGram = null; }
 function updateGramPrice() {
     const grams = parseInt(document.getElementById('gramInput').value) || 0;
     if (selectedProductForGram) {
@@ -617,9 +466,9 @@ function updateGramPrice() {
 // ============ FINISH BOX ============
 function bindFinishBox() {
     document.getElementById('btnFinishBox').addEventListener('click', () => {
-        if (!currentBox || currentBox.items.length === 0) { showToast('Please add at least one item to the box', 'bx-error-circle'); return; }
+        if (!currentBox || currentBox.items.length === 0) { showToast('Add at least one item', 'bx-error-circle'); return; }
         currentOrder.items.push({ type: 'box', data: JSON.parse(JSON.stringify(currentBox)) });
-        showToast('Box finished — added to order', 'bx-check-circle');
+        showToast('Box finished', 'bx-check-circle');
         currentBox = null;
         updateCurrentBoxStats();
         renderCheckout();
@@ -629,15 +478,14 @@ function bindFinishBox() {
 function bindBackToBoxes() {
     document.getElementById('btnBackToBoxes').addEventListener('click', () => {
         if (currentBox && currentBox.items.length > 0) {
-            if (confirm('Are you sure? Items in this box will be lost.')) { currentBox = null; updateCurrentBoxStats(); navigateTo('box-types'); }
+            if (confirm('Discard this box?')) { currentBox = null; updateCurrentBoxStats(); navigateTo('box-types'); }
         } else { currentBox = null; updateCurrentBoxStats(); navigateTo('box-types'); }
     });
 }
 function updateFloatingBoxSummary() {
     const summary = document.getElementById('floatingBoxSummary');
     if (!currentBox || currentBox.items.length === 0) { summary.classList.remove('active'); return; }
-    let itemCount = 0;
-    let total = currentBox.type.price;
+    let itemCount = 0, total = currentBox.type.price;
     currentBox.items.forEach(item => { itemCount += item.qty; total += (item.price * item.qty); });
     document.getElementById('boxItemCount').textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
     document.getElementById('boxTotalPrice').textContent = fmtMoney(total);
@@ -654,16 +502,12 @@ function updateCurrentBoxStats() {
     el.innerHTML = `<i class='bx bx-cart'></i> <span>${count} item${count !== 1 ? 's' : ''}</span> <span class="stat-strong">${fmtMoney(total)}</span>`;
 }
 
-// ============ CHECKOUT (MAIN) ============
+// ============ CHECKOUT ============
 function getOrderSubtotal() {
     let subtotal = 0;
     currentOrder.items.forEach(item => {
         if (item.type === 'offer') subtotal += item.data.price;
-        else {
-            const b = item.data;
-            subtotal += b.type.price;
-            b.items.forEach(i => { subtotal += (i.price * i.qty); });
-        }
+        else { const b = item.data; subtotal += b.type.price; b.items.forEach(i => { subtotal += (i.price * i.qty); }); }
     });
     return subtotal;
 }
@@ -673,36 +517,28 @@ function renderCheckout() {
     if (currentOrder.items.length === 0) {
         list.innerHTML = `<div style="text-align:center; padding:40px 20px; color:#8a7a85;">
             <i class='bx bx-cart' style="font-size:3rem; opacity:.3; display:block; margin-bottom:10px;"></i>
-            <p style="font-weight:600; margin-bottom:4px;">No items in order yet.</p>
-            <p style="font-size:.85rem;">Use the buttons above to add a box or offer.</p>
+            <p style="font-weight:600; margin-bottom:4px;">No items yet</p>
+            <p style="font-size:.82rem;">Use the buttons above to add items</p>
         </div>`;
     } else {
         list.innerHTML = currentOrder.items.map((item, index) => {
             if (item.type === 'offer') {
-                const o = item.data;
-                subtotal += o.price;
+                const o = item.data; subtotal += o.price;
                 return `<div class="order-item">
-                    <div class="order-item-info"><h4>${esc(o.name)}</h4><span>Offer Deal · ${esc(o.discount)}</span></div>
-                    <div class="order-item-right">
-                        <div class="order-item-price">${fmtMoney(o.price)}</div>
-                        <button class="remove-item-btn" onclick="removeOrderItem(${index})"><i class='bx bx-trash'></i></button>
-                    </div>
+                    <div class="order-item-info"><h4>${esc(o.name)}</h4><span>Offer · ${esc(o.discount)}</span></div>
+                    <div class="order-item-right"><div class="order-item-price">${fmtMoney(o.price)}</div>
+                    <button class="remove-item-btn" onclick="removeOrderItem(${index})"><i class='bx bx-trash'></i></button></div>
                 </div>`;
             } else {
                 const b = item.data;
                 let boxTotal = b.type.price;
-                let itemsHtml = b.items.map(i => {
-                    boxTotal += (i.price * i.qty);
-                    return `<div class="box-item-line">${i.qty}× ${esc(i.name)} (${i.grams}g) — ${fmtMoney(i.price * i.qty)}</div>`;
-                }).join('');
+                let itemsHtml = b.items.map(i => { boxTotal += (i.price * i.qty); return `<div class="box-item-line">${i.qty}× ${esc(i.name)} (${i.grams}g) — ${fmtMoney(i.price * i.qty)}</div>`; }).join('');
                 subtotal += boxTotal;
                 return `<div class="order-item order-item-box">
                     <div class="order-item-box-head">
                         <div class="order-item-info"><h4>${esc(b.type.name)}</h4><span>Custom Box · ${b.items.length} type${b.items.length !== 1 ? 's' : ''}</span></div>
-                        <div class="order-item-right">
-                            <div class="order-item-price">${fmtMoney(boxTotal)}</div>
-                            <button class="remove-item-btn" onclick="removeOrderItem(${index})"><i class='bx bx-trash'></i></button>
-                        </div>
+                        <div class="order-item-right"><div class="order-item-price">${fmtMoney(boxTotal)}</div>
+                        <button class="remove-item-btn" onclick="removeOrderItem(${index})"><i class='bx bx-trash'></i></button></div>
                     </div>
                     <div class="box-items-detail">${itemsHtml}</div>
                 </div>`;
@@ -772,50 +608,36 @@ function handleInStoreCheckout() {
     const customerPhone = document.getElementById('customerPhone').value.trim() || '';
     const payBtn = document.querySelector('.pay-method.active');
     const paymentMethod = (payBtn && payBtn.dataset.method) || 'cash';
-
     const receiptId = 'HC-POS-' + Date.now().toString().slice(-6);
     const now = new Date();
     const today = now.toISOString().split('T')[0];
-
     let subtotal = 0;
     const itemsList = [];
     currentOrder.items.forEach(item => {
         if (item.type === 'offer') {
-            const o = item.data;
-            subtotal += o.price;
+            const o = item.data; subtotal += o.price;
             itemsList.push({ name: o.name, qty: 1, price: o.price, isOffer: true, kind: 'offer' });
         } else {
             const b = item.data;
             let boxTotal = b.type.price;
-            b.items.forEach(i => {
-                boxTotal += (i.price * i.qty);
-                itemsList.push({ name: i.name, qty: i.qty, price: i.price, productId: i.id, grams: i.grams, isBoxItem: true, boxName: b.type.name, kind: 'box' });
-            });
+            b.items.forEach(i => { boxTotal += (i.price * i.qty); itemsList.push({ name: i.name, qty: i.qty, price: i.price, productId: i.id, grams: i.grams, isBoxItem: true, boxName: b.type.name, kind: 'box' }); });
             subtotal += boxTotal;
         }
     });
     const tax = subtotal * TAX_RATE;
     const total = subtotal + tax;
     const customerId = 'c-pos-' + Date.now();
-
     const orderObject = {
         id: receiptId, channel: 'pos',
-        employeeUsername: currentEmployee.username,
-        servedBy: currentEmployee.name,
-        date: today, status: 'delivered',
-        payment: paymentMethod,
+        employeeUsername: currentEmployee.username, servedBy: currentEmployee.name,
+        date: today, status: 'delivered', payment: paymentMethod,
         itemsList, subtotal, tax, total, deliveryFee: 0,
         customerId: customerName !== 'Walk-in Customer' ? customerId : 'c-guest-pos',
         customerInfo: customerName !== 'Walk-in Customer' ? { name: customerName, phone: customerPhone, email: '' } : null,
-        address: 'In-store',
-        shiftId: currentShiftId,
-        placedAt: now.toISOString()
+        address: 'In-store', shiftId: currentShiftId, placedAt: now.toISOString()
     };
-    const empOrders = loadEmployeeOrders();
-    empOrders.push(orderObject);
-    saveEmployeeOrders(empOrders);
+    const empOrders = loadEmployeeOrders(); empOrders.push(orderObject); saveEmployeeOrders(empOrders);
     deductStockFromAdmin(itemsList);
-
     buildReceiptView({ receiptId, date: now, customer: customerName, customerPhone, employee: currentEmployee.name, paymentLabel: paymentMethod.toUpperCase(), items: currentOrder.items, subtotal, fee: 0, tax, total, isDelivery: false });
     resetOrderState();
     renderRecentOrders();
@@ -830,57 +652,41 @@ function handleDeliveryCheckout() {
     const address = document.getElementById('deliveryAddress').value.trim();
     const fee = parseFloat(document.getElementById('deliveryFee').value) || 0;
     const notes = document.getElementById('deliveryNotes').value.trim();
-
     if (!customerName) { alert('Please enter the customer name'); document.getElementById('customerName').focus(); return; }
     if (!customerPhone) { alert('Please enter the customer phone'); document.getElementById('customerPhone').focus(); return; }
     if (!address) { alert('Please enter the delivery address'); document.getElementById('deliveryAddress').focus(); return; }
-
     const orderId = 'HC-DEL-' + Date.now().toString().slice(-6);
     const now = new Date();
     const today = now.toISOString().split('T')[0];
-
     let subtotal = 0;
     const itemsList = [];
     currentOrder.items.forEach(item => {
         if (item.type === 'offer') {
-            const o = item.data;
-            subtotal += o.price;
+            const o = item.data; subtotal += o.price;
             itemsList.push({ name: o.name, qty: 1, price: o.price, isOffer: true, kind: 'offer' });
         } else {
             const b = item.data;
             let boxTotal = b.type.price;
-            b.items.forEach(i => {
-                boxTotal += (i.price * i.qty);
-                itemsList.push({ name: i.name, qty: i.qty, price: i.price, productId: i.id, grams: i.grams, isBoxItem: true, boxName: b.type.name, kind: 'box' });
-            });
+            b.items.forEach(i => { boxTotal += (i.price * i.qty); itemsList.push({ name: i.name, qty: i.qty, price: i.price, productId: i.id, grams: i.grams, isBoxItem: true, boxName: b.type.name, kind: 'box' }); });
             subtotal += boxTotal;
         }
     });
     const tax = subtotal * TAX_RATE;
     const total = subtotal + fee + tax;
-
     const orderObject = {
         id: orderId, channel: 'manual',
-        employeeUsername: currentEmployee.username,
-        servedBy: currentEmployee.name,
-        date: today, status: 'processing',
-        payment: 'pending',
+        employeeUsername: currentEmployee.username, servedBy: currentEmployee.name,
+        date: today, status: 'processing', payment: 'pending',
         itemsList, subtotal, tax, deliveryFee: fee, total,
         customerId: 'c-del-' + Date.now(),
         customerInfo: { name: customerName, phone: customerPhone, email: '' },
-        address, notes, source,
-        deliveryMethod: 'delivery',
-        shiftId: currentShiftId,
-        placedAt: now.toISOString()
+        address, notes, source, deliveryMethod: 'delivery',
+        shiftId: currentShiftId, placedAt: now.toISOString()
     };
-
-    const empOrders = loadEmployeeOrders();
-    empOrders.push(orderObject);
-    saveEmployeeOrders(empOrders);
+    const empOrders = loadEmployeeOrders(); empOrders.push(orderObject); saveEmployeeOrders(empOrders);
     deductStockFromAdmin(itemsList);
     loadManualOrders();
     refreshDeliveryBadge();
-
     buildReceiptView({ receiptId: orderId, date: now, customer: customerName, customerPhone, employee: currentEmployee.name, paymentLabel: 'ON DELIVERY', items: currentOrder.items, subtotal, fee, tax, total, isDelivery: true, address });
     resetOrderState();
     renderRecentOrders();
@@ -990,9 +796,7 @@ function bindAutoPrintToggle() {
     const btn = document.getElementById('btnAutoPrint');
     if (!btn) return;
     btn.addEventListener('click', () => {
-        autoPrint = !autoPrint;
-        saveSettings();
-        updateAutoPrintUI();
+        autoPrint = !autoPrint; saveSettings(); updateAutoPrintUI();
         showToast(`Auto-Print ${autoPrint ? 'ON' : 'OFF'}`, 'bx-printer');
     });
     updateAutoPrintUI();
@@ -1016,7 +820,7 @@ function bindReceiptActions() {
     });
 }
 
-// ============ STOCK DEDUCTION ============
+// ============ STOCK ============
 function deductStockFromAdmin(itemsList) {
     try {
         const raw = localStorage.getItem(LS_KEYS.products);
@@ -1028,8 +832,7 @@ function deductStockFromAdmin(itemsList) {
             const p = arr.find(x => x.id === it.productId);
             if (p) {
                 const gramsTotal = (it.grams || 100) * it.qty;
-                const stockUnits = gramsTotal / 100;
-                p.stock = Math.max(0, (Number(p.stock) || 0) - stockUnits);
+                p.stock = Math.max(0, (Number(p.stock) || 0) - gramsTotal / 100);
             }
         });
         localStorage.setItem(LS_KEYS.products, JSON.stringify(arr));
@@ -1060,8 +863,7 @@ function adjustStockForEdit(origItems, newItems) {
 
 // ============ DELIVERY CENTER ============
 function refreshDeliveryBadge() {
-    loadOnlineOrders();
-    loadManualOrders();
+    loadOnlineOrders(); loadManualOrders();
     const activeOnline = onlineOrders.filter(o => ['processing', 'packing', 'shipped', 'out_for_delivery'].includes(o.status)).length;
     const activeManual = manualOrders.filter(o => ['processing', 'packing', 'shipped', 'out_for_delivery'].includes(o.status)).length;
     const total = activeOnline + activeManual;
@@ -1082,15 +884,13 @@ function bindDeliveryCenter() {
         });
     });
     document.getElementById('onlineFilters').addEventListener('click', (e) => {
-        const btn = e.target.closest('.dfilter');
-        if (!btn) return;
+        const btn = e.target.closest('.dfilter'); if (!btn) return;
         onlineFilter = btn.dataset.ofilter;
         document.querySelectorAll('#onlineFilters .dfilter').forEach(b => b.classList.toggle('active', b.dataset.ofilter === onlineFilter));
         renderOnlineOrders();
     });
     document.getElementById('manualFilters').addEventListener('click', (e) => {
-        const btn = e.target.closest('.mfilter');
-        if (!btn) return;
+        const btn = e.target.closest('.mfilter'); if (!btn) return;
         manualFilter = btn.dataset.mfilter;
         document.querySelectorAll('#manualFilters .mfilter').forEach(b => b.classList.toggle('active', b.dataset.mfilter === manualFilter));
         renderManualOrders();
@@ -1098,11 +898,8 @@ function bindDeliveryCenter() {
     document.getElementById('btnRefreshDelivery').addEventListener('click', (e) => {
         const btn = e.currentTarget;
         btn.style.transform = 'rotate(180deg)';
-        loadOnlineOrders();
-        loadManualOrders();
-        renderDeliveryCenter();
-        refreshDeliveryBadge();
-        showToast('Delivery data refreshed', 'bx-refresh');
+        loadOnlineOrders(); loadManualOrders(); renderDeliveryCenter(); refreshDeliveryBadge();
+        showToast('Refreshed', 'bx-refresh');
         setTimeout(() => btn.style.transform = '', 500);
     });
     document.getElementById('btnNewManualOrder').addEventListener('click', () => openManualOrderModal());
@@ -1126,10 +923,7 @@ function renderOnlineOrders() {
     let filtered = onlineOrders;
     if (onlineFilter !== 'all') filtered = onlineOrders.filter(o => o.status === onlineFilter);
     filtered = [...filtered].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    if (!filtered.length) {
-        list.innerHTML = `<div class="delivery-empty"><i class='bx bx-inbox'></i><h3>No online orders${onlineFilter !== 'all' ? ' in this status' : ''}</h3><p>${onlineFilter !== 'all' ? 'Try a different filter.' : 'Orders from the website will appear here.'}</p></div>`;
-        return;
-    }
+    if (!filtered.length) { list.innerHTML = `<div class="delivery-empty"><i class='bx bx-inbox'></i><h3>No online orders${onlineFilter !== 'all' ? ' in this status' : ''}</h3><p>${onlineFilter !== 'all' ? 'Try a different filter.' : 'Orders from website will appear here.'}</p></div>`; return; }
     list.innerHTML = filtered.map(o => orderCardHtml(o, false)).join('');
 }
 function renderManualOrders() {
@@ -1138,10 +932,7 @@ function renderManualOrders() {
     let filtered = manualOrders;
     if (manualFilter !== 'all') filtered = manualOrders.filter(o => o.status === manualFilter);
     filtered = [...filtered].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    if (!filtered.length) {
-        list.innerHTML = `<div class="delivery-empty"><i class='bx bx-edit'></i><h3>No manual orders${manualFilter !== 'all' ? ' in this status' : ''}</h3><p>${manualFilter !== 'all' ? 'Try a different filter.' : 'Click "New Manual Order" to create one.'}</p></div>`;
-        return;
-    }
+    if (!filtered.length) { list.innerHTML = `<div class="delivery-empty"><i class='bx bx-edit'></i><h3>No manual orders${manualFilter !== 'all' ? ' in this status' : ''}</h3><p>${manualFilter !== 'all' ? 'Try a different filter.' : 'Click "New Manual Order" to create one.'}</p></div>`; return; }
     list.innerHTML = filtered.map(o => orderCardHtml(o, true)).join('');
 }
 function orderCardHtml(o, isManual) {
@@ -1156,12 +947,8 @@ function orderCardHtml(o, isManual) {
     const sourceBar = isManual
         ? `<div class="order-card-del-date">${fmtDate(o.date)} · ${sourceIcon(source)} ${sourceLabel(source)}</div>`
         : `<div class="order-card-del-date">${fmtDate(o.date)}${o.placedAt ? ' · ' + fmtDateTime(o.placedAt) : ''}</div>`;
-    const iconLeft = isManual
-        ? `<i class='bx bx-edit' style="color:#0891b2;"></i>`
-        : `<i class='bx bx-globe' style="color:#1d4ed8;"></i>`;
-    const sourceChip = isManual && source !== 'other'
-        ? `<span class="order-source-chip ${source}">${sourceIcon(source)} ${sourceLabel(source)}</span>`
-        : '';
+    const iconLeft = isManual ? `<i class='bx bx-edit' style="color:#0891b2;"></i>` : `<i class='bx bx-globe' style="color:#1d4ed8;"></i>`;
+    const sourceChip = isManual && source !== 'other' ? `<span class="order-source-chip ${source}">${sourceIcon(source)} ${sourceLabel(source)}</span>` : '';
     return `<div class="order-card-del ${isManual ? 'source-manual' : ''} status-${o.status}">
         <div class="order-card-del-head">
             <div>
@@ -1182,7 +969,7 @@ function orderCardHtml(o, isManual) {
         </div>
         <div class="order-items-preview">
             <div class="order-items-preview-title">Items (${totalQty})</div>
-            ${itemsHtml || '<div style="opacity:.6;font-size:.8rem;">No items</div>'}
+            ${itemsHtml || '<div style="opacity:.6;font-size:.78rem;">No items</div>'}
         </div>
         <div class="order-total-row">
             <span class="order-total-row-label">Total</span>
@@ -1193,12 +980,10 @@ function orderCardHtml(o, isManual) {
             ${canAdvance && nextStatus ? `<button class="order-action-btn-del ${nextStatus === 'delivered' ? 'green' : 'primary'}" data-del-advance="${esc(o.id)}"><i class='bx ${statusIcon(nextStatus)}'></i> ${nextStatus === 'delivered' ? 'Deliver' : statusLabel(nextStatus)}</button>` : ''}
             <button class="order-action-btn-del ghost" data-order-edit="${esc(o.id)}" title="Edit"><i class='bx bx-edit'></i></button>
             ${canAdvance ? `<button class="order-action-btn-del danger" data-del-cancel="${esc(o.id)}" title="Cancel"><i class='bx bx-x'></i></button>` : ''}
-            <button class="order-action-btn-del danger" data-order-delete="${esc(o.id)}" title="Delete permanently"><i class='bx bx-trash'></i></button>
+            <button class="order-action-btn-del danger" data-order-delete="${esc(o.id)}" title="Delete"><i class='bx bx-trash'></i></button>
         </div>
     </div>`;
 }
-
-// Status advancement for manual/online orders
 function advanceOrderStatus(orderId) {
     let o = onlineOrders.find(x => x.id === orderId);
     let isOnline = !!o;
@@ -1210,19 +995,11 @@ function advanceOrderStatus(orderId) {
     o.status = next;
     const today = new Date().toISOString().split('T')[0];
     if (next === 'packing' && !o.packedAt) o.packedAt = today;
-    if (next === 'shipped') {
-        o.shippedAt = o.shippedAt || today;
-        if (!o.tracking) o.tracking = 'JD-EXP-' + Math.floor(100000 + Math.random() * 899999);
-    }
+    if (next === 'shipped') { o.shippedAt = o.shippedAt || today; if (!o.tracking) o.tracking = 'JD-EXP-' + Math.floor(100000 + Math.random() * 899999); }
     if (next === 'out_for_delivery') o.outAt = o.outAt || today;
     if (next === 'delivered') { o.deliveredAt = o.deliveredAt || today; o.eta = o.eta || today; }
     if (isOnline) saveOnlineOrders();
-    else {
-        const emp = loadEmployeeOrders();
-        const i = emp.findIndex(x => x.id === orderId);
-        if (i !== -1) { emp[i] = o; saveEmployeeOrders(emp); }
-        loadManualOrders();
-    }
+    else { const emp = loadEmployeeOrders(); const i = emp.findIndex(x => x.id === orderId); if (i !== -1) { emp[i] = o; saveEmployeeOrders(emp); } loadManualOrders(); }
     renderDeliveryCenter();
     renderRecentOrders();
     showToast(`Order ${o.id} → ${statusLabel(next)}`, 'bx-check-circle');
@@ -1234,36 +1011,27 @@ function cancelOrder(orderId) {
     if (!o) return;
     o.status = 'cancelled';
     if (isOnline) saveOnlineOrders();
-    else {
-        const emp = loadEmployeeOrders();
-        const i = emp.findIndex(x => x.id === orderId);
-        if (i !== -1) { emp[i] = o; saveEmployeeOrders(emp); }
-        loadManualOrders();
-    }
+    else { const emp = loadEmployeeOrders(); const i = emp.findIndex(x => x.id === orderId); if (i !== -1) { emp[i] = o; saveEmployeeOrders(emp); } loadManualOrders(); }
     renderDeliveryCenter();
     renderRecentOrders();
     showToast(`Order ${o.id} cancelled`, 'bx-x-circle');
 }
 function deleteOrderPermanent(orderId) {
-    let empOrders = loadEmployeeOrders();
-    empOrders = empOrders.filter(o => o.id !== orderId);
+    let empOrders = loadEmployeeOrders().filter(o => o.id !== orderId);
     saveEmployeeOrders(empOrders);
-    let onlineCopy = loadOnlineOrders ? [] : [];
     try {
         const raw = localStorage.getItem(LS_KEYS.onlineOrders);
         const arr = raw ? JSON.parse(raw) : [];
-        const filtered = arr.filter(o => o.id !== orderId);
-        localStorage.setItem(LS_KEYS.onlineOrders, JSON.stringify(filtered));
+        localStorage.setItem(LS_KEYS.onlineOrders, JSON.stringify(arr.filter(o => o.id !== orderId)));
     } catch (e) {}
-    loadManualOrders();
-    loadOnlineOrders();
+    loadManualOrders(); loadOnlineOrders();
     renderDeliveryCenter();
     renderRecentOrders();
     refreshDeliveryBadge();
     showToast(`Order ${orderId} deleted`, 'bx-trash');
 }
 
-// ============ MANUAL ORDER MODAL (with 3 add buttons) ============
+// ============ MANUAL ORDER MODAL ============
 function openManualOrderModal(editId) {
     manualDraft = { items: [], deliveryMethod: 'delivery', paymentMethod: 'cash' };
     document.getElementById('manualCustomerName').value = '';
@@ -1280,7 +1048,6 @@ function openManualOrderModal(editId) {
     renderManualDraftItems();
     updateManualTotals();
     document.getElementById('manualOrderModal').dataset.editId = editId || '';
-
     if (editId) {
         const o = manualOrders.find(x => x.id === editId);
         if (o) {
@@ -1292,8 +1059,8 @@ function openManualOrderModal(editId) {
             document.getElementById('manualDeliveryFee').value = (o.deliveryFee || 0).toFixed(2);
             document.getElementById('manualNotes').value = o.notes || '';
             manualDraft.items = (o.itemsList || []).map(i => {
-                if (i.isOffer) return { kind: 'offer', data: { name: i.name, price: i.price, qty: i.qty, img: '' }, qty: i.qty || 1 };
-                if (i.isBoxItem) return { kind: 'item', data: { id: i.productId, name: i.name, price: i.price, grams: i.grams || 100, img: (PRODUCTS.find(p => p.id === i.productId) || {}).img || '' }, qty: i.qty || 1 };
+                if (i.isOffer) return { kind: 'offer', data: { name: i.name, price: i.price, img: '' }, qty: i.qty || 1 };
+                if (i.isBox) return { kind: 'box', data: { type: { name: i.name }, items: [], totalPrice: i.price }, qty: i.qty || 1 };
                 return { kind: 'item', data: { id: i.productId, name: i.name, price: i.price, grams: i.grams || 100, img: (PRODUCTS.find(p => p.id === i.productId) || {}).img || '' }, qty: i.qty || 1 };
             });
             manualDraft.deliveryMethod = o.deliveryMethod || 'delivery';
@@ -1308,9 +1075,7 @@ function openManualOrderModal(editId) {
     }
     document.getElementById('manualOrderModal').classList.add('active');
 }
-function closeManualOrderModal() {
-    document.getElementById('manualOrderModal').classList.remove('active');
-}
+function closeManualOrderModal() { document.getElementById('manualOrderModal').classList.remove('active'); }
 function renderManualDraftItems() {
     const list = document.getElementById('manualItemsList');
     const empty = document.getElementById('manualItemsEmpty');
@@ -1320,18 +1085,9 @@ function renderManualDraftItems() {
         let img = 'https://via.placeholder.com/80';
         let meta = '';
         let typeCls = '';
-        if (it.kind === 'offer') {
-            img = it.data.img || img;
-            meta = `Offer · ${esc(it.data.discount || '')}`;
-            typeCls = 'type-offer';
-        } else if (it.kind === 'box') {
-            img = it.data.type?.icon ? `https://via.placeholder.com/80` : img;
-            meta = `Box · ${it.data.items?.length || 0} types`;
-            typeCls = 'type-box';
-        } else {
-            img = it.data.img || img;
-            meta = `${it.data.grams || 100}g per unit`;
-        }
+        if (it.kind === 'offer') { img = it.data.img || img; meta = `Offer · ${esc(it.data.discount || '')}`; typeCls = 'type-offer'; }
+        else if (it.kind === 'box') { meta = `Box · ${it.data.items?.length || 0} types`; typeCls = 'type-box'; }
+        else { img = it.data.img || img; meta = `${it.data.grams || 100}g per unit`; }
         return `<div class="manual-item-row ${typeCls}">
             <img class="manual-item-thumb" src="${esc(img)}" alt="">
             <div class="manual-item-info">
@@ -1379,18 +1135,9 @@ function bindManualOrderModal() {
         });
     });
     document.getElementById('manualDeliveryFee').addEventListener('input', updateManualTotals);
-
-    // ⭐ 3 add buttons
-    document.getElementById('manualAddItemBtn').addEventListener('click', () => {
-        openPickItemModal('manual');
-    });
-    document.getElementById('manualAddOfferBtn').addEventListener('click', () => {
-        openPickOfferModal('manual');
-    });
-    document.getElementById('manualAddBoxBtn').addEventListener('click', () => {
-        openPickBoxModal('manual');
-    });
-
+    document.getElementById('manualAddItemBtn').addEventListener('click', () => openPickItemModal('manual'));
+    document.getElementById('manualAddOfferBtn').addEventListener('click', () => openPickOfferModal('manual'));
+    document.getElementById('manualAddBoxBtn').addEventListener('click', () => openPickBoxModal('manual'));
     document.getElementById('manualItemsList').addEventListener('click', (e) => {
         const inc = e.target.closest('[data-manual-inc]');
         if (inc) { manualDraft.items[+inc.dataset.manualInc].qty++; renderManualDraftItems(); updateManualTotals(); return; }
@@ -1412,7 +1159,6 @@ function saveManualOrder() {
     if (!name) { alert('Please enter customer name'); return; }
     if (!phone) { alert('Please enter customer phone'); return; }
     if (!manualDraft.items.length) { alert('Please add at least one item'); return; }
-
     const source = document.getElementById('manualOrderSource').value;
     const notes = document.getElementById('manualNotes').value.trim();
     const fee = manualDraft.deliveryMethod === 'pickup' ? 0 : (parseFloat(document.getElementById('manualDeliveryFee').value) || 0);
@@ -1421,47 +1167,29 @@ function saveManualOrder() {
     const total = subtotal + fee;
     const today = new Date().toISOString().split('T')[0];
     const editId = document.getElementById('manualOrderModal').dataset.editId;
-
     const itemsList = [];
     manualDraft.items.forEach(it => {
-        if (it.kind === 'offer') {
-            itemsList.push({ name: it.data.name, qty: it.qty, price: it.data.price, isOffer: true, kind: 'offer' });
-        } else if (it.kind === 'box') {
-            itemsList.push({ name: it.data.type.name, qty: it.qty, price: it.data.totalPrice, isBox: true, kind: 'box' });
-        } else {
-            itemsList.push({ name: it.data.name, qty: it.qty, price: it.data.price, productId: it.data.id, grams: it.data.grams || 100, kind: 'item' });
-        }
+        if (it.kind === 'offer') itemsList.push({ name: it.data.name, qty: it.qty, price: it.data.price, isOffer: true, kind: 'offer' });
+        else if (it.kind === 'box') itemsList.push({ name: it.data.type.name, qty: it.qty, price: it.data.totalPrice, isBox: true, kind: 'box' });
+        else itemsList.push({ name: it.data.name, qty: it.qty, price: it.data.price, productId: it.data.id, grams: it.data.grams || 100, kind: 'item' });
     });
-
     const empOrders = loadEmployeeOrders();
     if (editId) {
         const idx = empOrders.findIndex(o => o.id === editId);
         if (idx !== -1) {
-            empOrders[idx] = {
-                ...empOrders[idx],
-                customerInfo: { name, phone, email: '' },
-                itemsList, subtotal, deliveryFee: fee, total,
-                address, notes, source,
-                deliveryMethod: manualDraft.deliveryMethod,
-                payment: manualDraft.paymentMethod
-            };
+            empOrders[idx] = { ...empOrders[idx], customerInfo: { name, phone, email: '' }, itemsList, subtotal, deliveryFee: fee, total, address, notes, source, deliveryMethod: manualDraft.deliveryMethod, payment: manualDraft.paymentMethod };
         }
         showToast('Manual order updated', 'bx-check-circle');
     } else {
         const orderId = 'HC-MAN-' + Date.now().toString().slice(-6);
         empOrders.push({
             id: orderId, channel: 'manual',
-            employeeUsername: currentEmployee.username,
-            servedBy: currentEmployee.name,
-            date: today, status: 'processing',
-            payment: manualDraft.paymentMethod,
+            employeeUsername: currentEmployee.username, servedBy: currentEmployee.name,
+            date: today, status: 'processing', payment: manualDraft.paymentMethod,
             itemsList, subtotal, deliveryFee: fee, total,
-            customerInfo: { name, phone, email: '' },
-            customerId: 'c-man-' + Date.now(),
-            address, notes, source,
-            deliveryMethod: manualDraft.deliveryMethod,
-            shiftId: currentShiftId,
-            placedAt: new Date().toISOString()
+            customerInfo: { name, phone, email: '' }, customerId: 'c-man-' + Date.now(),
+            address, notes, source, deliveryMethod: manualDraft.deliveryMethod,
+            shiftId: currentShiftId, placedAt: new Date().toISOString()
         });
         showToast('Manual order created', 'bx-check-circle');
     }
@@ -1475,15 +1203,14 @@ function saveManualOrder() {
 }
 
 // ============ PICK ITEM MODAL ============
-let pickItemTarget = 'manual'; // 'manual' | 'edit'
+let pickItemTarget = 'manual';
 function bindPickItemModal() {
     document.getElementById('closePickItemModal').addEventListener('click', () => document.getElementById('pickItemModal').classList.remove('active'));
     document.getElementById('pickItemCancel').addEventListener('click', () => document.getElementById('pickItemModal').classList.remove('active'));
     document.getElementById('pickItemModal').addEventListener('click', (e) => { if (e.target.id === 'pickItemModal') document.getElementById('pickItemModal').classList.remove('active'); });
     document.getElementById('pickItemSearch').addEventListener('input', (e) => renderPickItemGrid(e.target.value.trim().toLowerCase()));
     document.getElementById('pickItemGrid').addEventListener('click', (e) => {
-        const card = e.target.closest('[data-pick-id]');
-        if (!card) return;
+        const card = e.target.closest('[data-pick-id]'); if (!card) return;
         addPickedItem(card.dataset.pickId, pickItemTarget);
     });
 }
@@ -1497,10 +1224,7 @@ function openPickItemModal(target) {
 function renderPickItemGrid(query) {
     const grid = document.getElementById('pickItemGrid');
     const list = PRODUCTS.filter(p => !query || p.name.toLowerCase().includes(query));
-    if (!list.length) {
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#8a7a85;"><i class='bx bx-search' style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:8px;"></i><p style="font-weight:600;">No products found</p></div>`;
-        return;
-    }
+    if (!list.length) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#8a7a85;"><i class='bx bx-search' style="font-size:2.2rem;opacity:.3;display:block;margin-bottom:8px;"></i><p style="font-weight:600;font-size:.9rem;">No products found</p></div>`; return; }
     grid.innerHTML = list.map(p => `
         <div class="pick-item-card" data-pick-id="${esc(p.id)}">
             <img src="${esc(p.img)}" alt="${esc(p.name)}">
@@ -1516,24 +1240,21 @@ function addPickedItem(productId, target) {
     if (!p) return;
     const grams = 100;
     const price = (p.price / 100) * grams;
-    const newItem = { kind: 'item', data: { id: p.id, name: p.name, price: price, grams: grams, img: p.img }, qty: 1 };
-
+    const newItem = { kind: 'item', data: { id: p.id, name: p.name, price, grams, img: p.img }, qty: 1 };
     if (target === 'manual') {
         const existing = manualDraft.items.find(i => i.kind === 'item' && i.data.id === p.id && i.data.grams === grams);
         if (existing) existing.qty++;
         else manualDraft.items.push(newItem);
-        renderManualDraftItems();
-        updateManualTotals();
+        renderManualDraftItems(); updateManualTotals();
     } else if (target === 'edit' && editingDraft) {
-        editingDraft.itemsList.push({ name: p.name, qty: 1, price: price, productId: p.id, grams: grams, kind: 'item' });
+        editingDraft.itemsList.push({ name: p.name, qty: 1, price, productId: p.id, grams, kind: 'item' });
         renderEditForm();
     } else if (target === 'box-builder') {
         const existing = boxBuilderState.items.find(i => i.id === p.id && i.grams === grams);
         if (existing) existing.qty++;
-        else boxBuilderState.items.push({ id: p.id, name: p.name, price: price, grams: grams, qty: 1, img: p.img });
+        else boxBuilderState.items.push({ id: p.id, name: p.name, price, grams, qty: 1, img: p.img });
         renderBoxBuilderItems();
     }
-
     showToast(`${p.name} added`, 'bx-cart-add');
     document.getElementById('pickItemModal').classList.remove('active');
 }
@@ -1545,8 +1266,7 @@ function bindPickOfferModal() {
     document.getElementById('pickOfferCancel').addEventListener('click', () => document.getElementById('pickOfferModal').classList.remove('active'));
     document.getElementById('pickOfferModal').addEventListener('click', (e) => { if (e.target.id === 'pickOfferModal') document.getElementById('pickOfferModal').classList.remove('active'); });
     document.getElementById('pickOfferGrid').addEventListener('click', (e) => {
-        const card = e.target.closest('[data-pick-offer]');
-        if (!card) return;
+        const card = e.target.closest('[data-pick-offer]'); if (!card) return;
         addPickedOffer(card.dataset.pickOffer, pickOfferTarget);
     });
 }
@@ -1572,34 +1292,28 @@ function addPickedOffer(offerId, target) {
     const offer = OFFERS.find(o => o.id === offerId);
     if (!offer) return;
     const newItem = { kind: 'offer', data: { ...offer }, qty: 1 };
-
     if (target === 'manual') {
         const existing = manualDraft.items.find(i => i.kind === 'offer' && i.data.id === offer.id);
         if (existing) existing.qty++;
         else manualDraft.items.push(newItem);
-        renderManualDraftItems();
-        updateManualTotals();
+        renderManualDraftItems(); updateManualTotals();
     } else if (target === 'edit' && editingDraft) {
         editingDraft.itemsList.push({ name: offer.name, qty: 1, price: offer.price, isOffer: true, kind: 'offer' });
         renderEditForm();
     }
-
     showToast(`${offer.name} added`, 'bx-cart-add');
     document.getElementById('pickOfferModal').classList.remove('active');
 }
 
-// ============ PICK BOX MODAL (Build a box inside manual order) ============
+// ============ PICK BOX MODAL ============
 let pickBoxTarget = 'manual';
 function bindPickBoxModal() {
     document.getElementById('closePickBoxModal').addEventListener('click', () => document.getElementById('pickBoxModal').classList.remove('active'));
     document.getElementById('pickBoxCancel').addEventListener('click', () => document.getElementById('pickBoxModal').classList.remove('active'));
     document.getElementById('pickBoxModal').addEventListener('click', (e) => { if (e.target.id === 'pickBoxModal') document.getElementById('pickBoxModal').classList.remove('active'); });
-
     document.getElementById('boxTypesSelector').addEventListener('click', (e) => {
-        const opt = e.target.closest('[data-box-type]');
-        if (!opt) return;
-        const typeId = opt.dataset.boxType;
-        const bt = BOX_TYPES.find(b => b.id === typeId);
+        const opt = e.target.closest('[data-box-type]'); if (!opt) return;
+        const bt = BOX_TYPES.find(b => b.id === opt.dataset.boxType);
         if (!bt) return;
         boxBuilderState.boxType = bt;
         document.querySelectorAll('#boxTypesSelector .box-type-option').forEach(el => el.classList.remove('selected'));
@@ -1608,13 +1322,9 @@ function bindPickBoxModal() {
         document.getElementById('pickBoxSaveBtn').style.display = 'inline-flex';
         renderBoxBuilderItems();
     });
-
-    document.getElementById('boxItemSearch').addEventListener('input', (e) => {
-        renderBoxItemGrid(e.target.value.trim().toLowerCase());
-    });
+    document.getElementById('boxItemSearch').addEventListener('input', (e) => renderBoxItemGrid(e.target.value.trim().toLowerCase()));
     document.getElementById('boxItemGrid').addEventListener('click', (e) => {
-        const card = e.target.closest('[data-pick-id]');
-        if (!card) return;
+        const card = e.target.closest('[data-pick-id]'); if (!card) return;
         addPickedItem(card.dataset.pickId, 'box-builder');
     });
     document.getElementById('boxBuilderItems').addEventListener('click', (e) => {
@@ -1625,8 +1335,7 @@ function bindPickBoxModal() {
             const i = +dec.dataset.bbDec;
             if (boxBuilderState.items[i].qty > 1) boxBuilderState.items[i].qty--;
             else boxBuilderState.items.splice(i, 1);
-            renderBoxBuilderItems();
-            return;
+            renderBoxBuilderItems(); return;
         }
         const rm = e.target.closest('[data-bb-remove]');
         if (rm) { boxBuilderState.items.splice(+rm.dataset.bbRemove, 1); renderBoxBuilderItems(); }
@@ -1667,10 +1376,7 @@ function renderBoxItemGrid(query) {
 function renderBoxBuilderItems() {
     const list = document.getElementById('boxBuilderItems');
     if (!list) return;
-    if (!boxBuilderState.items.length) {
-        list.innerHTML = `<div class="manual-items-empty"><i class='bx bx-cart'></i><p>Add products from above</p></div>`;
-        return;
-    }
+    if (!boxBuilderState.items.length) { list.innerHTML = `<div class="manual-items-empty"><i class='bx bx-cart'></i><p>Add products from above</p></div>`; return; }
     list.innerHTML = boxBuilderState.items.map((it, i) => `
         <div class="manual-item-row">
             <img class="manual-item-thumb" src="${esc(it.img || 'https://via.placeholder.com/80')}" alt="">
@@ -1693,18 +1399,11 @@ function savePickedBox() {
     if (!boxBuilderState.items.length) { alert('Please add at least one product'); return; }
     const totalItemsPrice = boxBuilderState.items.reduce((s, i) => s + i.price * i.qty, 0);
     const totalPrice = totalItemsPrice + boxBuilderState.boxType.price;
-    const boxData = {
-        type: boxBuilderState.boxType,
-        items: [...boxBuilderState.items],
-        totalPrice: totalPrice
-    };
-
+    const boxData = { type: boxBuilderState.boxType, items: [...boxBuilderState.items], totalPrice };
     if (pickBoxTarget === 'manual') {
         manualDraft.items.push({ kind: 'box', data: boxData, qty: 1 });
-        renderManualDraftItems();
-        updateManualTotals();
+        renderManualDraftItems(); updateManualTotals();
     } else if (pickBoxTarget === 'edit' && editingDraft) {
-        // For edit, flatten into individual line items
         boxBuilderState.items.forEach(i => {
             editingDraft.itemsList.push({ name: `${i.name} (${boxBuilderState.boxType.name})`, qty: i.qty, price: i.price, productId: i.id, grams: i.grams, kind: 'box', boxName: boxBuilderState.boxType.name });
         });
@@ -1713,12 +1412,11 @@ function savePickedBox() {
         }
         renderEditForm();
     }
-
     showToast(`${boxBuilderState.boxType.name} with ${boxBuilderState.items.length} products added`, 'bx-box');
     document.getElementById('pickBoxModal').classList.remove('active');
 }
 
-// ============ ORDER DETAILS MODAL ============
+// ============ ORDER DETAILS ============
 function bindOrderDetailsModal() {
     document.getElementById('closeOrderDetailsModal').addEventListener('click', closeOrderDetailsModal);
     document.getElementById('orderDetailsClose').addEventListener('click', closeOrderDetailsModal);
@@ -1728,19 +1426,15 @@ function bindOrderDetailsModal() {
         const o = onlineOrders.find(x => x.id === id) || manualOrders.find(x => x.id === id);
         if (!o) return;
         buildReceiptView({
-            receiptId: o.id,
-            date: new Date(o.date),
+            receiptId: o.id, date: new Date(o.date),
             customer: o.customerInfo?.name || o.customerName || 'Guest',
             customerPhone: o.customerInfo?.phone || o.customerPhone || '',
             employee: o.servedBy || currentEmployee?.name || 'POS',
             paymentLabel: (o.payment || 'cash').toUpperCase(),
             items: (o.itemsList || []).map(i => ({ type: 'offer', data: { name: i.name, price: i.price, qty: i.qty } })),
-            subtotal: o.subtotal || o.total,
-            fee: o.deliveryFee || 0,
-            tax: o.tax || 0,
-            total: o.total,
-            isDelivery: o.channel === 'manual',
-            address: o.address
+            subtotal: o.subtotal || o.total, fee: o.deliveryFee || 0,
+            tax: o.tax || 0, total: o.total,
+            isDelivery: o.channel === 'manual', address: o.address
         });
         setTimeout(printThermalReceipt, 300);
     });
@@ -1754,77 +1448,40 @@ function openOrderDetails(orderId) {
     const isManual = o.channel === 'manual';
     document.getElementById('orderDetailsTitle').textContent = `Order ${o.id}`;
     document.getElementById('orderDetailsModal').dataset.orderId = o.id;
-
     const items = o.itemsList || [];
-    const itemsHtml = items.map(i => `
-        <div class="order-details-item-line">
-            <span>${esc(i.name)} <strong>× ${i.qty}</strong>${i.grams ? ` <span style="color:#8a7a85;font-size:.78rem;">(${i.grams}g)</span>` : ''}</span>
-            <strong>${fmtMoney((i.price || 0) * (i.qty || 0))}</strong>
-        </div>
-    `).join('') || '<div style="text-align:center;color:#8a7a85;padding:12px;">No items</div>';
-
-    // Status flow
+    const itemsHtml = items.map(i => `<div class="order-details-item-line"><span>${esc(i.name)} <strong>× ${i.qty}</strong>${i.grams ? ` <span style="color:#8a7a85;font-size:.72rem;">(${i.grams}g)</span>` : ''}</span><strong>${fmtMoney((i.price || 0) * (i.qty || 0))}</strong></div>`).join('') || '<div style="text-align:center;color:#8a7a85;padding:12px;">No items</div>';
     const currentStatusIdx = STATUS_FLOW.indexOf(o.status);
     const statusFlowHtml = o.status === 'cancelled'
-        ? `<div class="status-flow"><div style="text-align:center;width:100%;color:#dc2626;font-weight:700;padding:8px;"><i class='bx bx-x-circle'></i> Order Cancelled</div></div>`
-        : `<div class="status-flow">
-            ${STATUS_FLOW.map((st, i) => `
-                <div class="status-step ${i < currentStatusIdx ? 'done' : (i === currentStatusIdx ? 'current' : '')}">
-                    <div class="status-step-dot"><i class='${statusIcon(st)}'></i></div>
-                    <div class="status-step-label">${statusLabel(st)}</div>
-                </div>
-            `).join('')}
-        </div>`;
-
+        ? `<div class="status-flow"><div style="text-align:center;width:100%;color:#dc2626;font-weight:700;padding:8px;font-size:.85rem;"><i class='bx bx-x-circle'></i> Order Cancelled</div></div>`
+        : `<div class="status-flow">${STATUS_FLOW.map((st, i) => `<div class="status-step ${i < currentStatusIdx ? 'done' : (i === currentStatusIdx ? 'current' : '')}"><div class="status-step-dot"><i class='${statusIcon(st)}'></i></div><div class="status-step-label">${statusLabel(st)}</div></div>`).join('')}</div>`;
     document.getElementById('orderDetailsBody').innerHTML = `
         ${statusFlowHtml}
         <div class="order-details-grid">
-            <div class="order-details-cell">
-                <div class="order-details-cell-label">Date</div>
-                <div class="order-details-cell-value">${fmtDate(o.date)}</div>
-            </div>
-            <div class="order-details-cell">
-                <div class="order-details-cell-label">Payment</div>
-                <div class="order-details-cell-value small">${(o.payment || 'cash').toUpperCase()}</div>
-            </div>
-            <div class="order-details-cell">
-                <div class="order-details-cell-label">Customer</div>
-                <div class="order-details-cell-value">${esc(o.customerInfo?.name || o.customerName || 'Guest')}</div>
-            </div>
-            <div class="order-details-cell">
-                <div class="order-details-cell-label">Phone</div>
-                <div class="order-details-cell-value small">${esc(o.customerInfo?.phone || o.customerPhone || '—')}</div>
-            </div>
-            <div class="order-details-cell">
-                <div class="order-details-cell-label">${isManual ? 'Source' : 'Channel'}</div>
-                <div class="order-details-cell-value small">${isManual ? sourceIcon(o.source) + ' ' + sourceLabel(o.source) : '🌐 Online'}</div>
-            </div>
-            <div class="order-details-cell">
-                <div class="order-details-cell-label">Served By</div>
-                <div class="order-details-cell-value small">${esc(o.servedBy || '—')}</div>
-            </div>
-            <div class="order-details-cell" style="grid-column:1/-1;">
-                <div class="order-details-cell-label">Address</div>
-                <div class="order-details-cell-value small">${esc(o.address || '—')}</div>
-            </div>
+            <div class="order-details-cell"><div class="order-details-cell-label">Date</div><div class="order-details-cell-value small">${fmtDate(o.date)}</div></div>
+            <div class="order-details-cell"><div class="order-details-cell-label">Payment</div><div class="order-details-cell-value small">${(o.payment || 'cash').toUpperCase()}</div></div>
+            <div class="order-details-cell"><div class="order-details-cell-label">Customer</div><div class="order-details-cell-value">${esc(o.customerInfo?.name || o.customerName || 'Guest')}</div></div>
+            <div class="order-details-cell"><div class="order-details-cell-label">Phone</div><div class="order-details-cell-value small">${esc(o.customerInfo?.phone || o.customerPhone || '—')}</div></div>
+            <div class="order-details-cell"><div class="order-details-cell-label">${isManual ? 'Source' : 'Channel'}</div><div class="order-details-cell-value small">${isManual ? sourceIcon(o.source) + ' ' + sourceLabel(o.source) : '🌐 Online'}</div></div>
+            <div class="order-details-cell"><div class="order-details-cell-label">Served By</div><div class="order-details-cell-value small">${esc(o.servedBy || '—')}</div></div>
+            <div class="order-details-cell" style="grid-column:1/-1;"><div class="order-details-cell-label">Address</div><div class="order-details-cell-value small">${esc(o.address || '—')}</div></div>
             ${o.notes ? `<div class="order-details-cell" style="grid-column:1/-1;"><div class="order-details-cell-label">Notes</div><div class="order-details-cell-value small">${esc(o.notes)}</div></div>` : ''}
         </div>
         <div class="order-details-section-title">Items</div>
         <div class="order-details-items">${itemsHtml}</div>
-        <div style="margin-top:16px;padding:14px;background:linear-gradient(135deg,rgba(250,204,67,.15),rgba(226,1,93,.08));border:2px dashed rgba(226,1,93,.25);border-radius:14px;">
-            ${o.subtotal !== undefined ? `<div style="display:flex;justify-content:space-between;font-size:.85rem;padding:3px 0;"><span style="color:#8a7a85;font-weight:600;">Subtotal</span><span style="font-weight:700;">${fmtMoney(o.subtotal)}</span></div>` : ''}
-            ${o.deliveryFee ? `<div style="display:flex;justify-content:space-between;font-size:.85rem;padding:3px 0;"><span style="color:#8a7a85;font-weight:600;">Delivery Fee</span><span style="font-weight:700;">${fmtMoney(o.deliveryFee)}</span></div>` : ''}
-            ${o.tax ? `<div style="display:flex;justify-content:space-between;font-size:.85rem;padding:3px 0;"><span style="color:#8a7a85;font-weight:600;">Tax</span><span style="font-weight:700;">${fmtMoney(o.tax)}</span></div>` : ''}
+        <div style="margin-top:14px;padding:12px;background:linear-gradient(135deg,rgba(250,204,67,.15),rgba(226,1,93,.08));border:2px dashed rgba(226,1,93,.25);border-radius:14px;">
+            ${o.subtotal !== undefined ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0;"><span style="color:#8a7a85;font-weight:600;">Subtotal</span><span style="font-weight:700;">${fmtMoney(o.subtotal)}</span></div>` : ''}
+            ${o.deliveryFee ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0;"><span style="color:#8a7a85;font-weight:600;">Delivery Fee</span><span style="font-weight:700;">${fmtMoney(o.deliveryFee)}</span></div>` : ''}
+            ${o.tax ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0;"><span style="color:#8a7a85;font-weight:600;">Tax</span><span style="font-weight:700;">${fmtMoney(o.tax)}</span></div>` : ''}
             <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:2px solid rgba(226,1,93,.15);margin-top:6px;">
                 <span style="color:#9f0b3b;font-weight:700;">Total</span>
-                <span style="font-family:'Autolova',sans-serif;font-size:1.6rem;color:#e2015d;">${fmtMoney(o.total)}</span>
+                <span style="font-family:'Autolova',sans-serif;font-size:1.5rem;color:#e2015d;">${fmtMoney(o.total)}</span>
             </div>
         </div>
     `;
     document.getElementById('orderDetailsModal').classList.add('active');
 }
 
-// ============ INVOICE EDIT SYSTEM ============
+// ============ INVOICE EDIT ============
 function loadEditUnlocks() {
     try {
         const raw = localStorage.getItem(LS_KEYS.editUnlocks);
@@ -1841,54 +1498,22 @@ function addEditUnlock(orderId, employeeUsername) {
 }
 function isOrderUnlocked(orderId) { return loadEditUnlocks().some(u => u.orderId === orderId); }
 function consumeUnlock(orderId) { saveEditUnlocks(loadEditUnlocks().filter(u => u.orderId !== orderId)); }
-function loadEditLog() {
-    try {
-        const raw = localStorage.getItem(LS_KEYS.editLog);
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-    } catch (e) { return []; }
-}
+function loadEditLog() { try { const raw = localStorage.getItem(LS_KEYS.editLog); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; } catch (e) { return []; } }
 function saveEditLog(list) { try { localStorage.setItem(LS_KEYS.editLog, JSON.stringify(list)); } catch (e) {} }
-function addEditLogEntry(entry) {
-    const list = loadEditLog();
-    list.unshift(entry);
-    if (list.length > 500) list.length = 500;
-    saveEditLog(list);
-}
+function addEditLogEntry(entry) { const list = loadEditLog(); list.unshift(entry); if (list.length > 500) list.length = 500; saveEditLog(list); }
 function getOrderEditLog(orderId) { return loadEditLog().filter(e => e.orderId === orderId); }
-function getOrderTimestamp(order) {
-    if (!order) return 0;
-    if (order.placedAt) return new Date(order.placedAt).getTime();
-    if (order.date) return new Date(order.date).getTime();
-    return 0;
-}
-function getTimeRemaining(order) {
-    const ts = getOrderTimestamp(order);
-    if (!ts) return 0;
-    return Math.max(0, EDIT_WINDOW_MS - (Date.now() - ts));
-}
-function formatTimeRemaining(ms) {
-    const totalSec = Math.floor(ms / 1000);
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-}
+function getOrderTimestamp(order) { if (!order) return 0; if (order.placedAt) return new Date(order.placedAt).getTime(); if (order.date) return new Date(order.date).getTime(); return 0; }
+function getTimeRemaining(order) { const ts = getOrderTimestamp(order); if (!ts) return 0; return Math.max(0, EDIT_WINDOW_MS - (Date.now() - ts)); }
+function formatTimeRemaining(ms) { const totalSec = Math.floor(ms / 1000); const m = Math.floor(totalSec / 60); const s = totalSec % 60; return `${m}:${String(s).padStart(2, '0')}`; }
 function getRecentOrdersForEmployee() {
     if (!currentEmployee) return [];
-    const empOrders = loadEmployeeOrders();
-    return empOrders
-        .filter(o => o.employeeUsername === currentEmployee.username)
-        .sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a))
-        .slice(0, 10);
+    return loadEmployeeOrders().filter(o => o.employeeUsername === currentEmployee.username).sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a)).slice(0, 10);
 }
 function renderRecentOrders() {
     const grid = document.getElementById('recentOrdersGrid');
     if (!grid) return;
     const orders = getRecentOrdersForEmployee();
-    if (!orders.length) {
-        grid.innerHTML = `<div class="recent-empty"><i class='bx bx-receipt'></i><p>No orders in this shift yet.</p><p style="font-size:.78rem;opacity:.75;margin-top:4px;">Complete an order to see it here.</p></div>`;
-        return;
-    }
+    if (!orders.length) { grid.innerHTML = `<div class="recent-empty"><i class='bx bx-receipt'></i><p>No orders in this shift yet</p><p style="font-size:.75rem;opacity:.75;margin-top:4px;">Complete an order to see it here</p></div>`; return; }
     grid.innerHTML = orders.map(o => recentOrderCardHtml(o)).join('');
 }
 function recentOrderCardHtml(o) {
@@ -1925,7 +1550,7 @@ function recentOrderCardHtml(o) {
         </div>
         <div class="recent-order-actions">
             <button class="recent-action-btn edit ${isLocked ? 'locked' : ''}" data-recent-edit="${esc(o.id)}">
-                <i class='bx ${isLocked ? 'bx-lock-alt' : 'bx-edit'}'></i> ${isLocked ? 'Unlock to Edit' : 'Edit'}
+                <i class='bx ${isLocked ? 'bx-lock-alt' : 'bx-edit'}'></i> ${isLocked ? 'Unlock' : 'Edit'}
             </button>
             <button class="recent-action-btn print" data-recent-print="${esc(o.id)}" title="Print"><i class='bx bx-printer'></i></button>
             ${editCount > 0 ? `<button class="recent-action-btn history" data-recent-history="${esc(o.id)}" title="History"><i class='bx bx-history'></i></button>` : ''}
@@ -1939,7 +1564,7 @@ function bindRecentOrders() {
             e.currentTarget.style.transform = 'rotate(180deg)';
             renderRecentOrders();
             setTimeout(() => { e.currentTarget.style.transform = ''; }, 500);
-            showToast('Recent orders refreshed', 'bx-refresh');
+            showToast('Refreshed', 'bx-refresh');
         });
     }
     const grid = document.getElementById('recentOrdersGrid');
@@ -1955,7 +1580,6 @@ function bindRecentOrders() {
     }
 }
 function findOrderById(id) { return loadEmployeeOrders().find(o => o.id === id); }
-
 function openEditInvoiceModal(orderId) {
     const order = findOrderById(orderId);
     if (!order) { showToast('Order not found', 'bx-error-circle'); return; }
@@ -1990,9 +1614,9 @@ function updateEditTimerBanner(remaining, unlocked) {
     const label = document.getElementById('editTimerLabel');
     const countdown = document.getElementById('editTimerCountdown');
     banner.classList.remove('warning', 'locked');
-    if (unlocked) { label.textContent = 'Admin Unlocked — Edits allowed'; countdown.textContent = '🔓'; return; }
+    if (unlocked) { label.textContent = 'Admin Unlocked'; countdown.textContent = '🔓'; return; }
     if (remaining === 0) { banner.classList.add('locked'); label.textContent = 'Edit Window Closed'; countdown.textContent = '0:00'; return; }
-    if (remaining <= 2 * 60 * 1000) { banner.classList.add('warning'); label.textContent = 'Last chance — Edit Window'; }
+    if (remaining <= 2 * 60 * 1000) { banner.classList.add('warning'); label.textContent = 'Last chance'; }
     else { label.textContent = 'Edit Window Open'; }
     countdown.textContent = formatTimeRemaining(remaining);
 }
@@ -2032,7 +1656,7 @@ function renderEditForm() {
                 <i class='bx ${removed ? 'bx-undo' : 'bx-trash'}'></i>
             </button>
         </div>`;
-    }).join('') || `<div style="text-align:center;padding:16px;color:#8a7a85;font-size:.85rem;">No items</div>`;
+    }).join('') || `<div style="text-align:center;padding:14px;color:#8a7a85;font-size:.82rem;">No items</div>`;
     document.getElementById('editCustomerName').value = editingDraft.customerInfo?.name || editingDraft.customerName || '';
     document.getElementById('editCustomerPhone').value = editingDraft.customerInfo?.phone || editingDraft.customerPhone || '';
     const isDelivery = editingDraft.channel === 'manual' || editingDraft.deliveryMethod === 'delivery';
@@ -2056,12 +1680,11 @@ function updateEditTotals() {
     const fee = isDelivery ? (parseFloat(document.getElementById('editDeliveryFee')?.value) || 0) : 0;
     const tax = subtotal * TAX_RATE;
     const total = subtotal + fee + tax;
-    const el = document.getElementById('editTotals');
-    el.innerHTML = `<div class="edit-total-row"><span>Subtotal</span><span>${fmtMoney(subtotal)}</span></div>
+    document.getElementById('editTotals').innerHTML = `<div class="edit-total-row"><span>Subtotal</span><span>${fmtMoney(subtotal)}</span></div>
         ${fee > 0 ? `<div class="edit-total-row"><span>Delivery Fee</span><span>${fmtMoney(fee)}</span></div>` : ''}
         <div class="edit-total-row"><span>Tax (${Math.round(TAX_RATE * 100)}%)</span><span>${fmtMoney(tax)}</span></div>
         <div class="edit-total-row grand"><span>TOTAL</span><span>${fmtMoney(total)}</span></div>
-        ${editingOrderOriginal && Math.abs(total - editingOrderOriginal.total) > 0.001 ? `<div style="text-align:center;margin-top:10px;font-size:.72rem;color:${total > editingOrderOriginal.total ? '#b91c1c' : '#15803d'};font-weight:700;">${total > editingOrderOriginal.total ? '▲' : '▼'} ${fmtMoney(Math.abs(total - editingOrderOriginal.total))} vs original</div>` : ''}`;
+        ${editingOrderOriginal && Math.abs(total - editingOrderOriginal.total) > 0.001 ? `<div style="text-align:center;margin-top:10px;font-size:.7rem;color:${total > editingOrderOriginal.total ? '#b91c1c' : '#15803d'};font-weight:700;">${total > editingOrderOriginal.total ? '▲' : '▼'} ${fmtMoney(Math.abs(total - editingOrderOriginal.total))} vs original</div>` : ''}`;
     editingDraft.subtotal = subtotal;
     editingDraft.tax = tax;
     editingDraft.total = total;
@@ -2099,7 +1722,6 @@ function bindEditFormInteractions() {
             if (id === 'editPayment') editingDraft.payment = el.value;
         });
     });
-    // ⭐ 3 EDIT ADD BUTTONS
     document.querySelectorAll('[data-edit-add]').forEach(btn => {
         btn.addEventListener('click', () => {
             const kind = btn.dataset.editAdd;
@@ -2129,14 +1751,14 @@ function tryAdminUnlock() {
         editingIsUnlocked = true;
         input.value = ''; input.classList.remove('error'); error.textContent = '';
         addEditLogEntry({ orderId: editingOrder.id, editedBy: currentEmployee.username, editedByName: currentEmployee.name, editedAt: new Date().toISOString(), type: 'unlock', override: true, changes: [] });
-        showToast('Admin unlocked — you can now edit', 'bx-lock-open-alt');
+        showToast('Admin unlocked', 'bx-lock-open-alt');
         document.getElementById('adminGate').style.display = 'none';
         document.getElementById('editFormBody').style.display = 'block';
         document.getElementById('editModalFooter').style.display = 'flex';
         updateEditTimerBanner(0, true);
         renderEditForm();
     } else {
-        error.textContent = 'Invalid admin PIN. Please try again.';
+        error.textContent = 'Invalid admin PIN.';
         input.classList.add('error');
         input.value = '';
         setTimeout(() => input.classList.remove('error'), 550);
@@ -2146,7 +1768,7 @@ function tryAdminUnlock() {
 function saveEditedInvoice() {
     if (!editingDraft || !editingOrderOriginal) return;
     const activeItems = editingDraft.itemsList.filter(i => !i._removed);
-    if (!activeItems.length) { showToast('At least one item is required', 'bx-error-circle'); return; }
+    if (!activeItems.length) { showToast('At least one item required', 'bx-error-circle'); return; }
     const changes = [];
     const origItems = editingOrderOriginal.itemsList || [];
     const draftItems = editingDraft.itemsList || [];
@@ -2167,7 +1789,6 @@ function saveEditedInvoice() {
     if ((editingOrderOriginal.deliveryFee || 0) !== (editingDraft.deliveryFee || 0)) changes.push({ type: 'delivery_fee', old: editingOrderOriginal.deliveryFee || 0, new: editingDraft.deliveryFee || 0 });
     if (Math.abs((editingOrderOriginal.total || 0) - (editingDraft.total || 0)) > 0.001) changes.push({ type: 'total', old: editingOrderOriginal.total || 0, new: editingDraft.total || 0 });
     if (changes.length === 0) { showToast('No changes made', 'bx-info-circle'); closeEditModal(); return; }
-
     const updated = JSON.parse(JSON.stringify(editingOrderOriginal));
     updated.itemsList = draftItems.filter(i => !i._removed).map(i => { const { _removed, ...clean } = i; return clean; });
     updated.subtotal = editingDraft.subtotal;
@@ -2184,17 +1805,7 @@ function saveEditedInvoice() {
     const idx = empOrders.findIndex(o => o.id === updated.id);
     if (idx !== -1) { empOrders[idx] = updated; saveEmployeeOrders(empOrders); }
     adjustStockForEdit(origItems, updated.itemsList);
-    addEditLogEntry({
-        orderId: updated.id,
-        editedBy: currentEmployee.username,
-        editedByName: currentEmployee.name,
-        editedAt: new Date().toISOString(),
-        type: 'edit',
-        override: editingIsUnlocked,
-        changes,
-        oldTotal: editingOrderOriginal.total,
-        newTotal: updated.total
-    });
+    addEditLogEntry({ orderId: updated.id, editedBy: currentEmployee.username, editedByName: currentEmployee.name, editedAt: new Date().toISOString(), type: 'edit', override: editingIsUnlocked, changes, oldTotal: editingOrderOriginal.total, newTotal: updated.total });
     if (editingIsUnlocked) consumeUnlock(updated.id);
     loadManualOrders();
     renderRecentOrders();
@@ -2205,20 +1816,19 @@ function saveEditedInvoice() {
 function openEditHistoryModal(orderId) {
     const log = getOrderEditLog(orderId);
     const body = document.getElementById('editHistoryBody');
-    if (!log.length) {
-        body.innerHTML = `<div class="edit-history-empty"><i class='bx bx-history'></i><p>No edits recorded for this invoice.</p></div>`;
-    } else {
+    if (!log.length) { body.innerHTML = `<div class="edit-history-empty"><i class='bx bx-history'></i><p>No edits recorded.</p></div>`; }
+    else {
         body.innerHTML = log.map(entry => {
             const changeList = (entry.changes || []).map(c => {
-                if (c.type === 'item_qty') return `<div style="font-size:.78rem;color:#555;">• Qty of <strong>${esc(c.name)}</strong>: ${c.oldQty} → ${c.newQty}</div>`;
-                if (c.type === 'item_removed') return `<div style="font-size:.78rem;color:#b91c1c;">• Removed <strong>${esc(c.name)}</strong> (was ${c.oldQty})</div>`;
-                if (c.type === 'item_added') return `<div style="font-size:.78rem;color:#15803d;">• Added <strong>${esc(c.name)}</strong> × ${c.newQty}</div>`;
-                if (c.type === 'total') return `<div style="font-size:.78rem;color:#555;">• Total: ${fmtMoney(c.old)} → <strong>${fmtMoney(c.new)}</strong></div>`;
-                if (c.type === 'payment') return `<div style="font-size:.78rem;color:#555;">• Payment: ${esc(c.old)} → ${esc(c.new)}</div>`;
-                if (c.type === 'customer_name') return `<div style="font-size:.78rem;color:#555;">• Name: ${esc(c.old)} → ${esc(c.new)}</div>`;
-                if (c.type === 'customer_phone') return `<div style="font-size:.78rem;color:#555;">• Phone: ${esc(c.old)} → ${esc(c.new)}</div>`;
-                if (c.type === 'address') return `<div style="font-size:.78rem;color:#555;">• Address updated</div>`;
-                if (c.type === 'delivery_fee') return `<div style="font-size:.78rem;color:#555;">• Delivery fee: ${fmtMoney(c.old)} → ${fmtMoney(c.new)}</div>`;
+                if (c.type === 'item_qty') return `<div style="font-size:.74rem;color:#555;">• Qty of <strong>${esc(c.name)}</strong>: ${c.oldQty} → ${c.newQty}</div>`;
+                if (c.type === 'item_removed') return `<div style="font-size:.74rem;color:#b91c1c;">• Removed <strong>${esc(c.name)}</strong></div>`;
+                if (c.type === 'item_added') return `<div style="font-size:.74rem;color:#15803d;">• Added <strong>${esc(c.name)}</strong> × ${c.newQty}</div>`;
+                if (c.type === 'total') return `<div style="font-size:.74rem;color:#555;">• Total: ${fmtMoney(c.old)} → <strong>${fmtMoney(c.new)}</strong></div>`;
+                if (c.type === 'payment') return `<div style="font-size:.74rem;color:#555;">• Payment: ${esc(c.old)} → ${esc(c.new)}</div>`;
+                if (c.type === 'customer_name') return `<div style="font-size:.74rem;color:#555;">• Name updated</div>`;
+                if (c.type === 'customer_phone') return `<div style="font-size:.74rem;color:#555;">• Phone updated</div>`;
+                if (c.type === 'address') return `<div style="font-size:.74rem;color:#555;">• Address updated</div>`;
+                if (c.type === 'delivery_fee') return `<div style="font-size:.74rem;color:#555;">• Delivery fee: ${fmtMoney(c.old)} → ${fmtMoney(c.new)}</div>`;
                 return '';
             }).join('');
             return `<div class="edit-history-entry">
@@ -2226,8 +1836,7 @@ function openEditHistoryModal(orderId) {
                     <div class="edit-history-by"><i class='bx bx-user-circle'></i> ${esc(entry.editedByName || entry.editedBy)}</div>
                     <div class="edit-history-date">${fmtDateTime(entry.editedAt)}</div>
                 </div>
-                ${entry.type === 'unlock' ? `<div style="font-size:.8rem;color:#a16207;font-weight:700;">🔓 Unlocked with admin PIN</div>` : changeList || '<div style="font-size:.78rem;color:#999;">No specific changes recorded</div>'}
-                ${entry.override && entry.type === 'edit' ? `<span class="edit-history-override">🔐 Admin Override</span>` : ''}
+                ${entry.type === 'unlock' ? `<div style="font-size:.76rem;color:#a16207;font-weight:700;">🔓 Unlocked with admin PIN</div>` : changeList || '<div style="font-size:.74rem;color:#999;">No changes</div>'}
             </div>`;
         }).join('');
     }
@@ -2243,8 +1852,7 @@ function printRecentOrder(orderId) {
     if (!order) { showToast('Order not found', 'bx-error-circle'); return; }
     const items = (order.itemsList || []).map(i => ({ type: 'offer', data: { name: i.name, price: i.price, qty: i.qty } }));
     buildReceiptView({
-        receiptId: order.id,
-        date: new Date(order.placedAt || order.date),
+        receiptId: order.id, date: new Date(order.placedAt || order.date),
         customer: order.customerInfo?.name || order.customerName || 'Walk-in',
         customerPhone: order.customerInfo?.phone || order.customerPhone || '',
         employee: order.servedBy || currentEmployee?.name || 'POS',
@@ -2255,11 +1863,11 @@ function printRecentOrder(orderId) {
         address: order.address
     });
     setTimeout(printThermalReceipt, 250);
-    showToast('Printing receipt...', 'bx-printer');
+    showToast('Printing...', 'bx-printer');
 }
 
 // =====================================================
-// INVENTORY MANAGEMENT SYSTEM
+// INVENTORY
 // =====================================================
 function findInvItemByBarcode(barcode) {
     if (!barcode) return null;
@@ -2274,9 +1882,26 @@ function updateInventoryBadge() {
     badge.textContent = total;
     badge.classList.toggle('hidden', total === 0);
 }
+function generateBarcode(category, weight, sequence) {
+    const catCode = CATEGORY_CODES[category] || '900';
+    const wStr = String(Math.min(9999, Math.max(0, parseInt(weight) || 0))).padStart(4, '0');
+    let seq = sequence;
+    if (seq === undefined || seq === null) {
+        const existing = invItems.map(i => {
+            const match = (i.barcode || '').match(/HC\d{3}\d{4}(\d{5})/);
+            return match ? parseInt(match[1]) : 0;
+        });
+        const maxSeq = existing.length ? Math.max(...existing) : 0;
+        seq = maxSeq + 1;
+    }
+    const seqStr = String(seq).padStart(5, '0');
+    const base = `${catCode}${wStr}${seqStr}`;
+    const sum = base.split('').reduce((s, d) => s + parseInt(d), 0);
+    const check = String(sum % 10);
+    return `HC${base}${check}`;
+}
 function renderInventory() {
-    loadInventoryItems();
-    loadInventoryMovements();
+    loadInventoryItems(); loadInventoryMovements();
     renderInventoryStats();
     renderReceiveBatch();
     renderTransferBatch();
@@ -2295,10 +1920,10 @@ function renderInventoryStats() {
     const shopTotal = invItems.reduce((s, i) => s + (Number(i.shopStock) || 0), 0);
     const lowStockCount = invItems.filter(i => (Number(i.warehouseStock) || 0) > 0 && (Number(i.warehouseStock) || 0) <= 5).length;
     el.innerHTML = `
-        <div class="inv-stat-card blue"><div class="inv-stat-icon"><i class='bx bx-package'></i></div><div><div class="inv-stat-value">${totalItems}</div><div class="inv-stat-label">Product Types</div></div></div>
-        <div class="inv-stat-card green"><div class="inv-stat-icon"><i class='bx bx-warehouse'></i></div><div><div class="inv-stat-value">${warehouseTotal}</div><div class="inv-stat-label">Warehouse Bags</div></div></div>
-        <div class="inv-stat-card purple"><div class="inv-stat-icon"><i class='bx bx-store'></i></div><div><div class="inv-stat-value">${shopTotal}</div><div class="inv-stat-label">Shop Bags</div></div></div>
-        <div class="inv-stat-card orange"><div class="inv-stat-icon"><i class='bx bx-error-circle'></i></div><div><div class="inv-stat-value">${lowStockCount}</div><div class="inv-stat-label">Low Stock</div></div></div>
+        <div class="inv-stat-card blue"><div class="inv-stat-icon"><i class='bx bx-package'></i></div><div><div class="inv-stat-value">${totalItems}</div><div class="inv-stat-label">Types</div></div></div>
+        <div class="inv-stat-card green"><div class="inv-stat-icon"><i class='bx bx-warehouse'></i></div><div><div class="inv-stat-value">${warehouseTotal}</div><div class="inv-stat-label">Warehouse</div></div></div>
+        <div class="inv-stat-card purple"><div class="inv-stat-icon"><i class='bx bx-store'></i></div><div><div class="inv-stat-value">${shopTotal}</div><div class="inv-stat-label">Shop</div></div></div>
+        <div class="inv-stat-card orange"><div class="inv-stat-icon"><i class='bx bx-error-circle'></i></div><div><div class="inv-stat-value">${lowStockCount}</div><div class="inv-stat-label">Low</div></div></div>
     `;
 }
 function switchInventoryTab(tab, silent) {
@@ -2320,14 +1945,14 @@ function handleBarcodeInput(mode) {
     if (!barcode) return;
     const item = findInvItemByBarcode(barcode);
     if (!item) {
-        showToast(`Barcode "${barcode}" not found`, 'bx-error-circle');
+        showToast(`"${barcode}" not found`, 'bx-error-circle');
         showBarcodeLookupModal(mode, barcode);
         input.value = '';
         return;
     }
     if (mode === 'transfer') {
         const currentStock = Number(item.warehouseStock) || 0;
-        if (currentStock <= 0) { showToast(`${item.name} — no stock at warehouse`, 'bx-error-circle'); input.value = ''; return; }
+        if (currentStock <= 0) { showToast(`${item.name} — no stock`, 'bx-error-circle'); input.value = ''; return; }
     }
     showDetectedItem(mode, item);
     input.value = '';
@@ -2340,7 +1965,7 @@ function showDetectedItem(mode, item) {
         <div class="barcode-detected-icon"><i class='bx bx-check'></i></div>
         <div class="barcode-detected-info">
             <strong>${esc(item.name)}</strong>
-            <span>${esc(item.barcode)} · ${item.weight}g/bag · WH: ${currentStock}</span>
+            <span>${esc(item.barcode)} · ${item.weight}g · WH: ${currentStock}</span>
         </div>
         <div class="barcode-detected-qty">
             <button type="button" data-detected-dec="${mode}"><i class='bx bx-minus'></i></button>
@@ -2392,13 +2017,9 @@ function renderReceiveBatch() {
             <img class="inv-batch-thumb" src="${esc(item.img || 'https://via.placeholder.com/80')}" alt="">
             <div class="inv-batch-info">
                 <div class="inv-batch-name">${esc(item.name)}</div>
-                <div class="inv-batch-meta"><i class='bx bx-barcode'></i> ${esc(item.barcode)}<span style="opacity:.6;">·</span><span>${item.weight}g/bag</span></div>
+                <div class="inv-batch-meta"><i class='bx bx-barcode'></i> ${esc(item.barcode)}<span style="opacity:.6;">·</span><span>${item.weight}g</span></div>
             </div>
-            <div class="inv-batch-qty">
-                <button type="button" data-rb-dec="${idx}">−</button>
-                <span>${b.qty}</span>
-                <button type="button" data-rb-inc="${idx}">+</button>
-            </div>
+            <div class="inv-batch-qty"><button type="button" data-rb-dec="${idx}">−</button><span>${b.qty}</span><button type="button" data-rb-inc="${idx}">+</button></div>
             <button type="button" class="inv-batch-remove" data-rb-remove="${idx}"><i class='bx bx-x'></i></button>
         </div>`;
     }).join('');
@@ -2417,11 +2038,7 @@ function renderTransferBatch() {
                 <div class="inv-batch-name">${esc(item.name)}</div>
                 <div class="inv-batch-meta"><i class='bx bx-barcode'></i> ${esc(item.barcode)}<span style="opacity:.6;">·</span><span>WH: ${item.warehouseStock}</span></div>
             </div>
-            <div class="inv-batch-qty">
-                <button type="button" data-tb-dec="${idx}">−</button>
-                <span>${b.qty}</span>
-                <button type="button" data-tb-inc="${idx}">+</button>
-            </div>
+            <div class="inv-batch-qty"><button type="button" data-tb-dec="${idx}">−</button><span>${b.qty}</span><button type="button" data-tb-inc="${idx}">+</button></div>
             <button type="button" class="inv-batch-remove" data-tb-remove="${idx}"><i class='bx bx-x'></i></button>
         </div>`;
     }).join('');
@@ -2456,17 +2073,15 @@ function confirmReceiveBatch() {
             id: 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
             type: 'in', itemId: item.id, itemName: item.name, barcode: item.barcode,
             qty: b.qty, from: 'supplier', to: 'warehouse',
-            employee: currentEmployee?.username || 'emp',
-            employeeName: currentEmployee?.name || 'Employee',
+            employee: currentEmployee?.username || 'emp', employeeName: currentEmployee?.name || 'Employee',
             date: today, note: ''
         });
     });
-    saveInventoryItems();
-    saveInventoryMovements();
+    saveInventoryItems(); saveInventoryMovements();
     const total = invReceiveBatch.reduce((s, b) => s + b.qty, 0);
     invReceiveBatch = [];
     renderInventory();
-    showToast(`${total} bags received & added to warehouse`, 'bx-check-circle');
+    showToast(`${total} bags received`, 'bx-check-circle');
 }
 function confirmTransferBatch() {
     if (!invTransferBatch.length) return;
@@ -2486,14 +2101,12 @@ function confirmTransferBatch() {
         invMovements.unshift({
             id: 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
             type: 'transfer', itemId: item.id, itemName: item.name, barcode: item.barcode,
-            qty: b.qty, from: 'warehouse', to: shopName, shopId: shopId,
-            employee: currentEmployee?.username || 'emp',
-            employeeName: currentEmployee?.name || 'Employee',
+            qty: b.qty, from: 'warehouse', to: shopName, shopId,
+            employee: currentEmployee?.username || 'emp', employeeName: currentEmployee?.name || 'Employee',
             date: today, note: ''
         });
     });
-    saveInventoryItems();
-    saveInventoryMovements();
+    saveInventoryItems(); saveInventoryMovements();
     const total = invTransferBatch.reduce((s, b) => s + b.qty, 0);
     invTransferBatch = [];
     renderInventory();
@@ -2530,7 +2143,7 @@ function renderShopStock() {
     const q = (document.getElementById('shopSearchInput')?.value || '').trim().toLowerCase();
     let list = invItems.filter(i => !q || i.name.toLowerCase().includes(q) || (i.barcode || '').toLowerCase().includes(q));
     list = list.filter(i => (Number(i.shopStock) || 0) > 0);
-    if (!list.length) { grid.innerHTML = `<div class="inv-empty-small" style="grid-column:1/-1;"><i class='bx bx-store'></i><p>${q ? 'No matching items' : 'No stock at shops yet'}</p></div>`; return; }
+    if (!list.length) { grid.innerHTML = `<div class="inv-empty-small" style="grid-column:1/-1;"><i class='bx bx-store'></i><p>${q ? 'No matching items' : 'No stock at shops'}</p></div>`; return; }
     grid.innerHTML = list.map(item => {
         const stock = Number(item.shopStock) || 0;
         return `<div class="inv-stock-card">
@@ -2543,7 +2156,7 @@ function renderShopStock() {
                 <div class="inv-stock-qty">${stock}<small>bags</small></div>
             </div>
             <div class="inv-stock-footer">
-                <button class="inv-mini-btn ghost" data-return-to-wh="${esc(item.id)}"><i class='bx bx-undo'></i> Return to WH</button>
+                <button class="inv-mini-btn ghost" data-return-to-wh="${esc(item.id)}"><i class='bx bx-undo'></i> Return</button>
             </div>
         </div>`;
     }).join('');
@@ -2553,7 +2166,7 @@ function renderInventoryItems() {
     if (!list) return;
     const q = (document.getElementById('itemsSearchInput')?.value || '').trim().toLowerCase();
     let items = invItems.filter(i => !q || i.name.toLowerCase().includes(q) || (i.barcode || '').toLowerCase().includes(q));
-    if (!items.length) { list.innerHTML = `<div class="inv-empty-small" style="grid-column:1/-1;"><i class='bx bx-barcode'></i><p>${q ? 'No matching items' : 'No inventory items yet — click "Add Item"'}</p></div>`; return; }
+    if (!items.length) { list.innerHTML = `<div class="inv-empty-small" style="grid-column:1/-1;"><i class='bx bx-barcode'></i><p>${q ? 'No matching items' : 'No items — click "Add Item"'}</p></div>`; return; }
     list.innerHTML = items.map(item => {
         const catCls = item.category === 'chocolate' ? 'cat-chocolate' : (item.category === 'candy' ? 'cat-candy' : 'cat-other');
         return `<div class="inv-item-card">
@@ -2589,7 +2202,7 @@ function renderInventoryHistory() {
         const isIn = m.type === 'in';
         const isTransfer = m.type === 'transfer';
         let icon = isIn ? 'bx bx-import' : 'bx bx-transfer-alt';
-        let title = isIn ? `Received from Supplier → Warehouse` : `Warehouse → ${m.to || 'Shop'}`;
+        let title = isIn ? `Supplier → Warehouse` : `Warehouse → ${m.to || 'Shop'}`;
         let qtySign = isIn ? '+' : '−';
         const typeCls = isIn ? 'type-in' : 'type-transfer';
         return `<div class="inv-history-item ${typeCls}">
@@ -2610,10 +2223,8 @@ function bindInventoryEvents() {
     document.querySelectorAll('.inv-tab').forEach(tab => tab.addEventListener('click', () => switchInventoryTab(tab.dataset.itab)));
     document.getElementById('btnRefreshInventory').addEventListener('click', (e) => {
         e.currentTarget.style.transform = 'rotate(180deg)';
-        loadInventoryItems();
-        loadInventoryMovements();
-        renderInventory();
-        showToast('Inventory refreshed', 'bx-refresh');
+        loadInventoryItems(); loadInventoryMovements(); renderInventory();
+        showToast('Refreshed', 'bx-refresh');
         setTimeout(() => { e.currentTarget.style.transform = ''; }, 500);
     });
     const receiveInput = document.getElementById('receiveBarcodeInput');
@@ -2622,8 +2233,8 @@ function bindInventoryEvents() {
     if (transferInput) transferInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleBarcodeInput('transfer'); } });
     document.getElementById('receiveSearchBtn').addEventListener('click', () => showBarcodeLookupModal('receive', receiveInput.value.trim()));
     document.getElementById('transferSearchBtn').addEventListener('click', () => showBarcodeLookupModal('transfer', transferInput.value.trim()));
-    document.getElementById('receiveClearBatch').addEventListener('click', () => { if (!invReceiveBatch.length) return; if (!confirm('Clear receive queue?')) return; invReceiveBatch = []; renderReceiveBatch(); });
-    document.getElementById('transferClearBatch').addEventListener('click', () => { if (!invTransferBatch.length) return; if (!confirm('Clear transfer queue?')) return; invTransferBatch = []; renderTransferBatch(); });
+    document.getElementById('receiveClearBatch').addEventListener('click', () => { if (!invReceiveBatch.length) return; if (!confirm('Clear queue?')) return; invReceiveBatch = []; renderReceiveBatch(); });
+    document.getElementById('transferClearBatch').addEventListener('click', () => { if (!invTransferBatch.length) return; if (!confirm('Clear queue?')) return; invTransferBatch = []; renderTransferBatch(); });
     document.getElementById('receiveConfirmBtn').addEventListener('click', confirmReceiveBatch);
     document.getElementById('transferConfirmBtn').addEventListener('click', confirmTransferBatch);
     document.getElementById('receiveBatchList').addEventListener('click', (e) => {
@@ -2679,6 +2290,10 @@ function bindInventoryEvents() {
         }
     });
     document.getElementById('btnAddInventoryItem').addEventListener('click', () => openInventoryItemModal());
+
+    // ⭐ Scan buttons
+    document.getElementById('receiveScanBtn').addEventListener('click', () => openScanner('receive'));
+    document.getElementById('transferScanBtn').addEventListener('click', () => openScanner('transfer'));
 }
 function quickReceive(itemId) {
     const item = findInvItemById(itemId);
@@ -2699,7 +2314,7 @@ function returnToWarehouse(itemId) {
     if (!item) return;
     const shopStock = Number(item.shopStock) || 0;
     if (shopStock <= 0) return;
-    const qty = prompt(`How many bags to return? (max ${shopStock})`, '1');
+    const qty = prompt(`Return how many? (max ${shopStock})`, '1');
     const n = parseInt(qty);
     if (!n || n < 1 || n > shopStock) { showToast('Invalid quantity', 'bx-error-circle'); return; }
     item.shopStock -= n;
@@ -2708,13 +2323,10 @@ function returnToWarehouse(itemId) {
         id: 'mov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
         type: 'transfer', itemId: item.id, itemName: item.name, barcode: item.barcode,
         qty: n, from: 'shop', to: 'warehouse',
-        employee: currentEmployee?.username || 'emp',
-        employeeName: currentEmployee?.name || 'Employee',
+        employee: currentEmployee?.username || 'emp', employeeName: currentEmployee?.name || 'Employee',
         date: new Date().toISOString(), note: 'Return from shop'
     });
-    saveInventoryItems();
-    saveInventoryMovements();
-    renderInventory();
+    saveInventoryItems(); saveInventoryMovements(); renderInventory();
     showToast(`${n} bags returned to warehouse`, 'bx-undo');
 }
 
@@ -2732,6 +2344,8 @@ function bindInventoryItemModal() {
         document.getElementById('invItemBarcode').value = code;
         showToast('Barcode generated', 'bx-barcode');
     });
+    // ⭐ Scan existing barcode while adding item
+    document.getElementById('invItemScanBtn').addEventListener('click', () => openScanner('item-add'));
 }
 function openInventoryItemModal(itemId) {
     invEditingItemId = itemId || null;
@@ -2760,10 +2374,7 @@ function openInventoryItemModal(itemId) {
     document.getElementById('inventoryItemModal').classList.add('active');
     setTimeout(() => document.getElementById('invItemName').focus(), 200);
 }
-function closeInventoryItemModal() {
-    document.getElementById('inventoryItemModal').classList.remove('active');
-    invEditingItemId = null;
-}
+function closeInventoryItemModal() { document.getElementById('inventoryItemModal').classList.remove('active'); invEditingItemId = null; }
 function saveInventoryItemFromModal() {
     const name = document.getElementById('invItemName').value.trim();
     const weight = parseInt(document.getElementById('invItemWeight').value);
@@ -2774,8 +2385,7 @@ function saveInventoryItemFromModal() {
     const dup = invItems.find(i => (i.barcode || '').toLowerCase() === barcode.toLowerCase() && i.id !== invEditingItemId);
     if (dup) { alert(`Barcode "${barcode}" is already used by "${dup.name}"`); return; }
     const data = {
-        name,
-        weight,
+        name, weight,
         category: document.getElementById('invItemCategory').value,
         costPrice: parseFloat(document.getElementById('invItemCost').value) || 0,
         retailPrice: parseFloat(document.getElementById('invItemPrice').value) || 0,
@@ -2789,9 +2399,7 @@ function saveInventoryItemFromModal() {
     } else {
         invItems.push({
             id: 'inv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
-            ...data,
-            warehouseStock: 0,
-            shopStock: 0,
+            ...data, warehouseStock: 0, shopStock: 0,
             createdAt: new Date().toISOString()
         });
         showToast('Item created', 'bx-check-circle');
@@ -2801,14 +2409,13 @@ function saveInventoryItemFromModal() {
     renderInventory();
 }
 
-// ============ BARCODE LOOKUP MODAL ============
+// ============ BARCODE LOOKUP ============
 function bindBarcodeLookupModal() {
     document.getElementById('closeBarcodeLookup').addEventListener('click', closeBarcodeLookupModal);
     document.getElementById('barcodeLookupModal').addEventListener('click', (e) => { if (e.target.id === 'barcodeLookupModal') closeBarcodeLookupModal(); });
     document.getElementById('barcodeLookupSearch').addEventListener('input', renderBarcodeLookupList);
     document.getElementById('barcodeLookupList').addEventListener('click', (e) => {
-        const card = e.target.closest('[data-lookup-id]');
-        if (!card) return;
+        const card = e.target.closest('[data-lookup-id]'); if (!card) return;
         const itemId = card.dataset.lookupId;
         const mode = barcodeLookupTarget;
         if (mode) {
@@ -2825,16 +2432,13 @@ function showBarcodeLookupModal(mode, initialQuery) {
     document.getElementById('barcodeLookupModal').classList.add('active');
     setTimeout(() => searchInput.focus(), 200);
 }
-function closeBarcodeLookupModal() {
-    document.getElementById('barcodeLookupModal').classList.remove('active');
-    barcodeLookupTarget = null;
-}
+function closeBarcodeLookupModal() { document.getElementById('barcodeLookupModal').classList.remove('active'); barcodeLookupTarget = null; }
 function renderBarcodeLookupList() {
     const list = document.getElementById('barcodeLookupList');
     const q = (document.getElementById('barcodeLookupSearch')?.value || '').trim().toLowerCase();
     let items = invItems.filter(i => !q || i.name.toLowerCase().includes(q) || (i.barcode || '').toLowerCase().includes(q));
     items = items.slice(0, 50);
-    if (!items.length) { list.innerHTML = `<div class="inv-empty-small"><i class='bx bx-search'></i><p>${q ? 'No matching items' : 'No inventory items yet'}</p></div>`; return; }
+    if (!items.length) { list.innerHTML = `<div class="inv-empty-small"><i class='bx bx-search'></i><p>${q ? 'No matching items' : 'No items'}</p></div>`; return; }
     list.innerHTML = items.map(item => `
         <div class="inv-item-card pickable" data-lookup-id="${esc(item.id)}">
             <img class="inv-item-thumb" src="${esc(item.img || 'https://via.placeholder.com/80')}" alt="">
@@ -2851,7 +2455,7 @@ function renderBarcodeLookupList() {
     `).join('');
 }
 
-// ============ LABEL PRINT MODAL ============
+// ============ LABEL PRINT ============
 function bindLabelPrintModal() {
     document.getElementById('closeLabelModal').addEventListener('click', closeLabelPrintModal);
     document.getElementById('labelCancelBtn').addEventListener('click', closeLabelPrintModal);
@@ -2869,15 +2473,10 @@ function openLabelPrintModal(itemId) {
     renderLabelPreview();
     document.getElementById('barcodeLabelModal').classList.add('active');
 }
-function closeLabelPrintModal() {
-    document.getElementById('barcodeLabelModal').classList.remove('active');
-    labelPrintItem = null;
-}
+function closeLabelPrintModal() { document.getElementById('barcodeLabelModal').classList.remove('active'); labelPrintItem = null; }
 function renderLabelPreview() {
-    const item = labelPrintItem;
-    if (!item) return;
-    const preview = document.getElementById('labelPreview');
-    preview.innerHTML = `<div class="label-preview-inner">
+    const item = labelPrintItem; if (!item) return;
+    document.getElementById('labelPreview').innerHTML = `<div class="label-preview-inner">
         <div class="label-preview-name">${esc(item.name)}</div>
         <div class="label-preview-meta">${item.weight}g · ${esc(item.category || 'candy')}</div>
         <div class="label-preview-barcode">*${esc(item.barcode)}*</div>
@@ -2904,24 +2503,694 @@ function printBarcodeLabels() {
     showToast(`Printing ${count} labels...`, 'bx-printer');
 }
 
+// =====================================================
+// ⭐⭐ CAMERA SCANNER SYSTEM ⭐⭐
+// =====================================================
+
+function bindScannerEvents() {
+    document.getElementById('scannerClose').addEventListener('click', closeScanner);
+    document.getElementById('scannerDone').addEventListener('click', closeScanner);
+    document.getElementById('scannerBackdrop').addEventListener('click', closeScanner);
+    document.getElementById('scannerToggleCam').addEventListener('click', switchCamera);
+    document.getElementById('scannerTorchBtn').addEventListener('click', toggleTorch);
+
+    // Manual input
+    const manualInput = document.getElementById('scannerManualInput');
+    const manualSubmit = document.getElementById('scannerManualSubmit');
+    if (manualInput) {
+        manualInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); submitManualScan(); }
+        });
+    }
+    if (manualSubmit) manualSubmit.addEventListener('click', submitManualScan);
+
+    // ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (document.getElementById('scannerModal').classList.contains('active')) closeScanner();
+        }
+    });
+}
+
+function openScanner(mode) {
+    scannerMode = mode;
+    lastScannedBarcode = null;
+    lastScanTimestamp = 0;
+
+    // Reset UI
+    document.getElementById('scannerStatus').className = 'scanner-status';
+    document.getElementById('scannerStatus').innerHTML = `<i class='bx bx-loader-alt bx-spin'></i><span>Starting camera...</span>`;
+    document.getElementById('scanResult').classList.add('hidden');
+    document.getElementById('scannerManualInput').value = '';
+
+    const subtitleMap = {
+        'receive': 'Scanning for stock receive',
+        'transfer': 'Scanning for stock transfer',
+        'item-add': 'Scan existing barcode to register'
+    };
+    document.getElementById('scannerSubtitle').textContent = subtitleMap[mode] || 'Point at barcode';
+
+    document.getElementById('scannerModal').classList.add('active');
+    // Small delay to let the modal render
+    setTimeout(() => startScanner(), 250);
+}
+
+function closeScanner() {
+    stopScanner();
+    document.getElementById('scannerModal').classList.remove('active');
+    scannerMode = null;
+}
+
+async function startScanner() {
+    if (scannerRunning) return;
+
+    // Check library
+    if (typeof Html5Qrcode === 'undefined') {
+        setScannerStatus('Scanner library failed to load. Check internet connection.', 'error');
+        return;
+    }
+
+    try {
+        // Get available cameras
+        try {
+            scannerCameras = await Html5Qrcode.getCameras();
+        } catch (camErr) {
+            setScannerStatus('Camera access denied. Please enable camera permissions.', 'error');
+            showScannerHelp();
+            return;
+        }
+
+        if (!scannerCameras || !scannerCameras.length) {
+            setScannerStatus('No cameras found on this device', 'error');
+            return;
+        }
+
+        // Prefer back camera
+        currentCameraIndex = scannerCameras.findIndex(c => /back|rear|environment/i.test(c.label));
+        if (currentCameraIndex === -1) currentCameraIndex = scannerCameras.length - 1;
+
+        // Create instance
+        html5QrCode = new Html5Qrcode("reader", { verbose: false });
+
+        const config = {
+            fps: 12,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                const size = Math.floor(minEdge * 0.75);
+                return { width: size, height: size };
+            },
+            aspectRatio: 1.333,
+            disableFlip: false,
+            formatsToSupport: (typeof Html5QrcodeSupportedFormats !== 'undefined') ? [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.CODE_93,
+                Html5QrcodeSupportedFormats.ITF,
+                Html5QrcodeSupportedFormats.CODABAR,
+                Html5QrcodeSupportedFormats.DATA_MATRIX,
+                Html5QrcodeSupportedFormats.PDF_417
+            ] : undefined
+        };
+
+        await html5QrCode.start(
+            scannerCameras[currentCameraIndex].id,
+            config,
+            onScanSuccess,
+            onScanError
+        );
+
+        scannerRunning = true;
+        setScannerStatus('Camera ready — point at a barcode', 'ok');
+
+        // Show torch button if available (mobile back camera)
+        const torchBtn = document.getElementById('scannerTorchBtn');
+        if (torchBtn && /Mobi|Android/i.test(navigator.userAgent)) {
+            torchBtn.style.display = 'inline-flex';
+        }
+    } catch (err) {
+        console.warn('Scanner start error:', err);
+        setScannerStatus('Could not start camera. ' + (err.message || ''), 'error');
+        scannerRunning = false;
+    }
+}
+
+function stopScanner() {
+    if (html5QrCode && scannerRunning) {
+        try {
+            html5QrCode.stop().then(() => {
+                try { html5QrCode.clear(); } catch (e) {}
+                html5QrCode = null;
+                scannerRunning = false;
+            }).catch(() => {
+                html5QrCode = null;
+                scannerRunning = false;
+            });
+        } catch (e) {
+            html5QrCode = null;
+            scannerRunning = false;
+        }
+    } else {
+        scannerRunning = false;
+    }
+}
+
+async function switchCamera() {
+    if (!scannerCameras || scannerCameras.length < 2) {
+        showToast('Only one camera available', 'bx-info-circle');
+        return;
+    }
+    // Stop current
+    try {
+        if (html5QrCode) {
+            await html5QrCode.stop();
+            try { html5QrCode.clear(); } catch (e) {}
+        }
+    } catch (e) {}
+    html5QrCode = null;
+    scannerRunning = false;
+
+    // Switch index
+    currentCameraIndex = (currentCameraIndex + 1) % scannerCameras.length;
+    setScannerStatus('Switching camera...', 'ok');
+    setTimeout(() => startScanner(), 400);
+}
+
+async function toggleTorch() {
+    if (!html5QrCode || !scannerRunning) return;
+    try {
+        const state = html5QrCode.getState && html5QrCode.getState();
+        // Try torch via video track constraints
+        const video = document.querySelector('#reader video');
+        if (video && video.srcObject) {
+            const track = video.srcObject.getVideoTracks()[0];
+            const caps = track.getCapabilities ? track.getCapabilities() : {};
+            if (caps.torch) {
+                const current = track.getSettings().torch || false;
+                await track.applyConstraints({ advanced: [{ torch: !current }] });
+                showToast(`Torch ${!current ? 'ON' : 'OFF'}`, 'bx-bulb');
+            } else {
+                showToast('Torch not supported', 'bx-error-circle');
+            }
+        }
+    } catch (err) {
+        console.warn('Torch error:', err);
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    const now = Date.now();
+    // Cooldown to prevent duplicate scans
+    if (decodedText === lastScannedBarcode && (now - lastScanTimestamp) < SCAN_COOLDOWN_MS) {
+        return;
+    }
+    lastScannedBarcode = decodedText;
+    lastScanTimestamp = now;
+
+    // Vibrate if supported
+    if (navigator.vibrate) navigator.vibrate(80);
+
+    handleScanResult(decodedText);
+}
+
+function onScanError(errorMessage) {
+    // Ignore frequent errors (they happen on every frame with no code)
+}
+
+function setScannerStatus(text, type) {
+    const el = document.getElementById('scannerStatus');
+    el.className = 'scanner-status' + (type === 'ok' ? ' success' : (type === 'error' ? ' error' : ''));
+    let icon = 'bx bx-loader-alt bx-spin';
+    if (type === 'ok') icon = 'bx bx-check-circle';
+    if (type === 'error') icon = 'bx bx-error-circle';
+    el.innerHTML = `<i class='${icon}'></i><span>${esc(text)}</span>`;
+}
+
+function showScannerHelp() {
+    const status = document.getElementById('scannerStatus');
+    status.className = 'scanner-status error';
+    status.innerHTML = `<i class='bx bx-info-circle'></i><span>To use camera: allow camera access in your browser settings. Or type the barcode manually below.</span>`;
+}
+
+function submitManualScan() {
+    const input = document.getElementById('scannerManualInput');
+    const value = (input.value || '').trim();
+    if (!value) return;
+    input.value = '';
+    lastScannedBarcode = value;
+    lastScanTimestamp = Date.now();
+    handleScanResult(value);
+}
+
+function handleScanResult(barcode) {
+    // ===== MODE: Item-Add (register new item from existing barcode) =====
+    if (scannerMode === 'item-add') {
+        const existing = findInvItemByBarcode(barcode);
+        if (existing) {
+            showScanResultCard({
+                status: 'warn',
+                title: 'Barcode already registered',
+                subtitle: `${existing.name} · ${existing.weight}g`,
+                barcode,
+                actions: [
+                    { label: 'Use Anyway', primary: true, onClick: () => {
+                        document.getElementById('invItemBarcode').value = barcode;
+                        closeScanner();
+                        showToast('Barcode filled', 'bx-check');
+                    }},
+                    { label: 'Cancel', onClick: closeScanner }
+                ]
+            });
+            setScannerStatus('Already registered', 'error');
+        } else {
+            showScanResultCard({
+                status: 'success',
+                title: 'New barcode detected',
+                subtitle: 'Ready to register as new item',
+                barcode,
+                actions: [
+                    { label: 'Use This Barcode', primary: true, onClick: () => {
+                        document.getElementById('invItemBarcode').value = barcode;
+                        closeScanner();
+                        showToast('Barcode filled — complete details', 'bx-check-circle');
+                    }},
+                    { label: 'Scan Again', onClick: () => { lastScannedBarcode = null; document.getElementById('scanResult').classList.add('hidden'); }}
+                ]
+            });
+            setScannerStatus('Scanned successfully', 'ok');
+        }
+        return;
+    }
+
+    // ===== MODE: Receive / Transfer =====
+    const item = findInvItemByBarcode(barcode);
+
+    if (!item) {
+        showScanResultCard({
+            status: 'error',
+            title: 'Barcode not registered',
+            subtitle: 'This barcode is not in the system',
+            barcode,
+            actions: [
+                { label: 'Register as New', primary: true, onClick: () => {
+                    closeScanner();
+                    navigateTo('inventory');
+                    switchInventoryTab('items');
+                    setTimeout(() => {
+                        openInventoryItemModal();
+                        document.getElementById('invItemBarcode').value = barcode;
+                        showToast('Complete the item details', 'bx-edit');
+                    }, 300);
+                }},
+                { label: 'Scan Again', onClick: () => { lastScannedBarcode = null; document.getElementById('scanResult').classList.add('hidden'); }}
+            ]
+        });
+        setScannerStatus('Not found in system', 'error');
+        return;
+    }
+
+    // Check transfer stock
+    if (scannerMode === 'transfer') {
+        const whStock = Number(item.warehouseStock) || 0;
+        if (whStock <= 0) {
+            showScanResultCard({
+                status: 'error',
+                title: 'No stock in warehouse',
+                subtitle: `${item.name} — WH: 0`,
+                barcode,
+                actions: [
+                    { label: 'Scan Another', primary: true, onClick: () => { lastScannedBarcode = null; document.getElementById('scanResult').classList.add('hidden'); }}
+                ]
+            });
+            setScannerStatus('No warehouse stock', 'error');
+            return;
+        }
+    }
+
+    // Success — show item
+    const stock = scannerMode === 'transfer'
+        ? `Warehouse: ${item.warehouseStock} bags`
+        : `In stock: ${item.warehouseStock} bags`;
+
+    showScanResultCard({
+        status: 'success',
+        title: item.name,
+        subtitle: `${item.weight}g/bag · ${stock}`,
+        barcode: item.barcode,
+        actions: [
+            { label: 'Add to Queue', primary: true, onClick: () => {
+                addToBatch(scannerMode, item.id, 1);
+                lastScannedBarcode = null;
+                document.getElementById('scanResult').classList.add('hidden');
+                setScannerStatus('Added! Scan next item', 'ok');
+            }},
+            { label: 'Scan Next', onClick: () => {
+                lastScannedBarcode = null;
+                document.getElementById('scanResult').classList.add('hidden');
+                setScannerStatus('Camera ready', 'ok');
+            }}
+        ]
+    });
+    setScannerStatus('Detected: ' + item.name, 'ok');
+}
+
+function showScanResultCard({ status, title, subtitle, barcode, actions }) {
+    const el = document.getElementById('scanResult');
+    el.innerHTML = `
+        <div class="scan-result-icon ${status === 'error' ? 'error' : (status === 'warn' ? 'warn' : '')}">
+            <i class='bx ${status === 'error' ? 'bx-x' : (status === 'warn' ? 'bx-error' : 'bx-check')}'></i>
+        </div>
+        <div class="scan-result-info">
+            <strong>${esc(title)}</strong>
+            <span>${esc(subtitle)}</span>
+            <div style="font-family:'Courier New',monospace;font-size:.7rem;opacity:.7;margin-top:4px;word-break:break-all;">${esc(barcode)}</div>
+            <div class="scan-result-actions" id="scanResultActions"></div>
+        </div>
+    `;
+    el.classList.remove('hidden');
+
+    const actionsContainer = document.getElementById('scanResultActions');
+    actionsContainer.innerHTML = actions.map((a, i) =>
+        `<button type="button" class="scan-result-btn ${a.primary ? 'primary' : 'ghost'}" data-scan-action="${i}">${esc(a.label)}</button>`
+    ).join('');
+
+    actionsContainer.querySelectorAll('[data-scan-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.scanAction);
+            if (actions[idx] && actions[idx].onClick) actions[idx].onClick();
+        });
+    });
+}
+
 // ============ AUTO REFRESH ============
 setInterval(() => {
     if (document.getElementById('view-home').classList.contains('active')) renderRecentOrders();
 }, 10000);
+/* =====================================================
+   🖥️ FULLSCREEN MANAGER
+   - Auto-enter after 10 seconds
+   - Fallback prompt if browser blocks auto-fullscreen
+   - Manual toggle via topbar button
+   - Works on desktop, mobile, iOS Safari, Android Chrome
+   ===================================================== */
 
-// ============ GLOBAL ESC KEY ============
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        if (document.getElementById('editInvoiceModal').classList.contains('active')) closeEditModal();
-        else if (document.getElementById('editHistoryModal').classList.contains('active')) document.getElementById('editHistoryModal').classList.remove('active');
-        else if (document.getElementById('manualOrderModal').classList.contains('active')) closeManualOrderModal();
-        else if (document.getElementById('pickItemModal').classList.contains('active')) document.getElementById('pickItemModal').classList.remove('active');
-        else if (document.getElementById('pickOfferModal').classList.contains('active')) document.getElementById('pickOfferModal').classList.remove('active');
-        else if (document.getElementById('pickBoxModal').classList.contains('active')) document.getElementById('pickBoxModal').classList.remove('active');
-        else if (document.getElementById('orderDetailsModal').classList.contains('active')) closeOrderDetailsModal();
-        else if (document.getElementById('gramModal').classList.contains('active')) closeGramModal();
-        else if (document.getElementById('inventoryItemModal').classList.contains('active')) closeInventoryItemModal();
-        else if (document.getElementById('barcodeLookupModal').classList.contains('active')) closeBarcodeLookupModal();
-        else if (document.getElementById('barcodeLabelModal').classList.contains('active')) closeLabelPrintModal();
+const FULLSCREEN_DELAY = 10000; // 10 seconds
+const FS_PROMPT_SKIPPED_KEY = 'hatcandy-fs-skipped';
+
+let fsAutoTimer = null;
+let fsExitHintTimer = null;
+let fsHasInteracted = false;
+let fsWasAlreadyAsked = false;
+
+// ===== Detect fullscreen support =====
+function getFullscreenElement() {
+    return document.fullscreenElement
+        || document.webkitFullscreenElement
+        || document.mozFullScreenElement
+        || document.msFullscreenElement
+        || null;
+}
+
+function isFullscreenActive() {
+    return !!getFullscreenElement();
+}
+
+function isFullscreenSupported() {
+    const el = document.documentElement;
+    return !!(el.requestFullscreen
+        || el.webkitRequestFullscreen
+        || el.mozRequestFullScreen
+        || el.msRequestFullscreen);
+}
+
+// ===== Request fullscreen (cross-browser) =====
+async function requestFullscreen() {
+    const el = document.documentElement;
+    try {
+        if (el.requestFullscreen) {
+            await el.requestFullscreen({ navigationUI: 'hide' });
+        } else if (el.webkitRequestFullscreen) {
+            // Safari desktop / iOS older
+            el.webkitRequestFullscreen();
+        } else if (el.mozRequestFullScreen) {
+            el.mozRequestFullScreen();
+        } else if (el.msRequestFullscreen) {
+            el.msRequestFullscreen();
+        } else {
+            return false;
+        }
+        return true;
+    } catch (err) {
+        console.warn('[FS] Request failed:', err);
+        return false;
+    }
+}
+
+// ===== Exit fullscreen =====
+async function exitFullscreen() {
+    try {
+        if (document.exitFullscreen) {
+            await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        return true;
+    } catch (err) {
+        console.warn('[FS] Exit failed:', err);
+        return false;
+    }
+}
+
+// ===== Toggle =====
+async function toggleFullscreen() {
+    if (isFullscreenActive()) {
+        await exitFullscreen();
+    } else {
+        await requestFullscreen();
+    }
+}
+
+// ===== Update UI based on state =====
+function updateFullscreenUI() {
+    const btn = document.getElementById('btnFullscreen');
+    const icon = document.getElementById('fullscreenIcon');
+    const label = document.getElementById('fullscreenLabel');
+    if (!btn || !icon) return;
+
+    if (isFullscreenActive()) {
+        btn.classList.add('active');
+        icon.className = 'bx bx-exit-fullscreen';
+        if (label) label.textContent = 'Exit';
+        btn.title = 'Exit Fullscreen (Esc)';
+    } else {
+        btn.classList.remove('active');
+        icon.className = 'bx bx-expand';
+        if (label) label.textContent = 'Fullscreen';
+        btn.title = 'Enter Fullscreen (F11)';
+    }
+}
+
+// ===== Show exit hint =====
+function showExitHint() {
+    const hint = document.getElementById('fullscreenExitHint');
+    if (!hint) return;
+    hint.classList.add('show');
+    clearTimeout(fsExitHintTimer);
+    fsExitHintTimer = setTimeout(() => {
+        hint.classList.remove('show');
+    }, 4500);
+}
+
+// ===== Fullscreen prompt (fallback when auto is blocked) =====
+function showFullscreenPrompt() {
+    // Don't show if user already skipped before this session
+    try {
+        if (sessionStorage.getItem(FS_PROMPT_SKIPPED_KEY) === '1') return;
+    } catch (e) {}
+
+    const prompt = document.getElementById('fullscreenPrompt');
+    if (!prompt) return;
+    prompt.classList.add('show');
+}
+
+function hideFullscreenPrompt() {
+    const prompt = document.getElementById('fullscreenPrompt');
+    if (!prompt) return;
+    prompt.classList.remove('show');
+}
+
+// ===== Auto attempt after 10 seconds =====
+async function tryAutoFullscreen() {
+    if (fsWasAlreadyAsked) return;
+    fsWasAlreadyAsked = true;
+
+    // If already in fullscreen, nothing to do
+    if (isFullscreenActive()) return;
+
+    // If not supported (very rare), show prompt with fallback message
+    if (!isFullscreenSupported()) {
+        showFullscreenPrompt();
+        return;
+    }
+
+    // Try request — will work if there was recent user interaction
+    const ok = await requestFullscreen();
+    if (!ok) {
+        // Browser blocked — show elegant prompt
+        showFullscreenPrompt();
+    } else {
+        // Success!
+        showExitHint();
+    }
+}
+
+// ===== Mark that user interacted =====
+function markInteraction() {
+    if (fsHasInteracted) return;
+    fsHasInteracted = true;
+}
+['click', 'touchstart', 'keydown', 'mousemove', 'scroll'].forEach(evt => {
+    document.addEventListener(evt, markInteraction, { once: true, passive: true });
+});
+
+// ===== Bind events =====
+function bindFullscreenEvents() {
+    // Toggle button in topbar
+    const btn = document.getElementById('btnFullscreen');
+    if (btn) {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await toggleFullscreen();
+        });
+    }
+
+    // F11 keyboard shortcut (intercept only when not already handled by browser)
+    document.addEventListener('keydown', async (e) => {
+        // F11 - prevent browser default and use our toggle
+        if (e.key === 'F11') {
+            e.preventDefault();
+            await toggleFullscreen();
+            return;
+        }
+        // Ctrl+Shift+F or Cmd+Shift+F
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+            e.preventDefault();
+            await toggleFullscreen();
+        }
+    });
+
+    // Prompt buttons
+    const enterBtn = document.getElementById('fsPromptEnter');
+    const skipBtn = document.getElementById('fsPromptSkip');
+    if (enterBtn) {
+        enterBtn.addEventListener('click', async () => {
+            hideFullscreenPrompt();
+            const ok = await requestFullscreen();
+            if (ok) {
+                showExitHint();
+            } else {
+                // Show hint that it needs to be triggered by tap
+                showToast('Tap the Fullscreen button in top bar', 'bx-info-circle');
+            }
+        });
+    }
+    if (skipBtn) {
+        skipBtn.addEventListener('click', () => {
+            try { sessionStorage.setItem(FS_PROMPT_SKIPPED_KEY, '1'); } catch (e) {}
+            hideFullscreenPrompt();
+        });
+    }
+
+    // Detect fullscreen changes (including manual F11 by browser, ESC)
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+        document.addEventListener(evt, () => {
+            updateFullscreenUI();
+            if (isFullscreenActive()) {
+                showExitHint();
+            }
+        });
+    });
+}
+
+// ===== Start auto-timer =====
+function startFullscreenTimer() {
+    clearTimeout(fsAutoTimer);
+    fsAutoTimer = setTimeout(() => {
+        tryAutoFullscreen();
+    }, FULLSCREEN_DELAY);
+}
+
+// ===== On mobile: also handle visibility (retry when tab becomes visible) =====
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        updateFullscreenUI();
     }
 });
+
+// ===== Initialize =====
+document.addEventListener('DOMContentLoaded', () => {
+    bindFullscreenEvents();
+    updateFullscreenUI();
+
+    // Only start the auto-timer after the user logs in (POS visible)
+    // We check every second until POS becomes active, then start timer once
+    const checkPosActive = setInterval(() => {
+        if (posApp.classList.contains('active')) {
+            clearInterval(checkPosActive);
+            // Re-bind (elements exist)
+            bindFullscreenEvents();
+            updateFullscreenUI();
+            // Start the 10-second timer
+            startFullscreenTimer();
+        }
+    }, 500);
+});
+
+// ===== Reset when user logs out =====
+(function patchLogout() {
+    const originalLogoutBtn = document.getElementById('btnLogout');
+    if (originalLogoutBtn) {
+        // Already bound elsewhere; we just add a listener for our cleanup
+        originalLogoutBtn.addEventListener('click', () => {
+            clearTimeout(fsAutoTimer);
+            fsWasAlreadyAsked = false;
+            fsHasInteracted = false;
+            hideFullscreenPrompt();
+            // Exit fullscreen on logout
+            if (isFullscreenSupported() && isFullscreenActive()) {
+                exitFullscreen();
+            }
+        });
+    }
+})();
+
+// ===== iOS Safari: fullscreen API works only on video elements in old versions =====
+// For iOS < 16, we simulate by hiding scrollbars and going "app-like"
+(function iosFallback() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone === true;
+    if (!isIOS || isStandalone) return;
+
+    // Add a class to body so CSS can be adjusted for "app-like" mode
+    // when user "enters fullscreen" on iOS
+    window.__enterIOSFullscreen = function() {
+        document.body.classList.add('ios-fs-sim');
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+        window.scrollTo(0, 0);
+    };
+    window.__exitIOSFullscreen = function() {
+        document.body.classList.remove('ios-fs-sim');
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+    };
+})();

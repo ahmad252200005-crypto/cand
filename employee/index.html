@@ -2,7 +2,8 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#e2015d">
 <title>Hat Candy | Employee POS</title>
 <link href="https://fonts.cdnfonts.com/css/autolova" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Cairo:wght@300;400;600;700&family=Libre+Barcode+39&display=swap" rel="stylesheet">
@@ -39,7 +40,7 @@
     </div>
 </div>
 
-<!-- ============ POS ============ -->
+<!-- ============ POS APP ============ -->
 <div class="pos-app" id="posApp">
     <header class="pos-topbar">
         <div class="brand">
@@ -51,9 +52,14 @@
                 <i class='bx bx-user-circle'></i>
                 <span id="employeeNameDisplay">Employee</span>
             </div>
-            <button class="nav-btn" id="btnHome"><i class='bx bx-home'></i> Home</button>
-            <button class="nav-btn" id="btnLogout"><i class='bx bx-log-out'></i> Logout</button>
+            <button class="nav-btn" id="btnHome"><i class='bx bx-home'></i> <span>Home</span></button>
+            <button class="nav-btn" id="btnLogout"><i class='bx bx-log-out'></i> <span>Logout</span></button>
         </div>
+        <!-- ===== FULLSCREEN BUTTON ===== -->
+<button class="nav-btn fullscreen-btn" id="btnFullscreen" title="Toggle Fullscreen (F11)">
+    <i class='bx bx-expand' id="fullscreenIcon"></i>
+    <span class="hide-xs" id="fullscreenLabel">Fullscreen</span>
+</button>
     </header>
 
     <!-- ===== HOME ===== -->
@@ -62,7 +68,7 @@
             <div class="home-card" onclick="navigateTo('offers')">
                 <div class="home-card-icon"><i class='bx bxs-flame'></i></div>
                 <h3>Offers &amp; Deals</h3>
-                <p>Select from our limited-time offers</p>
+                <p>Limited-time offers</p>
             </div>
             <div class="home-card home-card-delivery" onclick="openDeliveryView()">
                 <div class="home-card-icon delivery-icon"><i class='bx bx-cycling'></i></div>
@@ -72,8 +78,8 @@
             </div>
             <div class="home-card" onclick="startNewBoxFlow()">
                 <div class="home-card-icon"><i class='bx bx-box'></i></div>
-                <h3>Build a New Box</h3>
-                <p>Custom candy box for customer</p>
+                <h3>Build a Box</h3>
+                <p>Custom candy box</p>
             </div>
             <div class="home-card home-card-inventory" onclick="openInventoryView()">
                 <div class="home-card-icon inventory-icon"><i class='bx bx-package'></i></div>
@@ -87,7 +93,7 @@
             <div class="recent-orders-head">
                 <div>
                     <h3><i class='bx bx-history'></i> Recent Orders</h3>
-                    <p>From your current shift · Editable within 10 minutes</p>
+                    <p>From your shift · Editable within 10 minutes</p>
                 </div>
                 <button class="recent-refresh-btn" id="btnRefreshRecent" title="Refresh">
                     <i class='bx bx-refresh'></i>
@@ -100,11 +106,11 @@
     <!-- ===== OFFERS ===== -->
     <div class="view" id="view-offers">
         <div class="view-header">
-            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> Back</button>
+            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> <span class="hide-xs">Back</span></button>
             <h2>Available Offers</h2>
             <div class="checkout-header-actions">
                 <button class="add-more-btn" onclick="navigateTo('checkout')">
-                    <i class='bx bx-cart'></i> View Cart
+                    <i class='bx bx-cart'></i> <span class="hide-xs">View Cart</span>
                 </button>
             </div>
         </div>
@@ -114,10 +120,10 @@
     <!-- ===== DELIVERY CENTER ===== -->
     <div class="view" id="view-delivery">
         <div class="view-header delivery-header">
-            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> Back</button>
+            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> <span class="hide-xs">Back</span></button>
             <div class="current-box-info">
                 <h2>Delivery Center</h2>
-                <p>Online orders &amp; manual orders with full tracking</p>
+                <p>Online + manual orders with tracking</p>
             </div>
             <button class="refresh-btn" id="btnRefreshDelivery" title="Refresh"><i class='bx bx-refresh'></i></button>
         </div>
@@ -125,12 +131,12 @@
         <div class="delivery-tabs">
             <button class="delivery-tab active" data-dtab="online">
                 <i class='bx bx-globe'></i>
-                <span>Online Orders</span>
+                <span>Online</span>
                 <span class="delivery-count" id="onlineOrdersCount">0</span>
             </button>
             <button class="delivery-tab" data-dtab="manual">
                 <i class='bx bx-edit'></i>
-                <span>Manual Orders</span>
+                <span>Manual</span>
                 <span class="delivery-count" id="manualOrdersCount">0</span>
             </button>
         </div>
@@ -140,9 +146,9 @@
                 <div class="delivery-filters" id="onlineFilters">
                     <button class="dfilter active" data-ofilter="all">All</button>
                     <button class="dfilter" data-ofilter="processing">Processing</button>
-                    <button class="dfilter" data-ofilter="packing">Packaging</button>
+                    <button class="dfilter" data-ofilter="packing">Packing</button>
                     <button class="dfilter" data-ofilter="shipped">Shipped</button>
-                    <button class="dfilter" data-ofilter="out_for_delivery">Out for Delivery</button>
+                    <button class="dfilter" data-ofilter="out_for_delivery">Out for Del.</button>
                     <button class="dfilter" data-ofilter="delivered">Delivered</button>
                 </div>
             </div>
@@ -154,9 +160,9 @@
                 <div class="delivery-filters" id="manualFilters">
                     <button class="mfilter active" data-mfilter="all">All</button>
                     <button class="mfilter" data-mfilter="processing">Processing</button>
-                    <button class="mfilter" data-mfilter="packing">Packaging</button>
+                    <button class="mfilter" data-mfilter="packing">Packing</button>
                     <button class="mfilter" data-mfilter="shipped">Shipped</button>
-                    <button class="mfilter" data-mfilter="out_for_delivery">Out for Delivery</button>
+                    <button class="mfilter" data-mfilter="out_for_delivery">Out for Del.</button>
                     <button class="mfilter" data-mfilter="delivered">Delivered</button>
                 </div>
             </div>
@@ -173,7 +179,7 @@
     <!-- ===== BOX TYPES ===== -->
     <div class="view" id="view-box-types">
         <div class="view-header">
-            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> Back</button>
+            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> <span class="hide-xs">Back</span></button>
             <h2>Select Box Type</h2>
         </div>
         <div class="grid-container box-grid" id="boxTypesGrid"></div>
@@ -182,7 +188,7 @@
     <!-- ===== PRODUCTS ===== -->
     <div class="view" id="view-products">
         <div class="view-header">
-            <button class="back-btn" id="btnBackToBoxes"><i class='bx bx-arrow-back'></i> Back</button>
+            <button class="back-btn" id="btnBackToBoxes"><i class='bx bx-arrow-back'></i> <span class="hide-xs">Back</span></button>
             <div class="current-box-info">
                 <h2>Adding to: <span id="currentBoxName">Box</span></h2>
                 <p>Tap products to add them by weight</p>
@@ -196,18 +202,18 @@
                 <span id="boxItemCount">0 items</span>
                 <strong id="boxTotalPrice">$0.00</strong>
             </div>
-            <button class="btn-finish-box" id="btnFinishBox">Finish Box <i class='bx bx-check'></i></button>
+            <button class="btn-finish-box" id="btnFinishBox">Finish <i class='bx bx-check'></i></button>
         </div>
     </div>
 
     <!-- ===== CHECKOUT ===== -->
     <div class="view" id="view-checkout">
         <div class="view-header checkout-header">
-            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> Back</button>
+            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> <span class="hide-xs">Back</span></button>
             <h2>Order Summary</h2>
             <div class="checkout-header-actions">
-                <button class="add-more-btn" onclick="startNewBoxFlow()"><i class='bx bx-plus'></i> Add Box</button>
-                <button class="add-more-btn" onclick="navigateTo('offers')"><i class='bx bx-plus'></i> Add Offer</button>
+                <button class="add-more-btn" onclick="startNewBoxFlow()"><i class='bx bx-plus'></i> <span class="hide-xs">Add Box</span></button>
+                <button class="add-more-btn" onclick="navigateTo('offers')"><i class='bx bx-plus'></i> <span class="hide-xs">Add Offer</span></button>
             </div>
         </div>
 
@@ -241,7 +247,7 @@
                         <button class="order-type-btn" data-ordertype="delivery">
                             <i class='bx bx-cycling'></i>
                             <span>Delivery</span>
-                            <small>Create &amp; track order</small>
+                            <small>Track order</small>
                         </button>
                     </div>
                 </div>
@@ -269,7 +275,7 @@
                     </div>
                     <div class="form-group">
                         <label class="mini-label">Delivery Address *</label>
-                        <input type="text" id="deliveryAddress" placeholder="Amman, Abdoun, Building 5...">
+                        <input type="text" id="deliveryAddress" placeholder="Amman, Abdoun...">
                     </div>
                     <div class="form-group">
                         <label class="mini-label">Delivery Fee ($)</label>
@@ -277,7 +283,7 @@
                     </div>
                     <div class="form-group">
                         <label class="mini-label">Notes (optional)</label>
-                        <input type="text" id="deliveryNotes" placeholder="Any special instructions...">
+                        <input type="text" id="deliveryNotes" placeholder="Instructions...">
                     </div>
                 </div>
 
@@ -307,10 +313,10 @@
     <!-- ===== INVENTORY ===== -->
     <div class="view" id="view-inventory">
         <div class="view-header inventory-header">
-            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> Back</button>
+            <button class="back-btn" onclick="navigateTo('home')"><i class='bx bx-arrow-back'></i> <span class="hide-xs">Back</span></button>
             <div class="current-box-info">
-                <h2>Inventory Management</h2>
-                <p>Warehouse &amp; Shop barcode control</p>
+                <h2>Inventory</h2>
+                <p>Barcode-driven stock control</p>
             </div>
             <button class="refresh-btn" id="btnRefreshInventory" title="Refresh"><i class='bx bx-refresh'></i></button>
         </div>
@@ -318,26 +324,33 @@
         <div class="inv-stats" id="invStats"></div>
 
         <div class="inv-tabs" id="invTabs">
-            <button class="inv-tab active" data-itab="receive"><i class='bx bx-import'></i><span>Receive</span><small>From supplier</small></button>
-            <button class="inv-tab" data-itab="transfer"><i class='bx bx-export'></i><span>Transfer</span><small>To shops</small></button>
-            <button class="inv-tab" data-itab="warehouse"><i class='bx bx-warehouse'></i><span>Warehouse</span><small>Current stock</small></button>
-            <button class="inv-tab" data-itab="shop"><i class='bx bx-store'></i><span>Shops</span><small>Distributed</small></button>
-            <button class="inv-tab" data-itab="items"><i class='bx bx-barcode'></i><span>Items</span><small>Manage</small></button>
-            <button class="inv-tab" data-itab="history"><i class='bx bx-history'></i><span>History</span><small>Movements</small></button>
+            <button class="inv-tab active" data-itab="receive"><i class='bx bx-import'></i><span>Receive</span></button>
+            <button class="inv-tab" data-itab="transfer"><i class='bx bx-export'></i><span>Transfer</span></button>
+            <button class="inv-tab" data-itab="warehouse"><i class='bx bx-warehouse'></i><span>Warehouse</span></button>
+            <button class="inv-tab" data-itab="shop"><i class='bx bx-store'></i><span>Shops</span></button>
+            <button class="inv-tab" data-itab="items"><i class='bx bx-barcode'></i><span>Items</span></button>
+            <button class="inv-tab" data-itab="history"><i class='bx bx-history'></i><span>History</span></button>
         </div>
 
+        <!-- ===== RECEIVE ===== -->
         <div class="inv-pane active" data-ipane="receive">
             <div class="barcode-scanner-card">
                 <div class="barcode-scanner-head">
                     <i class='bx bx-barcode-reader'></i>
                     <div>
-                        <h3>Scan Barcode to Receive</h3>
-                        <p>Scan bag barcode OR type manually</p>
+                        <h3>Scan to Receive</h3>
+                        <p>Use camera or type manually</p>
                     </div>
+                </div>
+                <div class="scan-action-row">
+                    <button type="button" class="scan-open-btn" id="receiveScanBtn">
+                        <i class='bx bx-camera'></i>
+                        <span>Open Camera Scanner</span>
+                    </button>
                 </div>
                 <div class="barcode-input-wrap">
                     <i class='bx bx-barcode'></i>
-                    <input type="text" id="receiveBarcodeInput" placeholder="Scan or type barcode..." autocomplete="off">
+                    <input type="text" id="receiveBarcodeInput" placeholder="Or type barcode manually..." autocomplete="off">
                     <button type="button" class="barcode-search-btn" id="receiveSearchBtn" title="Search">
                         <i class='bx bx-search'></i>
                     </button>
@@ -361,18 +374,25 @@
             </div>
         </div>
 
+        <!-- ===== TRANSFER ===== -->
         <div class="inv-pane" data-ipane="transfer">
             <div class="barcode-scanner-card transfer-theme">
                 <div class="barcode-scanner-head">
                     <i class='bx bx-barcode-reader'></i>
                     <div>
-                        <h3>Scan Barcode to Transfer</h3>
-                        <p>Move stock from warehouse to shop</p>
+                        <h3>Scan to Transfer</h3>
+                        <p>Move stock warehouse → shop</p>
                     </div>
+                </div>
+                <div class="scan-action-row">
+                    <button type="button" class="scan-open-btn transfer-scan" id="transferScanBtn">
+                        <i class='bx bx-camera'></i>
+                        <span>Open Camera Scanner</span>
+                    </button>
                 </div>
                 <div class="barcode-input-wrap">
                     <i class='bx bx-barcode'></i>
-                    <input type="text" id="transferBarcodeInput" placeholder="Scan or type barcode..." autocomplete="off">
+                    <input type="text" id="transferBarcodeInput" placeholder="Or type barcode manually..." autocomplete="off">
                     <button type="button" class="barcode-search-btn" id="transferSearchBtn" title="Search">
                         <i class='bx bx-search'></i>
                     </button>
@@ -405,6 +425,7 @@
             </div>
         </div>
 
+        <!-- ===== WAREHOUSE ===== -->
         <div class="inv-pane" data-ipane="warehouse">
             <div class="inv-search-bar">
                 <i class='bx bx-search'></i>
@@ -413,6 +434,7 @@
             <div class="inv-stock-grid" id="warehouseStockGrid"></div>
         </div>
 
+        <!-- ===== SHOP ===== -->
         <div class="inv-pane" data-ipane="shop">
             <div class="inv-search-bar">
                 <i class='bx bx-search'></i>
@@ -421,6 +443,7 @@
             <div class="inv-stock-grid" id="shopStockGrid"></div>
         </div>
 
+        <!-- ===== ITEMS ===== -->
         <div class="inv-pane" data-ipane="items">
             <div class="inv-toolbar-row">
                 <div>
@@ -438,6 +461,7 @@
             <div class="inv-items-list" id="invItemsList"></div>
         </div>
 
+        <!-- ===== HISTORY ===== -->
         <div class="inv-pane" data-ipane="history">
             <div class="inv-history-filters">
                 <button class="ihfilter active" data-ihfilter="all">All</button>
@@ -490,10 +514,9 @@
             <button class="close-modal" id="closeManualModal"><i class='bx bx-x'></i></button>
         </div>
         <div class="modal-body manual-modal-body">
-
             <div class="manual-section">
                 <h4 class="manual-section-title"><i class='bx bx-user'></i> Customer Info</h4>
-                <div class="form-group"><label>Customer Name *</label><input type="text" id="manualCustomerName" placeholder="e.g. Ahmad Al-Rashid"></div>
+                <div class="form-group"><label>Customer Name *</label><input type="text" id="manualCustomerName" placeholder="Ahmad Al-Rashid"></div>
                 <div class="form-group"><label>Phone Number *</label><input type="tel" id="manualCustomerPhone" placeholder="07X XXX XXXX"></div>
                 <div class="form-group"><label>Order Source *</label>
                     <select id="manualOrderSource">
@@ -507,29 +530,22 @@
                 </div>
             </div>
 
-            <!-- ===== ORDER ITEMS WITH 3 ADD BUTTONS ===== -->
             <div class="manual-section">
-                <h4 class="manual-section-title">
-                    <i class='bx bx-cart-add'></i> Order Contents
-                </h4>
+                <h4 class="manual-section-title"><i class='bx bx-cart-add'></i> Order Contents</h4>
                 <div class="manual-add-row">
                     <button type="button" class="manual-add-type-btn" id="manualAddItemBtn">
-                        <i class='bx bx-package'></i>
-                        <span>Item</span>
+                        <i class='bx bx-package'></i><span>Item</span>
                     </button>
                     <button type="button" class="manual-add-type-btn" id="manualAddOfferBtn">
-                        <i class='bx bxs-flame'></i>
-                        <span>Offer</span>
+                        <i class='bx bxs-flame'></i><span>Offer</span>
                     </button>
                     <button type="button" class="manual-add-type-btn" id="manualAddBoxBtn">
-                        <i class='bx bx-box'></i>
-                        <span>Box</span>
+                        <i class='bx bx-box'></i><span>Box</span>
                     </button>
                 </div>
                 <div class="manual-items-list" id="manualItemsList"></div>
                 <div class="manual-items-empty" id="manualItemsEmpty">
-                    <i class='bx bx-cart'></i>
-                    <p>No items yet — tap Item, Offer, or Box</p>
+                    <i class='bx bx-cart'></i><p>No items yet — tap Item, Offer, or Box</p>
                 </div>
             </div>
 
@@ -539,7 +555,7 @@
                     <button type="button" class="manual-del-btn active" data-dmethod="delivery"><i class='bx bx-cycling'></i> Delivery</button>
                     <button type="button" class="manual-del-btn" data-dmethod="pickup"><i class='bx bx-store'></i> Pickup</button>
                 </div>
-                <div class="form-group" id="manualAddressWrap"><label>Delivery Address</label><input type="text" id="manualAddress" placeholder="Amman, Abdoun, Building 5..."></div>
+                <div class="form-group" id="manualAddressWrap"><label>Delivery Address</label><input type="text" id="manualAddress" placeholder="Amman, Abdoun..."></div>
                 <div class="form-group" id="manualFeeWrap"><label>Delivery Fee ($)</label><input type="number" step="0.01" min="0" id="manualDeliveryFee" value="2.00"></div>
             </div>
 
@@ -554,7 +570,7 @@
 
             <div class="manual-section">
                 <h4 class="manual-section-title"><i class='bx bx-note'></i> Notes (Optional)</h4>
-                <textarea id="manualNotes" rows="2" placeholder="Any special instructions..."></textarea>
+                <textarea id="manualNotes" rows="2" placeholder="Special instructions..."></textarea>
             </div>
 
             <div class="manual-totals">
@@ -637,7 +653,7 @@
             <button class="close-modal" id="closeOrderDetailsModal"><i class='bx bx-x'></i></button>
         </div>
         <div class="modal-body" id="orderDetailsBody"></div>
-        <div class="modal-footer" id="orderDetailsFooter">
+        <div class="modal-footer">
             <button class="btn-cancel" id="orderDetailsPrint"><i class='bx bx-printer'></i> Print</button>
             <button class="btn-confirm" id="orderDetailsClose">Close</button>
         </div>
@@ -666,31 +682,24 @@
         <div class="admin-gate" id="adminGate" style="display:none;">
             <div class="admin-gate-icon"><i class='bx bx-shield-quarter'></i></div>
             <h3>Admin Approval Required</h3>
-            <p>This invoice is older than 10 minutes. Enter the admin PIN to unlock editing.</p>
+            <p>This invoice is older than 10 minutes. Enter the admin PIN.</p>
             <div class="admin-gate-field">
                 <i class='bx bx-key'></i>
                 <input type="password" id="adminPinInput" placeholder="• • • •" inputmode="numeric" maxlength="8" autocomplete="off">
             </div>
-            <button class="admin-gate-btn" id="adminUnlockBtn"><i class='bx bx-lock-open-alt'></i> Unlock for Editing</button>
+            <button class="admin-gate-btn" id="adminUnlockBtn"><i class='bx bx-lock-open-alt'></i> Unlock</button>
             <p class="admin-gate-error" id="adminGateError"></p>
-            <p class="admin-gate-hint"><i class='bx bx-info-circle'></i> Ask your manager for the PIN</p>
+            <p class="admin-gate-hint"><i class='bx bx-info-circle'></i> Ask your manager</p>
         </div>
 
         <div class="modal-body" id="editFormBody" style="display:none;">
-
             <div class="edit-section">
                 <h4 class="edit-section-title">
                     <i class='bx bx-cart'></i> Items
                     <div class="edit-add-row" style="margin-left:auto;">
-                        <button type="button" class="edit-add-btn" data-edit-add="item">
-                            <i class='bx bx-package'></i> + Item
-                        </button>
-                        <button type="button" class="edit-add-btn" data-edit-add="offer">
-                            <i class='bx bxs-flame'></i> + Offer
-                        </button>
-                        <button type="button" class="edit-add-btn" data-edit-add="box">
-                            <i class='bx bx-box'></i> + Box
-                        </button>
+                        <button type="button" class="edit-add-btn" data-edit-add="item"><i class='bx bx-package'></i> + Item</button>
+                        <button type="button" class="edit-add-btn" data-edit-add="offer"><i class='bx bxs-flame'></i> + Offer</button>
+                        <button type="button" class="edit-add-btn" data-edit-add="box"><i class='bx bx-box'></i> + Box</button>
                     </div>
                 </h4>
                 <div class="edit-items-list" id="editItemsList"></div>
@@ -756,7 +765,7 @@
 
 <!-- ============ INVENTORY ITEM MODAL ============ -->
 <div class="modal" id="inventoryItemModal">
-    <div class="modal-content" style="max-width:560px;">
+    <div class="modal-content" style="max-width:600px;">
         <div class="modal-header inv-modal-header">
             <div>
                 <h3 id="invItemModalTitle">Add Inventory Item</h3>
@@ -796,14 +805,17 @@
                         <input type="number" id="invItemPrice" min="0" step="0.01" value="0.00">
                     </div>
                     <div class="inv-form-field full">
-                        <label>Barcode * (auto-generated, can edit)</label>
+                        <label>Barcode *</label>
                         <div class="barcode-field-wrap">
-                            <input type="text" id="invItemBarcode" placeholder="Auto-generated..." required>
+                            <input type="text" id="invItemBarcode" placeholder="Auto-generated or scan existing" required>
+                            <button type="button" class="barcode-scan-inline" id="invItemScanBtn" title="Scan existing">
+                                <i class='bx bx-camera'></i>
+                            </button>
                             <button type="button" class="barcode-gen-btn" id="generateBarcodeBtn" title="Regenerate">
                                 <i class='bx bx-refresh'></i>
                             </button>
                         </div>
-                        <p class="barcode-hint">Format: <code>HC + Category(3) + Weight(4) + Seq(5) + Check(1)</code></p>
+                        <p class="barcode-hint">Format: <code>HC + Cat(3) + Wt(4) + Seq(5) + Check(1)</code></p>
                     </div>
                     <div class="inv-form-field full">
                         <label>Image URL (optional)</label>
@@ -836,7 +848,7 @@
     </div>
 </div>
 
-<!-- ============ BARCODE LABEL PRINT MODAL ============ -->
+<!-- ============ BARCODE LABEL MODAL ============ -->
 <div class="modal" id="barcodeLabelModal">
     <div class="modal-content" style="max-width:620px;">
         <div class="modal-header inv-modal-header">
@@ -864,9 +876,109 @@
     </div>
 </div>
 
+<!-- ===================================================== -->
+<!-- ============ CAMERA SCANNER MODAL ============ -->
+<!-- ===================================================== -->
+<div class="scanner-modal" id="scannerModal" role="dialog" aria-modal="true">
+    <div class="scanner-backdrop" id="scannerBackdrop"></div>
+    <div class="scanner-card">
+        <header class="scanner-header">
+            <div class="scanner-title">
+                <i class='bx bx-qr-scan'></i>
+                <div>
+                    <h3>Scan Barcode / QR</h3>
+                    <p id="scannerSubtitle">Point at a barcode to scan</p>
+                </div>
+            </div>
+            <button class="scanner-close" id="scannerClose" aria-label="Close"><i class='bx bx-x'></i></button>
+        </header>
+
+        <div class="scanner-body">
+            <div class="scanner-viewport" id="scannerViewport">
+                <div id="reader"></div>
+                <div class="scanner-frame">
+                    <div class="scanner-corner top-left"></div>
+                    <div class="scanner-corner top-right"></div>
+                    <div class="scanner-corner bottom-left"></div>
+                    <div class="scanner-corner bottom-right"></div>
+                    <div class="scanner-laser"></div>
+                </div>
+                <div class="scanner-hint">
+                    <i class='bx bx-info-circle'></i>
+                    <span id="scannerHintText">Align barcode within the frame</span>
+                </div>
+            </div>
+
+            <div class="scanner-status" id="scannerStatus">
+                <i class='bx bx-loader-alt bx-spin'></i>
+                <span>Starting camera...</span>
+            </div>
+
+            <!-- Last Scanned Result -->
+            <div class="scan-result hidden" id="scanResult">
+                <!-- filled by JS -->
+            </div>
+
+            <!-- Manual fallback -->
+            <div class="scanner-manual">
+                <div class="scanner-manual-head">
+                    <i class='bx bx-keyboard'></i>
+                    <span>Or type manually</span>
+                </div>
+                <div class="scanner-manual-row">
+                    <input type="text" id="scannerManualInput" placeholder="Enter barcode..." autocomplete="off">
+                    <button type="button" id="scannerManualSubmit"><i class='bx bx-check'></i></button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="scanner-footer">
+            <button type="button" class="scanner-toggle-btn" id="scannerToggleCam">
+                <i class='bx bx-refresh'></i> Switch Camera
+            </button>
+            <button type="button" class="scanner-toggle-btn" id="scannerTorchBtn" style="display:none;">
+                <i class='bx bx-bulb'></i> Torch
+            </button>
+            <button type="button" class="scanner-done-btn" id="scannerDone">
+                <i class='bx bx-check-double'></i> Done
+            </button>
+        </footer>
+    </div>
+</div>
+
 <!-- ============ THERMAL PRINT CONTAINER ============ -->
 <div id="thermalReceipt" class="thermal-receipt" aria-hidden="true"></div>
+<!-- ===== FULLSCREEN PROMPT (shown if auto-fullscreen is blocked) ===== -->
+<div class="fullscreen-prompt" id="fullscreenPrompt">
+    <div class="fullscreen-prompt-card">
+        <div class="fullscreen-prompt-icon">
+            <i class='bx bx-fullscreen'></i>
+        </div>
+        <h3>Go Fullscreen</h3>
+        <p>Get the best POS experience with maximum screen space.</p>
+        <div class="fullscreen-prompt-actions">
+            <button class="fs-prompt-btn primary" id="fsPromptEnter">
+                <i class='bx bx-expand'></i> Enter Fullscreen
+            </button>
+            <button class="fs-prompt-btn ghost" id="fsPromptSkip">
+                <i class='bx bx-x'></i> Not Now
+            </button>
+        </div>
+        <p class="fs-prompt-hint">
+            <i class='bx bx-info-circle'></i>
+            You can always toggle it later from the top bar
+        </p>
+    </div>
+</div>
 
+<!-- ===== FULLSCREEN EXIT HINT ===== -->
+<div class="fullscreen-exit-hint" id="fullscreenExitHint">
+    <i class='bx bx-exit-fullscreen'></i>
+    <span>Press <kbd>ESC</kbd> or tap <strong>Fullscreen</strong> to exit</span>
+</div>
+<!-- html5-qrcode library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>
