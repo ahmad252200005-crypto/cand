@@ -15,7 +15,7 @@
 <body>
 
 <!-- =====================================================
-     FLOATING SIGNBOARD
+     FLOATING SIGNBOARD (OPEN/CLOSED)
      ===================================================== -->
 <div class="floating-sign" id="floatingSign" aria-live="polite">
   <div class="sign-cycle-inner">
@@ -47,8 +47,8 @@
       </li>
       <li><a href="#home"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=120&h=120&fit=crop" alt="Home"></span><span class="nav-text" data-i18n="nav.home">Home</span></a></li>
       <li><a href="#offers" class="nav-offers-link"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=120&h=120&fit=crop" alt="Offers"></span><span class="nav-text" data-i18n="nav.offers">Offers</span><i class='bx bxs-flame nav-flame-icon'></i></a></li>
-      <li><a href="#candies" id="navCandiesLink" class="nav-candies-link" data-cat-jump="candy"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=120&h=120&fit=crop" alt="Candies"></span><span class="nav-text" data-i18n="nav.candies">Candies</span></a></li>
-      <li><a href="#candies" id="navChocolateLink" class="nav-chocolate-link" data-cat-jump="chocolate"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1548907040-4baa42d10919?w=120&h=120&fit=crop" alt="Chocolate"></span><span class="nav-text" data-i18n="nav.chocolate">Chocolate</span></a></li>
+      <li><a href="#candies" id="navCandiesLink" class="nav-candies-link"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=120&h=120&fit=crop" alt="Candies"></span><span class="nav-text" data-i18n="nav.candies">Candies</span></a></li>
+      <li><a href="#candies" id="navChocolateLink" class="nav-chocolate-link"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1548907040-4baa42d10919?w=120&h=120&fit=crop" alt="Chocolate"></span><span class="nav-text" data-i18n="nav.chocolate">Chocolate</span></a></li>
       <li><a href="#about"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=120&h=120&fit=crop" alt="About"></span><span class="nav-text" data-i18n="nav.about">About</span></a></li>
       <li><a href="#gallery"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1548907040-4baa42d10919?w=120&h=120&fit=crop" alt="Gallery"></span><span class="nav-text" data-i18n="nav.gallery">Gallery</span></a></li>
       <li><a href="#contact"><span class="nav-thumb"><img src="https://images.unsplash.com/photo-1513201099705-a9746e1e201f?w=120&h=120&fit=crop" alt="Contact"></span><span class="nav-text" data-i18n="nav.contact">Contact</span></a></li>
@@ -64,7 +64,7 @@
 </header>
 
 <!-- =====================================================
-     CART PANEL
+     CART PANEL (with Delivery like Employee POS)
      ===================================================== -->
 <aside class="cart-panel" id="cartPanel" aria-label="Shopping cart">
   <div class="cart-header">
@@ -77,10 +77,15 @@
 
   <div class="cart-items" id="cartItems"></div>
 
+  <!-- ===== DELIVERY SECTION (Employee-style) ===== -->
   <div class="delivery-section" id="deliverySection">
     <div class="delivery-toggle">
-      <button class="delivery-toggle-btn active" data-delivery-method="delivery"><i class='bx bx-cycling'></i> <span data-i18n="delivery.delivery">Delivery</span></button>
-      <button class="delivery-toggle-btn" data-delivery-method="pickup"><i class='bx bx-store'></i> <span data-i18n="delivery.pickup">Pickup</span></button>
+      <button class="delivery-toggle-btn active" data-delivery-method="delivery">
+        <i class='bx bx-cycling'></i> <span data-i18n="delivery.delivery">Delivery</span>
+      </button>
+      <button class="delivery-toggle-btn" data-delivery-method="pickup">
+        <i class='bx bx-store'></i> <span data-i18n="delivery.pickup">Pickup</span>
+      </button>
     </div>
     <div class="delivery-body" id="deliveryBody"></div>
   </div>
@@ -167,8 +172,7 @@
 <div class="toast" id="toast"><i class='bx bx-check-circle'></i><span id="toastMessage">Added to cart</span></div>
 
 <!-- =====================================================
-     WEIGHT PICKER MODAL
-     Customer picks weight → price auto-calculated from tiers
+     WEIGHT PICKER MODAL (Tiered Pricing)
      ===================================================== -->
 <div class="weight-modal" id="weightModal" role="dialog" aria-modal="true">
   <div class="weight-modal-backdrop" id="weightModalBackdrop"></div>
@@ -225,7 +229,7 @@
 </div>
 
 <!-- =====================================================
-     MIX BUILDER MODAL  (5 STEPS)
+     MIX BUILDER MODAL (5 STEPS)
      ===================================================== -->
 <div class="mix-modal" id="mixModal" role="dialog" aria-modal="true">
   <div class="mix-backdrop" id="mixBackdrop"></div>
@@ -260,13 +264,13 @@
 
       <div class="mix-pane" data-pane="2">
         <h3 class="mix-pane-title" data-i18n="mix.weightTitle">Choose Your Weight</h3>
-        <p class="mix-pane-subtitle" data-i18n="mix.weightSub">From 100 g up to 1 kg — pick the perfect size for your magic mix.</p>
+        <p class="mix-pane-subtitle" data-i18n="mix.weightSub">From 100 g up to 1 kg — pick the perfect size.</p>
         <div class="mix-weight-grid" id="mixWeightGrid"></div>
       </div>
 
       <div class="mix-pane" data-pane="3">
         <h3 class="mix-pane-title" data-i18n="mix.typesTitle">Choose Your Candy Types</h3>
-        <p class="mix-pane-subtitle" data-i18n="mix.typesSub">How many different candy types would you like to mix?</p>
+        <p class="mix-pane-subtitle" data-i18n="mix.typesSub">How many different candy types?</p>
         <div class="mix-type-counter">
           <button class="mix-count-btn" id="mixCountMinus"><i class='bx bx-minus'></i></button>
           <div class="mix-count-display"><div class="mix-count-number" id="mixCountNumber">1</div><div class="mix-count-label" data-i18n="mix.typesLabel">Types</div></div>
@@ -524,7 +528,7 @@
 </div>
 
 <!-- =====================================================
-     OWNER PAGE
+     OWNER / DEVELOPER PAGE
      ===================================================== -->
 <div class="owner-page" id="ownerPage">
   <div class="account-topbar">
@@ -546,7 +550,6 @@
     </div>
   </div>
 
-  <!-- ===== SCROLLABLE TABS BAR (works on desktop + mobile) ===== -->
   <div class="owner-tabs-bar">
     <button class="owner-tab-scroll-btn left" id="ownerTabsLeft" aria-label="Scroll left"><i class='bx bx-chevron-left'></i></button>
     <div class="owner-tabs-viewport" id="ownerTabsViewport">
@@ -608,7 +611,7 @@
           <h4><i class='bx bx-plus-circle'></i> Mix Add-ons</h4>
           <button class="owner-btn primary" id="ownerAddAddon"><i class='bx bx-plus'></i> Add Add-on</button>
         </div>
-        <p class="owner-p" style="margin-bottom:14px;">Add-ons like sprinkles (شبر) or sauce (صوص). Shown as optional in step 4 of the mix builder.</p>
+        <p class="owner-p" style="margin-bottom:14px;">Add-ons like sprinkles (شبر) or sauce (صوص). Shown in step 4 of the mix builder.</p>
         <div class="owner-list" id="ownerAddonsList"></div>
       </div>
     </div>
@@ -675,8 +678,6 @@
 <!-- =====================================================
      OWNER MODALS
      ===================================================== -->
-
-<!-- PRODUCT MODAL — pricing type toggle -->
 <div class="owner-modal" id="ownerProductModal">
   <div class="owner-modal-backdrop" data-close-owner-modal></div>
   <div class="owner-modal-card">
@@ -700,7 +701,6 @@
         <div class="form-group full"><label>Image URL</label><input type="text" data-field="img" placeholder="https://..."></div>
       </div>
 
-      <!-- ===== PRICING SECTION ===== -->
       <div class="owner-pricing-section">
         <div class="owner-pricing-head">
           <div class="owner-pricing-title"><i class='bx bx-dollar-circle'></i> Pricing Mode</div>
@@ -717,41 +717,21 @@
           <input type="hidden" data-field="pricingType" value="fixed">
         </div>
 
-        <!-- Fixed price -->
         <div class="owner-price-panel" data-price-panel="fixed">
-          <div class="form-group">
-            <label>Price ($) *</label>
-            <input type="number" step="0.01" min="0" data-field="price" placeholder="0.00">
-          </div>
-          <div class="form-group">
-            <label>Old Price ($) <small style="opacity:.6">optional</small></label>
-            <input type="number" step="0.01" min="0" data-field="oldPrice">
-          </div>
+          <div class="form-group"><label>Price ($) *</label><input type="number" step="0.01" min="0" data-field="price" placeholder="0.00"></div>
+          <div class="form-group"><label>Old Price ($) <small style="opacity:.6">optional</small></label><input type="number" step="0.01" min="0" data-field="oldPrice"></div>
         </div>
 
-        <!-- Tiered prices -->
         <div class="owner-price-panel" data-price-panel="tiered" style="display:none;">
           <div class="owner-price-hint">
             <i class='bx bx-info-circle'></i>
             <span>The price automatically updates based on weight. Set the price for each tier.</span>
           </div>
           <div class="owner-form-grid">
-            <div class="form-group">
-              <label>250 g price ($) *</label>
-              <input type="number" step="0.01" min="0" data-field="price250" placeholder="0.00">
-            </div>
-            <div class="form-group">
-              <label>500 g price ($) *</label>
-              <input type="number" step="0.01" min="0" data-field="price500" placeholder="0.00">
-            </div>
-            <div class="form-group">
-              <label>1 kg price ($) *</label>
-              <input type="number" step="0.01" min="0" data-field="price1000" placeholder="0.00">
-            </div>
-            <div class="form-group">
-              <label>Old 1 kg price ($) <small style="opacity:.6">optional</small></label>
-              <input type="number" step="0.01" min="0" data-field="oldPrice">
-            </div>
+            <div class="form-group"><label>250 g price ($) *</label><input type="number" step="0.01" min="0" data-field="price250" placeholder="0.00"></div>
+            <div class="form-group"><label>500 g price ($) *</label><input type="number" step="0.01" min="0" data-field="price500" placeholder="0.00"></div>
+            <div class="form-group"><label>1 kg price ($) *</label><input type="number" step="0.01" min="0" data-field="price1000" placeholder="0.00"></div>
+            <div class="form-group"><label>Old 1 kg price ($) <small style="opacity:.6">optional</small></label><input type="number" step="0.01" min="0" data-field="oldPrice"></div>
           </div>
           <div class="owner-price-preview" id="ownerPricePreview"></div>
         </div>
@@ -884,7 +864,7 @@
 </div>
 
 <!-- =====================================================
-     GOOGLE ACCOUNT CHOOSER MODAL
+     GOOGLE ACCOUNT CHOOSER
      ===================================================== -->
 <div class="gchooser" id="gChooser" role="dialog" aria-modal="true" aria-labelledby="gChooserTitle">
   <div class="gchooser-backdrop" id="gChooserBackdrop"></div>
@@ -979,7 +959,6 @@
 
 <section class="mix-banner" id="mix-banner"><div class="container"><div class="mix-banner-inner"><div class="mix-banner-text"><h2 data-i18n-html="banner.title">Mix It <span>Your Way</span> ✨</h2><p data-i18n="banner.text">Choose your weight, pick your packaging.</p></div><button class="mix-banner-cta" id="bannerMixBtn"><i class='bx bxs-magic-wand'></i> <span data-i18n="banner.cta">Start Building</span></button></div></div></section>
 
-<!-- ===== CANDIES / CHOCOLATE SECTION with category circles ===== -->
 <section class="candies" id="candies">
   <div class="container">
     <h2 class="section-title reveal" data-i18n="candies.title">Signature Collection</h2>

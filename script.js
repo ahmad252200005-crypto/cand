@@ -1,18 +1,11 @@
 /* =====================================================
-   HAT CANDY — MAIN APPLICATION SCRIPT
-   UPDATED:
-   - Nav "Chocolate" link with category jump
-   - 3-tier pricing (250g / 500g / 1kg) + fixed pricing
-   - Tier rules:
-     • w <  500g → 250g price
-     • w ≥  500g → 500g price
-     • w ≥ 1000g → 1kg price (cap)
-   - Weight Picker Modal for tiered products
-   - Fully responsive
+   HAT CANDY — CUSTOMER STORE SCRIPT
+   Connected with: Employee POS System
+   Roles: Customer / Admin / Developer (Owner) / Employee redirect
    ===================================================== */
 
 /* =====================================================
-   1. i18n DICTIONARY
+   1. i18n DICTIONARY (EN + AR)
    ===================================================== */
 const I18N = {
   en: {
@@ -21,13 +14,12 @@ const I18N = {
     'nav.about': 'About', 'nav.gallery': 'Gallery', 'nav.contact': 'Contact',
     'hero.badge': 'Luxury Candy Brand', 'hero.text': 'Every Candy Begins with Magic. Combining premium quality, elegant presentation, and playful creativity to transform every sweet treat into a memorable experience.',
     'hero.seeOffers': 'See Offers', 'hero.buildMix': 'Build Your Mix',
-    'offers.title': 'Limited-Time Offers', 'offers.subtitle': "Sweet deals that won't last forever — grab them before they're gone!", 'offers.empty': 'No active offers right now.<br>Check back soon for more magic ✨', 'offers.grab': 'Grab this Offer', 'offers.save': 'Save',
+    'offers.title': 'Limited-Time Offers', 'offers.subtitle': "Sweet deals that won't last forever — grab them before they're gone!", 'offers.empty': 'No active offers right now.<br>Check back soon ✨', 'offers.grab': 'Grab this Offer', 'offers.save': 'Save',
     'banner.title': 'Mix It <span>Your Way</span> ✨', 'banner.text': 'Choose your weight, pick your packaging, and combine your favorite candies into one magical custom mix.', 'banner.cta': 'Start Building',
-    'candies.title': 'Signature Collection', 'candies.subtitle': 'Indulge in our curated selection — add your favorites to the cart', 'candies.add': 'Add', 'candies.added': 'Added',
+    'candies.title': 'Signature Collection', 'candies.subtitle': 'Indulge in our curated selection', 'candies.add': 'Add', 'candies.added': 'Added',
     'cat.all': 'All', 'cat.candy': 'Candies', 'cat.chocolate': 'Chocolate',
-    'about.title': 'Our Magical Story', 'about.p1': 'Hat Candy is a luxury candy brand created to transform every sweet treat into a memorable experience.', 'about.p2': 'Inspired by our slogan, "Every Candy Begins with Magic," we believe that every piece of candy starts with imagination, care, and a little magic.', 'about.f1': 'Premium Ingredients', 'about.f2': 'Elegant Presentation', 'about.f3': 'Luxury Gift Boxes', 'about.f4': 'Made with Love',
-    'gallery.title': 'Magic in Every Detail', 'gallery.subtitle': 'A glimpse into our world of premium sweets and elegant packaging',
-    'contact.title': 'Get in Touch', 'contact.subtitle': 'Order your magical treats — online orders are accepted 24/7', 'contact.infoTitle': 'Contact Information', 'contact.infoText': "We'd love to hear from you! Place your order online any time, or visit our boutique during opening hours.",
+    'about.title': 'Our Magical Story', 'about.p1': 'Hat Candy is a luxury candy brand created to transform every sweet treat into a memorable experience.', 'about.p2': 'Inspired by our slogan, "Every Candy Begins with Magic," we believe every piece of candy starts with imagination and care.', 'about.f1': 'Premium Ingredients', 'about.f2': 'Elegant Presentation', 'about.f3': 'Luxury Gift Boxes', 'about.f4': 'Made with Love',
+    'gallery.title': 'Magic in Every Detail', 'gallery.subtitle': 'A glimpse into our world', 'contact.title': 'Get in Touch', 'contact.subtitle': 'Order your magical treats', 'contact.infoTitle': 'Contact Information', 'contact.infoText': "We'd love to hear from you!",
     'contact.addressLabel': 'Boutique Address', 'contact.address': 'Amman, Jordan — Magic Avenue', 'contact.phoneLabel': 'Phone', 'contact.emailLabel': 'Email', 'contact.hoursLabel': 'Boutique Hours', 'contact.hours': 'Mon–Sat: 8am – 5pm | Online: 24/7',
     'contact.formName': 'Full Name', 'contact.formEmail': 'Email Address', 'contact.formMessage': 'Your Order / Message', 'contact.send': 'Send Message', 'contact.sending': 'Sending...',
     'footer.copy': '© 2025 Hat Candy. All rights reserved. Every Candy Begins with Magic.',
@@ -39,23 +31,16 @@ const I18N = {
     'login.email': 'Email Address <span class="req">*</span>', 'login.password': 'Password <span class="req">*</span>', 'login.phone': 'Phone Number <span class="req">*</span>',
     'login.remember': 'Remember me', 'login.forgot': 'Forgot password?', 'login.signin': 'Sign In', 'login.signingIn': 'Signing in...', 'login.noAccount': 'Not a member?', 'login.createAccount': 'Create an account', 'login.change': 'Change', 'login.continue': 'Continue',
     'weight.choose': 'Choose your weight', 'weight.unit': 'g', 'weight.quantity': 'Quantity', 'weight.addToCart': 'Add to Cart',
-    'weight.tierNoteTitle': 'Pricing tier',
-    'weight.tierNote250': 'You are paying the <strong>250 g tier</strong> price ({price}).',
-    'weight.tierNote500': 'You are paying the <strong>500 g tier</strong> price ({price}).',
-    'weight.tierNote1000': 'You are paying the <strong>1 kg tier</strong> price ({price}). Max tier reached.',
-    'weight.customHint': 'Custom weight',
+    'weight.tierNote250': 'You are paying the <strong>250 g tier</strong> price ({price}).', 'weight.tierNote500': 'You are paying the <strong>500 g tier</strong> price ({price}).', 'weight.tierNote1000': 'You are paying the <strong>1 kg tier</strong> price ({price}). Max tier reached.',
     'mix.title': 'Build Your Own Mix', 'mix.subtitle': 'Every Candy Begins with Magic',
     'mix.step1': 'Packaging', 'mix.step2': 'Weight', 'mix.step3': 'Candy Types', 'mix.step4': 'Add-ons', 'mix.step5': 'Payment',
-    'mix.weightTitle': 'Choose Your Weight', 'mix.weightSub': 'From 100 g up to 1 kg — pick the perfect size for your magic mix.',
-    'mix.packTitle': 'Choose Packaging', 'mix.packSub': 'How would you like your candy mix packaged?',
-    'mix.typesTitle': 'Choose Your Candy Types', 'mix.typesSub': 'How many different candy types would you like to mix?', 'mix.typesLabel': 'Types', 'mix.pickTypes': 'Now pick your candy types',
-    'mix.addonsTitle': 'Choose Your Add-ons', 'mix.addonsSub': 'Optional extras to make your mix extra magical ✨',
-    'mix.payTitle': 'Review & Pay', 'mix.paySub': 'One last look before we complete your order.',
+    'mix.weightTitle': 'Choose Your Weight', 'mix.weightSub': 'From 100 g up to 1 kg.', 'mix.packTitle': 'Choose Packaging', 'mix.packSub': 'How would you like your candy mix packaged?',
+    'mix.typesTitle': 'Choose Your Candy Types', 'mix.typesSub': 'How many different candy types?', 'mix.typesLabel': 'Types', 'mix.pickTypes': 'Now pick your candy types',
+    'mix.addonsTitle': 'Choose Your Add-ons', 'mix.addonsSub': 'Optional extras ✨', 'mix.payTitle': 'Review & Pay', 'mix.paySub': 'One last look.',
     'mix.reviewTitle': 'Review Your Custom Mix', 'mix.reviewSub': 'One last look before we add it to your cart.', 'mix.yourMix': 'Your Custom Mix', 'mix.readyToAdd': 'Ready to add to your cart',
     'mix.weight': 'Weight', 'mix.packaging': 'Packaging', 'mix.candyTypes': 'Candy Types', 'mix.addons': 'Add-ons', 'mix.candySelection': 'Candy Selection', 'mix.addonsSelection': 'Add-ons Selection', 'mix.candy': 'Candy', 'mix.total': 'Total',
     'mix.back': 'Back', 'mix.next': 'Next', 'mix.addToCart': 'Add to Cart', 'mix.completeOrder': 'Complete Order', 'mix.tapToChoose': 'Tap below to choose', 'mix.type': 'Type',
-    'mix.halfKilo': 'Half Kilo', 'mix.fullKilo': 'Full Kilo', 'mix.min': 'Min', 'mix.kilogram': '1 Kilogram', 'mix.gramsLabel': '{w} grams', 'mix.unitG': 'g', 'mix.free': 'Free', 'mix.customMix': 'Custom Mix ✨',
-    'mix.noAddons': 'No add-ons available right now.',
+    'mix.halfKilo': 'Half Kilo', 'mix.fullKilo': 'Full Kilo', 'mix.min': 'Min', 'mix.kilogram': '1 Kilogram', 'mix.gramsLabel': '{w} grams', 'mix.unitG': 'g', 'mix.free': 'Free', 'mix.customMix': 'Custom Mix ✨', 'mix.noAddons': 'No add-ons available right now.',
     'sign.open': 'OPEN', 'sign.closed': 'CLOSED', 'sign.openNote': 'Open now – order online ✨', 'sign.closedNote': 'Closed – order online 24/7 ✨',
     'toast.added': '{name} added to cart', 'toast.removed': 'Item removed', 'toast.cartEmpty': 'Your cart is empty', 'toast.welcome': 'Welcome, {name}!', 'toast.signedInCheckout': "You're signed in! Proceed to checkout ✨",
     'toast.orderPlaced': 'Order placed! Total: {total}', 'toast.fillFields': 'Please fill all required fields', 'toast.validEmail': 'Please enter a valid email address', 'toast.validPhone': 'Please enter a valid Jordanian number (7X XXX XXXX)',
@@ -77,7 +62,7 @@ const I18N = {
     'account.labelHome': 'Home', 'account.labelWork': 'Work', 'account.labelOther': 'Other', 'account.cancel': 'Cancel', 'account.save': 'Save Address', 'account.cartNotice': 'You have {n} item(s) waiting in your cart.', 'account.goToCart': 'Go to Cart',
     'account.status_processing': 'Processing', 'account.status_packing': 'Packing', 'account.status_shipped': 'Shipped', 'account.status_out_for_delivery': 'Out for Delivery', 'account.status_delivered': 'Delivered', 'account.status_cancelled': 'Cancelled',
     'delivery.delivery': 'Delivery', 'delivery.pickup': 'Pickup', 'delivery.zone': 'Delivery Area', 'delivery.selectZone': 'Select your area…', 'delivery.fee': 'Delivery Fee', 'delivery.pickupTitle': 'Pickup from Boutique', 'delivery.pickupAddress': 'Amman, Jordan — Magic Avenue', 'delivery.pickupHours': 'Mon–Sat: 8am – 5pm', 'delivery.noZones': 'No delivery areas configured yet', 'delivery.subtotal': 'Subtotal', 'delivery.feeLabel': 'Delivery Fee',
-    'pay.title': 'Payment Method', 'pay.cash': 'Cash', 'pay.card': 'Card', 'pay.cashTitle': 'Cash on Delivery', 'pay.cashText': 'Pay in cash when your order arrives. Please have the exact amount ready.',
+    'pay.title': 'Payment Method', 'pay.cash': 'Cash', 'pay.card': 'Card', 'pay.cashTitle': 'Cash on Delivery', 'pay.cashText': 'Pay in cash when your order arrives.',
     'pay.cardNumber': 'Card Number', 'pay.cardName': 'Cardholder Name', 'pay.cardExpiry': 'Expiry (MM/YY)', 'pay.cardCvv': 'CVV', 'pay.cardSecure': 'Your payment is encrypted and secure',
     'pay.invalidCard': 'Please enter a valid card number', 'pay.invalidName': 'Please enter the cardholder name', 'pay.invalidExpiry': 'Please enter a valid expiry date (MM/YY)', 'pay.invalidCvv': 'Please enter a valid CVV (3–4 digits)',
     'admin.back': 'Back to Store', 'admin.badge': 'Admin', 'admin.heroName': 'Store Administration', 'admin.heroSub': 'Full control over orders, customers & revenue',
@@ -92,8 +77,7 @@ const I18N = {
     'admin.stockIn': 'In stock', 'admin.stockLow': 'Low stock', 'admin.stockOut': 'Out of stock', 'admin.tierVip': 'VIP', 'admin.tierActive': 'Active', 'admin.tierNew': 'New',
     'admin.online': 'Online', 'admin.offline': 'Offline', 'admin.now': 'Now',
     'admin.addEmployee': 'Add Employee', 'admin.editEmployee': 'Edit Employee', 'admin.saveEmployee': 'Save Employee',
-    'admin.noEmployees': 'No employees yet. Click "Add Employee" to create one.',
-    'admin.deleteEmployeeConfirm': 'Delete this employee? Their sales history will remain.',
+    'admin.noEmployees': 'No employees yet. Click "Add Employee" to create one.', 'admin.deleteEmployeeConfirm': 'Delete this employee? Their sales history will remain.',
     'admin.employeeName': 'Full Name', 'admin.employeeUsername': 'Username', 'admin.employeePassword': 'Password', 'admin.employeePhone': 'Phone', 'admin.employeeRole': 'Role', 'admin.employeeAddress': 'Address',
     'admin.noMessages': 'No messages yet', 'admin.noMessagesSub': 'Messages sent from the contact form will appear here.', 'admin.markRead': 'Mark as read', 'admin.markUnread': 'Mark as unread', 'admin.deleteMsg': 'Delete', 'admin.statusUpdated': 'Order {id} updated to {status}', 'admin.msgDeleted': 'Message deleted', 'admin.units': 'units'
   },
@@ -101,110 +85,98 @@ const I18N = {
     'title.page': 'هات كاندي | كل قطعة حلوى تبدأ بالسحر',
     'nav.home': 'الرئيسية', 'nav.offers': 'العروض', 'nav.candies': 'كانديز', 'nav.chocolate': 'تشوكليت',
     'nav.about': 'من نحن', 'nav.gallery': 'المعرض', 'nav.contact': 'تواصل معنا',
-    'hero.badge': 'علامة حلويات فاخرة', 'hero.text': 'كل قطعة حلوى تبدأ بالسحر. نجمع بين الجودة الفاخرة والتقديم الأنيق والإبداع المرح لتحويل كل قطعة حلوى إلى تجربة لا تُنسى.',
+    'hero.badge': 'علامة حلويات فاخرة', 'hero.text': 'كل قطعة حلوى تبدأ بالسحر. نجمع بين الجودة الفاخرة والتقديم الأنيق والإبداع المرح.',
     'hero.seeOffers': 'شاهد العروض', 'hero.buildMix': 'اصنع خلطتك',
-    'offers.title': 'عروض لفترة محدودة', 'offers.subtitle': 'عروض حلوة لن تدوم للأبد — احصل عليها قبل أن تنتهي!', 'offers.empty': 'لا توجد عروض فعّالة حالياً.<br>عُد قريباً لمزيد من السحر ✨', 'offers.grab': 'احصل على العرض', 'offers.save': 'وفّر',
-    'banner.title': 'امزجها <span>على طريقتك</span> ✨', 'banner.text': 'اختر الوزن، واختر التغليف، وامزج حلوياتك المفضلة في خلطة سحرية خاصة بك.', 'banner.cta': 'ابدأ الآن',
-    'candies.title': 'التشكيلة المميزة', 'candies.subtitle': 'استمتع بتشكيلتنا المنتقاة — أضف مفضلاتك إلى السلة', 'candies.add': 'أضف', 'candies.added': 'تمت الإضافة',
+    'offers.title': 'عروض لفترة محدودة', 'offers.subtitle': 'عروض حلوة لن تدوم للأبد!', 'offers.empty': 'لا توجد عروض فعّالة حالياً.', 'offers.grab': 'احصل على العرض', 'offers.save': 'وفّر',
+    'banner.title': 'امزجها <span>على طريقتك</span> ✨', 'banner.text': 'اختر الوزن، واختر التغليف، وامزج حلوياتك المفضلة.', 'banner.cta': 'ابدأ الآن',
+    'candies.title': 'التشكيلة المميزة', 'candies.subtitle': 'استمتع بتشكيلتنا المنتقاة', 'candies.add': 'أضف', 'candies.added': 'تمت الإضافة',
     'cat.all': 'الكل', 'cat.candy': 'كانديز', 'cat.chocolate': 'تشوكليت',
-    'about.title': 'قصتنا السحرية', 'about.p1': 'هات كاندي هي علامة حلويات فاخرة أُنشئت لتحويل كل قطعة حلوى إلى تجربة لا تُنسى.', 'about.p2': 'مستوحاة من شعارنا «كل قطعة حلوى تبدأ بالسحر»، نؤمن أن كل قطعة حلوى تبدأ من الخيال والعناية وقليل من السحر.', 'about.f1': 'مكونات فاخرة', 'about.f2': 'تقديم أنيق', 'about.f3': 'علب هدايا فاخرة', 'about.f4': 'مصنوعة بحب',
-    'gallery.title': 'السحر في كل تفصيلة', 'gallery.subtitle': 'لمحة عن عالمنا من الحلويات الفاخرة والتغليف الأنيق',
-    'contact.title': 'تواصل معنا', 'contact.subtitle': 'اطلب حلوياتك السحرية — الطلبات الإلكترونية متاحة ٢٤/٧', 'contact.infoTitle': 'معلومات التواصل', 'contact.infoText': 'يسعدنا سماعك! اطلب عبر الإنترنت في أي وقت، أو زُر متجرنا خلال ساعات العمل.',
-    'contact.addressLabel': 'عنوان المتجر', 'contact.address': 'عمّان، الأردن — شارع السحر', 'contact.phoneLabel': 'الهاتف', 'contact.emailLabel': 'البريد الإلكتروني', 'contact.hoursLabel': 'ساعات العمل', 'contact.hours': 'الاثنين–السبت: ٨ص – ٥م | الإنترنت: ٢٤/٧',
+    'about.title': 'قصتنا السحرية', 'about.p1': 'هات كاندي هي علامة حلويات فاخرة.', 'about.p2': 'مستوحاة من شعارنا «كل قطعة حلوى تبدأ بالسحر».', 'about.f1': 'مكونات فاخرة', 'about.f2': 'تقديم أنيق', 'about.f3': 'علب هدايا فاخرة', 'about.f4': 'مصنوعة بحب',
+    'gallery.title': 'السحر في كل تفصيلة', 'gallery.subtitle': 'لمحة عن عالمنا', 'contact.title': 'تواصل معنا', 'contact.subtitle': 'اطلب حلوياتك', 'contact.infoTitle': 'معلومات التواصل', 'contact.infoText': 'يسعدنا سماعك!',
+    'contact.addressLabel': 'عنوان المتجر', 'contact.address': 'عمّان، الأردن — شارع السحر', 'contact.phoneLabel': 'الهاتف', 'contact.emailLabel': 'البريد الإلكتروني', 'contact.hoursLabel': 'ساعات العمل', 'contact.hours': 'الاثنين–السبت: ٨ص – ٥م',
     'contact.formName': 'الاسم الكامل', 'contact.formEmail': 'البريد الإلكتروني', 'contact.formMessage': 'طلبك / رسالتك', 'contact.send': 'إرسال الرسالة', 'contact.sending': 'جارٍ الإرسال...',
-    'footer.copy': '© 2025 هات كاندي. جميع الحقوق محفوظة. كل قطعة حلوى تبدأ بالسحر.',
+    'footer.copy': '© 2025 هات كاندي. جميع الحقوق محفوظة.',
     'cart.title': 'سلتي', 'cart.item': 'عنصر', 'cart.items': 'عناصر', 'cart.empty': 'سلتك فارغة.<br>أضف بعض السحر ✨', 'cart.total': 'الإجمالي', 'cart.checkout': 'إتمام الشراء', 'cart.customMix': 'خلطة خاصة ✨',
-    'login.welcome': 'مرحباً بعودتك', 'login.subtitle': 'سجّل الدخول إلى حسابك في هات كاندي', 'login.almost': 'اقتربت من النهاية!', 'login.almostSub': 'سجّل الدخول لإتمام طلبك',
-    'login.callout': 'نحتاج بعض التفاصيل <strong>لإتمام طلبك</strong> وتوصيل حلوياتك السحرية.',
+    'login.welcome': 'مرحباً بعودتك', 'login.subtitle': 'سجّل الدخول إلى حسابك', 'login.almost': 'اقتربت من النهاية!', 'login.almostSub': 'سجّل الدخول لإتمام طلبك',
+    'login.callout': 'نحتاج بعض التفاصيل <strong>لإتمام طلبك</strong>.',
     'login.successTitle': 'تم تسجيل دخولك!', 'login.successSub': 'جاهز لإتمام طلبك ✨', 'login.successWelcome': 'مرحباً بعودتك، {name}! ✨',
     'login.google': 'المتابعة عبر جوجل', 'login.divider': 'أو تابع بالبريد الإلكتروني',
     'login.email': 'البريد الإلكتروني <span class="req">*</span>', 'login.password': 'كلمة المرور <span class="req">*</span>', 'login.phone': 'رقم الهاتف <span class="req">*</span>',
     'login.remember': 'تذكرني', 'login.forgot': 'نسيت كلمة المرور؟', 'login.signin': 'تسجيل الدخول', 'login.signingIn': 'جارٍ تسجيل الدخول...', 'login.noAccount': 'لست عضواً؟', 'login.createAccount': 'أنشئ حساباً', 'login.change': 'تغيير', 'login.continue': 'متابعة',
     'weight.choose': 'اختر الوزن', 'weight.unit': 'غرام', 'weight.quantity': 'الكمية', 'weight.addToCart': 'أضف إلى السلة',
-    'weight.tierNoteTitle': 'فئة السعر',
-    'weight.tierNote250': 'تدفع سعر <strong>فئة ٢٥٠ غرام</strong> ({price}).',
-    'weight.tierNote500': 'تدفع سعر <strong>فئة ٥٠٠ غرام</strong> ({price}).',
-    'weight.tierNote1000': 'تدفع سعر <strong>فئة ١ كيلو</strong> ({price}). وصلت للحد الأقصى.',
-    'weight.customHint': 'وزن مخصص',
+    'weight.tierNote250': 'تدفع سعر <strong>فئة ٢٥٠ غرام</strong> ({price}).', 'weight.tierNote500': 'تدفع سعر <strong>فئة ٥٠٠ غرام</strong> ({price}).', 'weight.tierNote1000': 'تدفع سعر <strong>فئة ١ كيلو</strong> ({price}).',
     'mix.title': 'اصنع خلطتك الخاصة', 'mix.subtitle': 'كل قطعة حلوى تبدأ بالسحر',
     'mix.step1': 'التغليف', 'mix.step2': 'الوزن', 'mix.step3': 'الأنواع', 'mix.step4': 'الإضافات', 'mix.step5': 'الدفع',
-    'mix.weightTitle': 'اختر الوزن', 'mix.weightSub': 'من ١٠٠ غرام حتى ١ كيلو — اختر الحجم المثالي لخلطتك السحرية.',
-    'mix.packTitle': 'اختر التغليف', 'mix.packSub': 'كيف تريد تغليف خلطة الحلوى؟',
-    'mix.typesTitle': 'اختر أنواع الحلوى', 'mix.typesSub': 'كم عدد أنواع الحلوى التي تريد مزجها؟', 'mix.typesLabel': 'أنواع', 'mix.pickTypes': 'اختر الآن أنواع الحلوى',
-    'mix.addonsTitle': 'اختر الإضافات', 'mix.addonsSub': 'إضافات اختيارية لزيادة سحر خلطتك ✨',
-    'mix.payTitle': 'المراجعة والدفع', 'mix.paySub': 'نظرة أخيرة قبل إتمام طلبك.',
-    'mix.reviewTitle': 'راجع خلطتك الخاصة', 'mix.reviewSub': 'نظرة أخيرة قبل إضافتها إلى سلتك.', 'mix.yourMix': 'خلطتك الخاصة', 'mix.readyToAdd': 'جاهزة للإضافة إلى سلتك',
+    'mix.weightTitle': 'اختر الوزن', 'mix.weightSub': 'من ١٠٠ غرام حتى ١ كيلو.', 'mix.packTitle': 'اختر التغليف', 'mix.packSub': 'كيف تريد تغليف خلطة الحلوى؟',
+    'mix.typesTitle': 'اختر أنواع الحلوى', 'mix.typesSub': 'كم عدد الأنواع؟', 'mix.typesLabel': 'أنواع', 'mix.pickTypes': 'اختر الآن أنواع الحلوى',
+    'mix.addonsTitle': 'اختر الإضافات', 'mix.addonsSub': 'إضافات اختيارية ✨', 'mix.payTitle': 'المراجعة والدفع', 'mix.paySub': 'نظرة أخيرة.',
+    'mix.reviewTitle': 'راجع خلطتك', 'mix.reviewSub': 'قبل إضافتها إلى سلتك.', 'mix.yourMix': 'خلطتك الخاصة', 'mix.readyToAdd': 'جاهزة للإضافة',
     'mix.weight': 'الوزن', 'mix.packaging': 'التغليف', 'mix.candyTypes': 'أنواع الحلوى', 'mix.addons': 'الإضافات', 'mix.candySelection': 'اختيار الحلوى', 'mix.addonsSelection': 'الإضافات المختارة', 'mix.candy': 'الحلوى', 'mix.total': 'الإجمالي',
-    'mix.back': 'السابق', 'mix.next': 'التالي', 'mix.addToCart': 'أضف إلى السلة', 'mix.completeOrder': 'إتمام الطلب', 'mix.tapToChoose': 'اضغط بالأسفل للاختيار', 'mix.type': 'النوع',
-    'mix.halfKilo': 'نصف كيلو', 'mix.fullKilo': 'كيلو كامل', 'mix.min': 'الحد الأدنى', 'mix.kilogram': '١ كيلوغرام', 'mix.gramsLabel': '{w} غرام', 'mix.unitG': 'غ', 'mix.free': 'مجاني', 'mix.customMix': 'خلطة خاصة ✨',
-    'mix.noAddons': 'لا توجد إضافات متاحة حالياً.',
-    'sign.open': 'مفتوح', 'sign.closed': 'مغلق', 'sign.openNote': 'مفتوح الآن – اطلب عبر الإنترنت ✨', 'sign.closedNote': 'مغلق – اطلب عبر الإنترنت ٢٤/٧ ✨',
-    'toast.added': 'تمت إضافة {name} إلى السلة', 'toast.removed': 'تم حذف العنصر', 'toast.cartEmpty': 'سلتك فارغة', 'toast.welcome': 'أهلاً بك، {name}!', 'toast.signedInCheckout': 'تم تسجيل دخولك! أكمل عملية الشراء ✨',
-    'toast.orderPlaced': 'تم تقديم الطلب! الإجمالي: {total}', 'toast.fillFields': 'يرجى تعبئة جميع الحقول المطلوبة', 'toast.validEmail': 'يرجى إدخال بريد إلكتروني صالح', 'toast.validPhone': 'يرجى إدخال رقم أردني صالح (7X XXX XXXX)',
-    'toast.enterPhone': 'يرجى إدخال رقم هاتفك', 'toast.resetSent': 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك', 'toast.thanks': 'شكراً لك، {name}! تم استلام رسالتك.', 'toast.allSlots': 'كل الخانات ممتلئة. ألغِ اختيار واحدة للتبديل.',
-    'toast.signedOut': 'تم تسجيل خروجك', 'toast.addressAdded': 'تمت إضافة العنوان بنجاح', 'toast.addressUpdated': 'تم تحديث العنوان', 'toast.addressDeleted': 'تم حذف العنوان', 'toast.addressDefaultSet': 'تم تحديث العنوان الافتراضي', 'toast.needOneAddress': 'تحتاج إلى عنوان محفوظ واحد على الأقل', 'toast.reordered': 'تمت إعادة العناصر إلى سلتك',
-    'toast.ownerWelcome': 'مرحباً بعودتك أيها المطوّر ✨', 'toast.adminWelcome': 'مرحباً بعودتك أيها المشرف ✨', 'toast.productSaved': 'تم حفظ المنتج بنجاح', 'toast.productDeleted': 'تم حذف المنتج', 'toast.offerSaved': 'تم حفظ العرض بنجاح', 'toast.offerDeleted': 'تم حذف العرض',
-    'toast.galleryAdded': 'تمت إضافة صورة للمعرض', 'toast.galleryRemoved': 'تم حذف الصورة', 'toast.contentSaved': 'تم تحديث محتوى الموقع', 'toast.dataExported': 'تم تصدير البيانات', 'toast.dataImported': 'تم استيراد البيانات بنجاح', 'toast.dataInvalid': 'صيغة الملف غير صحيحة', 'toast.confirmDelete': 'اضغط مرة أخرى للتأكيد', 'toast.hoursSaved': 'تم تحديث ساعات العمل',
-    'toast.employeeAdded': 'تمت إضافة الموظف بنجاح', 'toast.employeeUpdated': 'تم تحديث بيانات الموظف', 'toast.employeeDeleted': 'تم حذف الموظف', 'toast.employeeExists': 'اسم المستخدم موجود مسبقاً', 'toast.employeeFields': 'يرجى تعبئة الاسم واسم المستخدم وكلمة المرور',
-    'toast.addonSaved': 'تم حفظ الإضافة بنجاح', 'toast.addonDeleted': 'تم حذف الإضافة',
+    'mix.back': 'السابق', 'mix.next': 'التالي', 'mix.addToCart': 'أضف إلى السلة', 'mix.completeOrder': 'إتمام الطلب', 'mix.tapToChoose': 'اضغط للاختيار', 'mix.type': 'النوع',
+    'mix.halfKilo': 'نصف كيلو', 'mix.fullKilo': 'كيلو كامل', 'mix.min': 'الحد الأدنى', 'mix.kilogram': '١ كيلوغرام', 'mix.gramsLabel': '{w} غرام', 'mix.unitG': 'غ', 'mix.free': 'مجاني', 'mix.customMix': 'خلطة خاصة ✨', 'mix.noAddons': 'لا توجد إضافات حالياً.',
+    'sign.open': 'مفتوح', 'sign.closed': 'مغلق', 'sign.openNote': 'مفتوح الآن – اطلب ✨', 'sign.closedNote': 'مغلق – اطلب ٢٤/٧ ✨',
+    'toast.added': 'تمت إضافة {name}', 'toast.removed': 'تم حذف العنصر', 'toast.cartEmpty': 'سلتك فارغة', 'toast.welcome': 'أهلاً بك، {name}!', 'toast.signedInCheckout': 'تم تسجيل دخولك!',
+    'toast.orderPlaced': 'تم تقديم الطلب! الإجمالي: {total}', 'toast.fillFields': 'يرجى تعبئة الحقول', 'toast.validEmail': 'بريد إلكتروني غير صالح', 'toast.validPhone': 'رقم أردني غير صالح',
+    'toast.enterPhone': 'أدخل رقم هاتفك', 'toast.resetSent': 'تم إرسال رابط إعادة التعيين', 'toast.thanks': 'شكراً لك، {name}!', 'toast.allSlots': 'كل الخانات ممتلئة.',
+    'toast.signedOut': 'تم تسجيل خروجك', 'toast.addressAdded': 'تمت إضافة العنوان', 'toast.addressUpdated': 'تم تحديث العنوان', 'toast.addressDeleted': 'تم حذف العنوان', 'toast.addressDefaultSet': 'تم تحديث الافتراضي', 'toast.needOneAddress': 'تحتاج عنوان واحد على الأقل', 'toast.reordered': 'تمت إعادة العناصر',
+    'toast.ownerWelcome': 'مرحباً أيها المطوّر ✨', 'toast.adminWelcome': 'مرحباً أيها المشرف ✨', 'toast.productSaved': 'تم حفظ المنتج', 'toast.productDeleted': 'تم حذف المنتج', 'toast.offerSaved': 'تم حفظ العرض', 'toast.offerDeleted': 'تم حذف العرض',
+    'toast.galleryAdded': 'تمت إضافة صورة', 'toast.galleryRemoved': 'تم حذف الصورة', 'toast.contentSaved': 'تم تحديث المحتوى', 'toast.dataExported': 'تم التصدير', 'toast.dataImported': 'تم الاستيراد', 'toast.dataInvalid': 'ملف غير صالح', 'toast.confirmDelete': 'اضغط مرة أخرى للتأكيد', 'toast.hoursSaved': 'تم تحديث الساعات',
+    'toast.employeeAdded': 'تمت إضافة الموظف', 'toast.employeeUpdated': 'تم تحديث الموظف', 'toast.employeeDeleted': 'تم حذف الموظف', 'toast.employeeExists': 'اسم المستخدم موجود', 'toast.employeeFields': 'يرجى تعبئة الحقول',
+    'toast.addonSaved': 'تم حفظ الإضافة', 'toast.addonDeleted': 'تم حذف الإضافة',
     'account.back': 'العودة للمتجر', 'account.signout': 'تسجيل الخروج', 'account.memberSince': 'عضو منذ 2025', 'account.savedAddresses': 'عناوين محفوظة',
     'account.tabOrders': 'طلباتي', 'account.tabTracking': 'تتبع الشحنة', 'account.tabAddresses': 'العناوين',
     'account.statTotal': 'إجمالي الطلبات', 'account.statActive': 'نشطة', 'account.statDelivered': 'تم التوصيل', 'account.statSpent': 'إجمالي الإنفاق',
-    'account.orderId': 'طلب', 'account.orderTotal': 'إجمالي الطلب', 'account.trackOrder': 'تتبع', 'account.reorder': 'إعادة الطلب', 'account.noOrders': 'لا توجد طلبات بعد', 'account.noOrdersSub': 'رحلتك الحلوة تبدأ من طلبك الأول ✨', 'account.shopNow': 'تسوّق الآن',
-    'account.noTracking': 'لا توجد شحنات نشطة', 'account.noTrackingSub': 'عند تقديم طلب، يمكنك تتبعه هنا.', 'account.trackingFor': 'تتبع الطلب',
+    'account.orderId': 'طلب', 'account.orderTotal': 'إجمالي الطلب', 'account.trackOrder': 'تتبع', 'account.reorder': 'إعادة الطلب', 'account.noOrders': 'لا توجد طلبات', 'account.noOrdersSub': 'رحلتك الحلوة تبدأ من طلبك الأول ✨', 'account.shopNow': 'تسوّق الآن',
+    'account.noTracking': 'لا توجد شحنات نشطة', 'account.noTrackingSub': 'ستظهر الشحنات هنا.', 'account.trackingFor': 'تتبع الطلب',
     'account.stepPlaced': 'تم الطلب', 'account.stepProcessing': 'قيد التجهيز', 'account.stepPacking': 'قيد التغليف', 'account.stepShipped': 'تم الشحن', 'account.stepOut': 'خرج للتوصيل', 'account.stepDelivered': 'تم التوصيل',
-    'account.eta': 'التوصيل المتوقع', 'account.deliveringTo': 'التوصيل إلى', 'account.default': 'افتراضي', 'account.edit': 'تعديل', 'account.delete': 'حذف', 'account.setDefault': 'تعيين افتراضي', 'account.addNew': 'إضافة عنوان جديد',
-    'account.addAddressTitle': 'إضافة عنوان جديد', 'account.addAddressSub': 'أين نوصل حلوياتك السحرية؟', 'account.editAddressTitle': 'تعديل العنوان',
-    'account.fieldLabel': 'التسمية', 'account.fieldName': 'الاسم الكامل', 'account.fieldPhone': 'رقم الهاتف', 'account.fieldCity': 'المدينة', 'account.fieldArea': 'المنطقة / الحي', 'account.fieldLine': 'الشارع، المبنى، الطابق، الشقة',
-    'account.labelHome': 'المنزل', 'account.labelWork': 'العمل', 'account.labelOther': 'أخرى', 'account.cancel': 'إلغاء', 'account.save': 'حفظ العنوان', 'account.cartNotice': 'لديك {n} عنصر في سلتك بانتظار إتمام الشراء.', 'account.goToCart': 'الذهاب للسلة',
+    'account.eta': 'التوصيل المتوقع', 'account.deliveringTo': 'التوصيل إلى', 'account.default': 'افتراضي', 'account.edit': 'تعديل', 'account.delete': 'حذف', 'account.setDefault': 'تعيين افتراضي', 'account.addNew': 'إضافة عنوان',
+    'account.addAddressTitle': 'إضافة عنوان جديد', 'account.addAddressSub': 'أين نوصل حلوياتك؟', 'account.editAddressTitle': 'تعديل العنوان',
+    'account.fieldLabel': 'التسمية', 'account.fieldName': 'الاسم الكامل', 'account.fieldPhone': 'رقم الهاتف', 'account.fieldCity': 'المدينة', 'account.fieldArea': 'المنطقة', 'account.fieldLine': 'الشارع، المبنى',
+    'account.labelHome': 'المنزل', 'account.labelWork': 'العمل', 'account.labelOther': 'أخرى', 'account.cancel': 'إلغاء', 'account.save': 'حفظ', 'account.cartNotice': 'لديك {n} عنصر في سلتك.', 'account.goToCart': 'الذهاب للسلة',
     'account.status_processing': 'قيد التجهيز', 'account.status_packing': 'قيد التغليف', 'account.status_shipped': 'تم الشحن', 'account.status_out_for_delivery': 'خرج للتوصيل', 'account.status_delivered': 'تم التوصيل', 'account.status_cancelled': 'ملغي',
-    'delivery.delivery': 'توصيل', 'delivery.pickup': 'استلام من المحل', 'delivery.zone': 'منطقة التوصيل', 'delivery.selectZone': 'اختر منطقتك…', 'delivery.fee': 'رسوم التوصيل', 'delivery.pickupTitle': 'الاستلام من المتجر', 'delivery.pickupAddress': 'عمّان، الأردن — شارع السحر', 'delivery.pickupHours': 'الاثنين–السبت: ٨ص – ٥م', 'delivery.noZones': 'لا توجد مناطق توصيل مُعدّة', 'delivery.subtotal': 'المجموع الفرعي', 'delivery.feeLabel': 'رسوم التوصيل',
-    'pay.title': 'طريقة الدفع', 'pay.cash': 'كاش', 'pay.card': 'بطاقة', 'pay.cashTitle': 'الدفع عند الاستلام', 'pay.cashText': 'ادفع نقدًا عند وصول طلبك. يُفضّل تجهيز المبلغ بالضبط.',
-    'pay.cardNumber': 'رقم البطاقة', 'pay.cardName': 'اسم حامل البطاقة', 'pay.cardExpiry': 'تاريخ الانتهاء (MM/YY)', 'pay.cardCvv': 'CVV', 'pay.cardSecure': 'دفعك مشفّر وآمن',
-    'pay.invalidCard': 'يرجى إدخال رقم بطاقة صالح', 'pay.invalidName': 'يرجى إدخال اسم حامل البطاقة', 'pay.invalidExpiry': 'يرجى إدخال تاريخ انتهاء صالح (MM/YY)', 'pay.invalidCvv': 'يرجى إدخال CVV صالح (٣–٤ أرقام)',
-    'admin.back': 'العودة للمتجر', 'admin.badge': 'مشرف', 'admin.heroName': 'إدارة المتجر', 'admin.heroSub': 'تحكم كامل بالطلبات والعملاء والإيرادات',
+    'delivery.delivery': 'توصيل', 'delivery.pickup': 'استلام', 'delivery.zone': 'منطقة التوصيل', 'delivery.selectZone': 'اختر منطقتك…', 'delivery.fee': 'رسوم التوصيل', 'delivery.pickupTitle': 'الاستلام من المتجر', 'delivery.pickupAddress': 'عمّان، الأردن — شارع السحر', 'delivery.pickupHours': 'الاثنين–السبت: ٨ص – ٥م', 'delivery.noZones': 'لا توجد مناطق توصيل', 'delivery.subtotal': 'المجموع الفرعي', 'delivery.feeLabel': 'رسوم التوصيل',
+    'pay.title': 'طريقة الدفع', 'pay.cash': 'كاش', 'pay.card': 'بطاقة', 'pay.cashTitle': 'الدفع عند الاستلام', 'pay.cashText': 'ادفع نقدًا عند وصول طلبك.',
+    'pay.cardNumber': 'رقم البطاقة', 'pay.cardName': 'اسم حامل البطاقة', 'pay.cardExpiry': 'تاريخ الانتهاء', 'pay.cardCvv': 'CVV', 'pay.cardSecure': 'دفعك مشفّر وآمن',
+    'pay.invalidCard': 'رقم بطاقة غير صالح', 'pay.invalidName': 'اسم حامل البطاقة مطلوب', 'pay.invalidExpiry': 'تاريخ غير صالح', 'pay.invalidCvv': 'CVV غير صالح',
+    'admin.back': 'العودة للمتجر', 'admin.badge': 'مشرف', 'admin.heroName': 'إدارة المتجر', 'admin.heroSub': 'تحكم كامل',
     'admin.tabOverview': 'نظرة عامة', 'admin.tabOrders': 'الطلبات', 'admin.tabCustomers': 'العملاء', 'admin.tabProducts': 'المنتجات', 'admin.tabEmployees': 'الموظفون', 'admin.tabMessages': 'الرسائل',
     'admin.kpiRevenue': 'إجمالي الإيرادات', 'admin.kpiOrders': 'إجمالي الطلبات', 'admin.kpiCustomers': 'العملاء', 'admin.kpiAov': 'متوسط قيمة الطلب', 'admin.kpiPending': 'طلبات قيد التنفيذ', 'admin.kpiDelivered': 'إيرادات مكتملة',
     'admin.kpiTotalEmployees': 'إجمالي الموظفين', 'admin.kpiActiveNow': 'يعملون الآن', 'admin.kpiTotalSales': 'إجمالي المبيعات', 'admin.kpiTotalRevenue': 'إجمالي الإيرادات', 'admin.kpiPosOrders': 'طلبات الكاشير', 'admin.kpiPosRevenue': 'إيرادات الكاشير',
-    'admin.revenueChart': 'منحنى الإيرادات', 'admin.last7': 'آخر ٧ أيام', 'admin.topProducts': 'الأكثر مبيعاً', 'admin.recentOrders': 'أحدث الطلبات', 'admin.viewAll': 'عرض الكل', 'admin.noData': 'لا توجد بيانات بعد',
+    'admin.revenueChart': 'منحنى الإيرادات', 'admin.last7': 'آخر ٧ أيام', 'admin.topProducts': 'الأكثر مبيعاً', 'admin.recentOrders': 'أحدث الطلبات', 'admin.viewAll': 'عرض الكل', 'admin.noData': 'لا توجد بيانات',
     'admin.thOrder': 'الطلب', 'admin.thCustomer': 'العميل', 'admin.thItems': 'العناصر', 'admin.thTotal': 'الإجمالي', 'admin.thStatus': 'الحالة', 'admin.thActions': 'إجراءات', 'admin.thProduct': 'المنتج', 'admin.thPrice': 'السعر', 'admin.thStock': 'المخزون', 'admin.thSold': 'المبيعات', 'admin.thRevenue': 'الإيراد',
     'admin.thPhone': 'الهاتف', 'admin.thCity': 'المدينة', 'admin.thOrders': 'الطلبات', 'admin.thSpent': 'إجمالي الإنفاق', 'admin.thTier': 'التصنيف', 'admin.thJoined': 'تاريخ الانضمام',
     'admin.thEmployee': 'الموظف', 'admin.thUsername': 'اسم المستخدم', 'admin.thSales': 'المبيعات', 'admin.thItemsSold': 'القطع المباعة', 'admin.thShiftTime': 'وقت الدوام',
-    'admin.all': 'الكل', 'admin.export': 'تصدير CSV', 'admin.exported': 'تم تصدير الطلبات بنجاح', 'admin.advance': 'المرحلة التالية', 'admin.searchCustomers': 'ابحث عن عميل…', 'admin.payCard': 'بطاقة', 'admin.payCod': 'الدفع عند الاستلام',
-    'admin.stockIn': 'متوفر', 'admin.stockLow': 'مخزون منخفض', 'admin.stockOut': 'غير متوفر', 'admin.tierVip': 'كبار العملاء', 'admin.tierActive': 'نشط', 'admin.tierNew': 'جديد',
+    'admin.all': 'الكل', 'admin.export': 'تصدير CSV', 'admin.exported': 'تم التصدير', 'admin.advance': 'المرحلة التالية', 'admin.searchCustomers': 'ابحث…', 'admin.payCard': 'بطاقة', 'admin.payCod': 'الدفع عند الاستلام',
+    'admin.stockIn': 'متوفر', 'admin.stockLow': 'مخزون منخفض', 'admin.stockOut': 'غير متوفر', 'admin.tierVip': 'VIP', 'admin.tierActive': 'نشط', 'admin.tierNew': 'جديد',
     'admin.online': 'متصل', 'admin.offline': 'غير متصل', 'admin.now': 'الآن',
-    'admin.addEmployee': 'إضافة موظف', 'admin.editEmployee': 'تعديل موظف', 'admin.saveEmployee': 'حفظ الموظف',
-    'admin.noEmployees': 'لا يوجد موظفون بعد. اضغط "إضافة موظف" للبدء.',
-    'admin.deleteEmployeeConfirm': 'حذف هذا الموظف؟ سيبقى سجل مبيعاته محفوظاً.',
-    'admin.employeeName': 'الاسم الكامل', 'admin.employeeUsername': 'اسم المستخدم', 'admin.employeePassword': 'كلمة المرور', 'admin.employeePhone': 'الهاتف', 'admin.employeeRole': 'الدور', 'admin.employeeAddress': 'العنوان',
-    'admin.noMessages': 'لا توجد رسائل بعد', 'admin.noMessagesSub': 'ستظهر هنا الرسائل المرسلة من نموذج التواصل.', 'admin.markRead': 'تعليم كمقروءة', 'admin.markUnread': 'تعليم كغير مقروءة', 'admin.deleteMsg': 'حذف', 'admin.statusUpdated': 'تم تحديث الطلب {id} إلى {status}', 'admin.msgDeleted': 'تم حذف الرسالة', 'admin.units': 'وحدة'
+    'admin.addEmployee': 'إضافة موظف', 'admin.editEmployee': 'تعديل موظف', 'admin.saveEmployee': 'حفظ',
+    'admin.noEmployees': 'لا يوجد موظفون.', 'admin.deleteEmployeeConfirm': 'حذف الموظف؟',
+    'admin.employeeName': 'الاسم', 'admin.employeeUsername': 'المستخدم', 'admin.employeePassword': 'كلمة المرور', 'admin.employeePhone': 'الهاتف', 'admin.employeeRole': 'الدور', 'admin.employeeAddress': 'العنوان',
+    'admin.noMessages': 'لا توجد رسائل', 'admin.noMessagesSub': 'ستظهر هنا.', 'admin.markRead': 'تعليم كمقروءة', 'admin.markUnread': 'تعليم كغير مقروءة', 'admin.deleteMsg': 'حذف', 'admin.statusUpdated': 'تم تحديث {id} إلى {status}', 'admin.msgDeleted': 'تم حذف الرسالة', 'admin.units': 'وحدة'
   }
 };
 
 /* =====================================================
-   2. DEFAULT DATA
+   2. DEFAULTS
    ===================================================== */
 const DEFAULT_PRODUCTS = [
-  /* ===== CANDIES — FIXED PRICING ===== */
-  { id: 'gummies', category: 'candy', pricingType: 'fixed', name: 'Gourmet Gummies', name_ar: 'حلوى الجيلي الفاخرة', desc: 'Soft, fruity, and bursting with natural flavors.', desc_ar: 'ناعمة، فاكهية، ومليئة بالنكهات الطبيعية.', price: 8.99, oldPrice: 12.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 140, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
-  { id: 'lollipops', category: 'candy', pricingType: 'fixed', name: 'Honey Swirl Pops', name_ar: 'مصاصات العسل', desc: 'Colorful artisan lollipops crafted with real honey.', desc_ar: 'مصاصات ملونة حرفية مصنوعة من العسل الطبيعي.', price: 6.99, oldPrice: 9.99, badge: 'New', badge_ar: 'جديد', stock: 18, img: 'https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=600' },
-  { id: 'cloud', category: 'candy', pricingType: 'fixed', name: 'Cloud Candy', name_ar: 'حلوى السحاب', desc: 'Fluffy, melt-in-your-mouth cotton candy.', desc_ar: 'غزل البنات الهش الذائب في الفم.', price: 7.99, oldPrice: 10.99, badge: 'New', badge_ar: 'جديد', stock: 95, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
-  { id: 'sours', category: 'candy', pricingType: 'fixed', name: 'Zesty Sours', name_ar: 'حلوى حامضة', desc: 'Tangy and sweet gummy worms with a sour sugar coating.', desc_ar: 'ديدان جيلي حامضة وحلوة مع طبقة من السكر الحامض.', price: 8.49, oldPrice: 11.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 8, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
-  { id: 'caramel', category: 'candy', pricingType: 'fixed', name: 'Golden Caramel Corn', name_ar: 'فشار الكراميل الذهبي', desc: 'Crunchy popcorn coated in buttery caramel glaze.', desc_ar: 'فشار مقرمش مغطى بطبقة الكراميل بالزبدة.', price: 9.99, oldPrice: 13.99, badge: 'Premium', badge_ar: 'فاخر', stock: 34, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
-
-  /* ===== CHOCOLATE — TIERED PRICING (250g / 500g / 1kg) ===== */
-  { id: 'truffles', category: 'chocolate', pricingType: 'tiered', name: 'Velvet Truffles', name_ar: 'ترافل مخملي', desc: 'Rich, creamy chocolate ganache coated in premium Belgian cocoa.', desc_ar: 'غاناش شوكولاتة غني وكريمي مغطى بمسحوق الكاكاو البلجيكي.', price250: 5.99, price500: 10.99, price1000: 19.99, oldPrice: 24.99, badge: 'Premium', badge_ar: 'فاخر', stock: 62, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' },
-  { id: 'dark-bar', category: 'chocolate', pricingType: 'tiered', name: 'Dark Chocolate Bar', name_ar: 'لوح شوكولاتة داكنة', desc: '70% cocoa single-origin dark chocolate, intense and smooth.', desc_ar: 'شوكولاتة داكنة ٧٠٪ من مصدر واحد، غنية وناعمة.', price250: 4.99, price500: 8.99, price1000: 16.99, badge: 'Premium', badge_ar: 'فاخر', stock: 48, img: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=600' },
-  { id: 'milk-pralines', category: 'chocolate', pricingType: 'tiered', name: 'Milk Chocolate Pralines', name_ar: 'برالين شوكولاتة بالحليب', desc: 'Creamy milk chocolate filled with roasted hazelnut praline.', desc_ar: 'شوكولاتة بالحليب كريمية محشوة ببرالين البندق المحمص.', price250: 5.49, price500: 9.99, price1000: 18.49, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 55, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' },
-  { id: 'white-truffles', category: 'chocolate', pricingType: 'tiered', name: 'White Chocolate Truffles', name_ar: 'ترافل شوكولاتة بيضاء', desc: 'Silky white chocolate truffles with a hint of vanilla.', desc_ar: 'ترافل شوكولاتة بيضاء حريرية مع لمسة فانيليا.', price250: 6.49, price500: 11.99, price1000: 21.99, badge: 'New', badge_ar: 'جديد', stock: 30, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
-  { id: 'hazelnut-box', category: 'chocolate', pricingType: 'tiered', name: 'Hazelnut Chocolate Box', name_ar: 'علبة شوكولاتة بالبندق', desc: 'Luxury assorted chocolate box with whole roasted hazelnuts.', desc_ar: 'علبة شوكولاتة فاخرة مشكّلة مع بندق محمص كامل.', price250: 6.99, price500: 12.99, price1000: 23.99, oldPrice: 27.99, badge: 'Premium', badge_ar: 'فاخر', stock: 26, img: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=600' },
-  { id: 'choco-trio', category: 'chocolate', pricingType: 'tiered', name: 'Chocolate Lover Trio', name_ar: 'ثلاثية عشّاق الشوكولاتة', desc: 'Dark, milk & white chocolate — 3 premium flavors in one mix.', desc_ar: 'داكنة، حليب، وبيضاء — ٣ نكهات فاخرة في خلطة واحدة.', price250: 5.99, price500: 10.49, price1000: 19.49, badge: 'Bundle', badge_ar: 'مجمّع', stock: 40, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' }
+  { id: 'gummies', category: 'candy', pricingType: 'fixed', name: 'Gourmet Gummies', name_ar: 'حلوى الجيلي الفاخرة', desc: 'Soft, fruity, and bursting with natural flavors.', desc_ar: 'ناعمة، فاكهية، ومليئة بالنكهات.', price: 8.99, oldPrice: 12.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 140, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
+  { id: 'lollipops', category: 'candy', pricingType: 'fixed', name: 'Honey Swirl Pops', name_ar: 'مصاصات العسل', desc: 'Artisan lollipops crafted with real honey.', desc_ar: 'مصاصات حرفية من العسل الطبيعي.', price: 6.99, oldPrice: 9.99, badge: 'New', badge_ar: 'جديد', stock: 18, img: 'https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=600' },
+  { id: 'cloud', category: 'candy', pricingType: 'fixed', name: 'Cloud Candy', name_ar: 'حلوى السحاب', desc: 'Fluffy, melt-in-your-mouth cotton candy.', desc_ar: 'غزل البنات الهش.', price: 7.99, oldPrice: 10.99, badge: 'New', badge_ar: 'جديد', stock: 95, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
+  { id: 'sours', category: 'candy', pricingType: 'fixed', name: 'Zesty Sours', name_ar: 'حلوى حامضة', desc: 'Tangy gummy worms with sour sugar coating.', desc_ar: 'ديدان جيلي حامضة.', price: 8.49, oldPrice: 11.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 8, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
+  { id: 'caramel', category: 'candy', pricingType: 'fixed', name: 'Golden Caramel Corn', name_ar: 'فشار الكراميل', desc: 'Crunchy popcorn with buttery caramel glaze.', desc_ar: 'فشار مقرمش بالكراميل.', price: 9.99, oldPrice: 13.99, badge: 'Premium', badge_ar: 'فاخر', stock: 34, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
+  { id: 'truffles', category: 'chocolate', pricingType: 'tiered', name: 'Velvet Truffles', name_ar: 'ترافل مخملي', desc: 'Rich chocolate ganache in Belgian cocoa.', desc_ar: 'غاناش شوكولاتة غني.', price250: 5.99, price500: 10.99, price1000: 19.99, oldPrice: 24.99, badge: 'Premium', badge_ar: 'فاخر', stock: 62, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' },
+  { id: 'dark-bar', category: 'chocolate', pricingType: 'tiered', name: 'Dark Chocolate Bar', name_ar: 'شوكولاتة داكنة', desc: '70% cocoa single-origin dark chocolate.', desc_ar: 'شوكولاتة داكنة ٧٠٪.', price250: 4.99, price500: 8.99, price1000: 16.99, badge: 'Premium', badge_ar: 'فاخر', stock: 48, img: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=600' },
+  { id: 'milk-pralines', category: 'chocolate', pricingType: 'tiered', name: 'Milk Chocolate Pralines', name_ar: 'برالين بالحليب', desc: 'Creamy milk chocolate with hazelnut praline.', desc_ar: 'شوكولاتة بالحليب مع برالين البندق.', price250: 5.49, price500: 9.99, price1000: 18.49, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 55, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' },
+  { id: 'white-truffles', category: 'chocolate', pricingType: 'tiered', name: 'White Chocolate Truffles', name_ar: 'ترافل أبيض', desc: 'Silky white chocolate with vanilla hint.', desc_ar: 'شوكولاتة بيضاء مع فانيليا.', price250: 6.49, price500: 11.99, price1000: 21.99, badge: 'New', badge_ar: 'جديد', stock: 30, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
+  { id: 'hazelnut-box', category: 'chocolate', pricingType: 'tiered', name: 'Hazelnut Chocolate Box', name_ar: 'علبة شوكولاتة بالبندق', desc: 'Luxury assorted chocolate with hazelnuts.', desc_ar: 'علبة شوكولاتة فاخرة بالبندق.', price250: 6.99, price500: 12.99, price1000: 23.99, oldPrice: 27.99, badge: 'Premium', badge_ar: 'فاخر', stock: 26, img: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=600' },
+  { id: 'choco-trio', category: 'chocolate', pricingType: 'tiered', name: 'Chocolate Lover Trio', name_ar: 'ثلاثية الشوكولاتة', desc: 'Dark, milk & white — 3 premium flavors.', desc_ar: 'داكنة، حليب، وبيضاء.', price250: 5.99, price500: 10.49, price1000: 19.49, badge: 'Bundle', badge_ar: 'مجمّع', stock: 40, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' }
 ];
 
 const DEFAULT_OFFERS = [
-  { id: 'offer-love-box', name: 'Love Box Special', name_ar: 'علبة الحب الخاصة', desc: 'A romantic assortment of our finest gummies, truffles & swirl pops.', desc_ar: 'تشكيلة رومانسية من أفخر الجيلي والترافل ومصاصات العسل.', category: 'Valentine Special', category_ar: 'عرض الفالنتاين', discount: '35% OFF', discount_ar: 'خصم ٣٥٪', price: 24.99, oldPrice: 38.99, ends: 'Ends in 3 days', ends_ar: 'ينتهي خلال ٣ أيام', img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600', isActive: true },
-  { id: 'offer-family-pack', name: 'Family Magic Pack', name_ar: 'علبة العائلة السحرية', desc: '6 gourmet candy bags — perfect for sharing the magic.', desc_ar: '٦ أكياس حلوى فاخرة — مثالية لمشاركة السحر.', category: 'Bundle Deal', category_ar: 'عرض مجمّع', discount: '40% OFF', discount_ar: 'خصم ٤٠٪', price: 44.99, oldPrice: 74.99, ends: 'Ends in 5 days', ends_ar: 'ينتهي خلال ٥ أيام', img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600', isActive: true },
-  { id: 'offer-truffle-trio', name: 'Truffle Lover Trio', name_ar: 'ثلاثية عشّاق الترافل', desc: 'Three premium truffle flavors: Dark, Milk & White.', desc_ar: 'ثلاث نكهات ترافل فاخرة: الداكنة، الحليب، والبيضاء.', category: 'Premium Deal', category_ar: 'عرض فاخر', discount: '25% OFF', discount_ar: 'خصم ٢٥٪', price: 32.99, oldPrice: 43.99, ends: 'Ends in 2 days', ends_ar: 'ينتهي خلال يومين', img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600', isActive: true }
+  { id: 'offer-love-box', name: 'Love Box Special', name_ar: 'علبة الحب الخاصة', desc: 'A romantic assortment of our finest treats.', desc_ar: 'تشكيلة رومانسية.', category: 'Valentine Special', category_ar: 'عرض الفالنتاين', discount: '35% OFF', discount_ar: 'خصم ٣٥٪', price: 24.99, oldPrice: 38.99, ends: 'Ends in 3 days', ends_ar: 'ينتهي خلال ٣ أيام', img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600', isActive: true },
+  { id: 'offer-family-pack', name: 'Family Magic Pack', name_ar: 'علبة العائلة السحرية', desc: '6 gourmet candy bags.', desc_ar: '٦ أكياس حلوى فاخرة.', category: 'Bundle Deal', category_ar: 'عرض مجمّع', discount: '40% OFF', discount_ar: 'خصم ٤٠٪', price: 44.99, oldPrice: 74.99, ends: 'Ends in 5 days', ends_ar: 'ينتهي خلال ٥ أيام', img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600', isActive: true },
+  { id: 'offer-truffle-trio', name: 'Truffle Lover Trio', name_ar: 'ثلاثية الترافل', desc: 'Three premium truffle flavors.', desc_ar: 'ثلاث نكهات ترافل فاخرة.', category: 'Premium Deal', category_ar: 'عرض فاخر', discount: '25% OFF', discount_ar: 'خصم ٢٥٪', price: 32.99, oldPrice: 43.99, ends: 'Ends in 2 days', ends_ar: 'ينتهي خلال يومين', img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600', isActive: true }
 ];
 
 const DEFAULT_GALLERY = [
@@ -217,32 +189,28 @@ const DEFAULT_GALLERY = [
 ];
 
 const DEFAULT_MIX_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
-
 const DEFAULT_MIX_PACKAGING = [
-  { id: 'bag', name: 'Bag', name_ar: 'كيس', desc: 'Signature kraft bag', desc_ar: 'كيس كرافت المميز', icon: 'bx-shopping-bag', img: '', extra: 0 },
-  { id: 'round', name: 'Round', name_ar: 'علبة دائرية', desc: 'Circular bucket style', desc_ar: 'علبة دائرية أنيقة', icon: 'bx-cylinder', img: '', extra: 2.50 },
-  { id: 'rect', name: 'Rectangular', name_ar: 'علبة مستطيلة', desc: 'Sleek rectangular box', desc_ar: 'علبة مستطيلة أنيقة', icon: 'bx-rectangle', img: '', extra: 3.00 }
+  { id: 'bag', name: 'Bag', name_ar: 'كيس', desc: 'Signature kraft bag', desc_ar: 'كيس كرافت', icon: 'bx-shopping-bag', img: '', extra: 0 },
+  { id: 'round', name: 'Round', name_ar: 'دائرية', desc: 'Circular bucket', desc_ar: 'علبة دائرية', icon: 'bx-cylinder', img: '', extra: 2.50 },
+  { id: 'rect', name: 'Rectangular', name_ar: 'مستطيلة', desc: 'Sleek box', desc_ar: 'علبة مستطيلة', icon: 'bx-rectangle', img: '', extra: 3.00 }
 ];
-
 const DEFAULT_CANDY_TYPES = [
   { id: 'gummy-bears', name: 'Gummy Bears', name_ar: 'دببة الجيلي', img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=300', color: '#e2015d', price_per_kg: 12.00, sale_price_per_kg: 0 },
   { id: 'sour-worms', name: 'Sour Worms', name_ar: 'ديدان حامضة', img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=300', color: '#22c55e', price_per_kg: 11.00, sale_price_per_kg: 8.50 },
-  { id: 'chocolate', name: 'Chocolate Truffles', name_ar: 'ترافل الشوكولاتة', img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=300', color: '#7b3f00', price_per_kg: 18.00, sale_price_per_kg: 0 },
-  { id: 'lollipops', name: 'Swirl Lollipops', name_ar: 'مصاصات ملتوية', img: 'https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=300', color: '#fd5183', price_per_kg: 9.00, sale_price_per_kg: 0 },
+  { id: 'chocolate', name: 'Chocolate Truffles', name_ar: 'ترافل', img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=300', color: '#7b3f00', price_per_kg: 18.00, sale_price_per_kg: 0 },
+  { id: 'lollipops', name: 'Swirl Lollipops', name_ar: 'مصاصات', img: 'https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=300', color: '#fd5183', price_per_kg: 9.00, sale_price_per_kg: 0 },
   { id: 'cotton-candy', name: 'Cloud Candy', name_ar: 'حلوى السحاب', img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=300', color: '#fdba74', price_per_kg: 10.00, sale_price_per_kg: 0 },
   { id: 'jelly-beans', name: 'Jelly Beans', name_ar: 'حبوب الجيلي', img: 'https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?w=300', color: '#facc43', price_per_kg: 13.00, sale_price_per_kg: 10.00 },
   { id: 'marshmallows', name: 'Marshmallows', name_ar: 'مارشميلو', img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=300', color: '#fef3c7', price_per_kg: 8.00, sale_price_per_kg: 0 },
-  { id: 'caramel', name: 'Caramel Bites', name_ar: 'قطع الكراميل', img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=300', color: '#d97706', price_per_kg: 15.00, sale_price_per_kg: 0 }
+  { id: 'caramel', name: 'Caramel Bites', name_ar: 'كراميل', img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=300', color: '#d97706', price_per_kg: 15.00, sale_price_per_kg: 0 }
 ];
-
 const DEFAULT_ADDONS = [
-  { id: 'sprinkles', name: 'Rainbow Sprinkles', name_ar: 'شبر ملون', desc: 'Colorful sugar sprinkles', desc_ar: 'رشات سكرية ملونة', price: 0.99, icon: 'bx-dot', img: '', active: true },
-  { id: 'choco-sauce', name: 'Chocolate Sauce', name_ar: 'صوص شوكولاتة', desc: 'Rich melted chocolate dip', desc_ar: 'صوص شوكولاتة ذائبة غني', price: 1.50, icon: 'bx-water', img: '', active: true },
-  { id: 'caramel-sauce', name: 'Caramel Sauce', name_ar: 'صوص كراميل', desc: 'Sweet golden caramel dip', desc_ar: 'صوص كراميل ذهبي حلو', price: 1.50, icon: 'bx-droplet', img: '', active: true },
-  { id: 'nuts', name: 'Crushed Nuts', name_ar: 'مكسرات مجروشة', desc: 'Mixed roasted nuts topping', desc_ar: 'مكسرات مشكلة محمصة', price: 2.00, icon: 'bx-food-menu', img: '', active: true },
-  { id: 'gift-ribbon', name: 'Gift Ribbon', name_ar: 'شريط هدية', desc: 'Elegant silk ribbon on the box', desc_ar: 'شريط حريري أنيق على العلبة', price: 0.75, icon: 'bx-gift', img: '', active: true }
+  { id: 'sprinkles', name: 'Rainbow Sprinkles', name_ar: 'شبر ملون', desc: 'Colorful sugar sprinkles', desc_ar: 'رشات سكرية', price: 0.99, icon: 'bx-dot', img: '', active: true },
+  { id: 'choco-sauce', name: 'Chocolate Sauce', name_ar: 'صوص شوكولاتة', desc: 'Rich melted chocolate dip', desc_ar: 'صوص شوكولاتة', price: 1.50, icon: 'bx-water', img: '', active: true },
+  { id: 'caramel-sauce', name: 'Caramel Sauce', name_ar: 'صوص كراميل', desc: 'Sweet golden caramel dip', desc_ar: 'صوص كراميل', price: 1.50, icon: 'bx-droplet', img: '', active: true },
+  { id: 'nuts', name: 'Crushed Nuts', name_ar: 'مكسرات مجروشة', desc: 'Mixed roasted nuts topping', desc_ar: 'مكسرات محمصة', price: 2.00, icon: 'bx-food-menu', img: '', active: true },
+  { id: 'gift-ribbon', name: 'Gift Ribbon', name_ar: 'شريط هدية', desc: 'Elegant silk ribbon', desc_ar: 'شريط حريري', price: 0.75, icon: 'bx-gift', img: '', active: true }
 ];
-
 const DEFAULT_DELIVERY_ZONES = [
   { id: 'z1', name: 'Amman', name_ar: 'عمان', price: 2.00, active: true },
   { id: 'z2', name: 'Zarqa', name_ar: 'الزرقاء', price: 3.00, active: true },
@@ -252,7 +220,7 @@ const DEFAULT_DELIVERY_ZONES = [
 ];
 
 /* =====================================================
-   3. APPLICATION STATE
+   3. STATE
    ===================================================== */
 let products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
 let offers = JSON.parse(JSON.stringify(DEFAULT_OFFERS));
@@ -271,62 +239,40 @@ let checkoutIntent = false;
 let cartDelivery = { method: 'delivery', zoneId: null };
 let cartPayment = { method: 'cash', card: { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null } };
 
-/* Mix state (5 steps) */
 const mixState = {
-  step: 1,
-  packaging: null,
-  weight: null,
-  typesCount: 1,
-  selectedTypes: [],
-  selectedAddons: [],
-  payment: 'cash',
-  card: { number: '', name: '', expiry: '', cvv: '' }
+  step: 1, packaging: null, weight: null, typesCount: 1,
+  selectedTypes: [], selectedAddons: [], payment: 'cash'
 };
 
-/* Candy category filter */
 let candyFilter = 'all';
-
-/* Weight modal runtime state */
-let weightModalState = {
-  product: null,
-  weight: 250,
-  qty: 1
-};
+let weightModalState = { product: null, weight: 250, qty: 1 };
 
 let customers = [
   { id: 'c-1001', name: 'Ahmad Al-Rashid', email: 'ahmad.rashid@gmail.com', phone: '+962 7 9876 5432', city: 'Amman', joined: '2025-03-12', tier: 'vip' },
   { id: 'c-1002', name: 'Lina Haddad', email: 'lina.haddad@gmail.com', phone: '+962 7 9112 3344', city: 'Amman', joined: '2025-05-04', tier: 'active' },
-  { id: 'c-1003', name: 'Omar Nasser', email: 'omar.nasser@outlook.com', phone: '+962 7 8899 1122', city: 'Zarqa', joined: '2025-06-21', tier: 'active' },
-  { id: 'c-1004', name: 'Sara Khalil', email: 'sara.khalil@gmail.com', phone: '+962 7 7777 8899', city: 'Irbid', joined: '2025-08-09', tier: 'new' },
-  { id: 'c-1005', name: 'Yousef Mansour', email: 'yousef.m@gmail.com', phone: '+962 7 9555 6677', city: 'Aqaba', joined: '2025-09-15', tier: 'active' },
-  { id: 'c-1006', name: 'Rana Odeh', email: 'rana.odeh@gmail.com', phone: '+962 7 9333 4455', city: 'Amman', joined: '2025-10-02', tier: 'vip' },
-  { id: 'c-1007', name: 'Khaled Sami', email: 'khaled.sami@gmail.com', phone: '+962 7 9666 7788', city: 'Salt', joined: '2025-11-11', tier: 'new' }
+  { id: 'c-1003', name: 'Omar Nasser', email: 'omar.nasser@outlook.com', phone: '+962 7 8899 1122', city: 'Zarqa', joined: '2025-06-21', tier: 'active' }
 ];
 
 let orderHistory = [
-  { id: 'HC-2025-1042', customerId: 'c-1001', date: '2025-12-01', status: 'delivered', payment: 'card', itemsList: [{ name: 'Velvet Truffles', name_ar: 'ترافل مخملي', qty: 1, price: 14.99 }, { name: 'Gourmet Gummies', name_ar: 'حلوى الجيلي الفاخرة', qty: 2, price: 8.99 }], total: 32.97, address: 'Amman, Abdoun', tracking: 'JD-EXP-882134', placedAt: '2025-12-01', packedAt: '2025-12-01', shippedAt: '2025-12-02', outAt: '2025-12-03', deliveredAt: '2025-12-04', eta: '2025-12-04' },
-  { id: 'HC-2025-1051', customerId: 'c-1002', date: '2025-12-02', status: 'delivered', payment: 'cod', itemsList: [{ name: 'Love Box Special', name_ar: 'علبة الحب الخاصة', qty: 1, price: 24.99 }], total: 24.99, address: 'Amman, Sweifieh', tracking: 'JD-EXP-883401', placedAt: '2025-12-02', packedAt: '2025-12-02', shippedAt: '2025-12-03', outAt: '2025-12-04', deliveredAt: '2025-12-05', eta: '2025-12-05' },
-  { id: 'HC-2025-1063', customerId: 'c-1003', date: '2025-12-03', status: 'out_for_delivery', payment: 'card', itemsList: [{ name: 'Family Magic Pack', name_ar: 'علبة العائلة السحرية', qty: 1, price: 44.99 }], total: 44.99, address: 'Zarqa', tracking: 'JD-EXP-885220', placedAt: '2025-12-03', packedAt: '2025-12-03', shippedAt: '2025-12-04', outAt: '2025-12-05', deliveredAt: null, eta: '2025-12-06' },
-  { id: 'HC-2025-1074', customerId: 'c-1004', date: '2025-12-04', status: 'shipped', payment: 'card', itemsList: [{ name: 'Cloud Candy', name_ar: 'حلوى السحاب', qty: 1, price: 7.99 }, { name: 'Zesty Sours', name_ar: 'حلوى حامضة', qty: 1, price: 8.49 }], total: 16.48, address: 'Irbid', tracking: 'JD-EXP-887902', placedAt: '2025-12-04', packedAt: '2025-12-04', shippedAt: '2025-12-05', outAt: null, deliveredAt: null, eta: '2025-12-07' }
+  { id: 'HC-2025-1042', customerId: 'c-1001', date: '2025-12-01', status: 'delivered', payment: 'card', itemsList: [{ name: 'Velvet Truffles', name_ar: 'ترافل مخملي', qty: 1, price: 14.99 }], total: 14.99, address: 'Amman, Abdoun', tracking: 'JD-EXP-882134', placedAt: '2025-12-01', packedAt: '2025-12-01', shippedAt: '2025-12-02', outAt: '2025-12-03', deliveredAt: '2025-12-04', eta: '2025-12-04' }
 ];
 
 let savedAddresses = [
-  { id: 'addr-1', label: 'home', name: 'Ahmad Al-Rashid', phone: '+962 7 9876 5432', city: 'Amman', area: 'Abdoun', line: 'Magic Avenue, Building 5, Floor 2, Apt 201', isDefault: true },
-  { id: 'addr-2', label: 'work', name: 'Ahmad Al-Rashid', phone: '+962 7 9876 5432', city: 'Amman', area: 'Sweifieh', line: 'Rainbow Street, Office 12, 3rd Floor', isDefault: false }
+  { id: 'addr-1', label: 'home', name: 'Ahmad Al-Rashid', phone: '+962 7 9876 5432', city: 'Amman', area: 'Abdoun', line: 'Magic Avenue, Building 5, Floor 2, Apt 201', isDefault: true }
 ];
 
 let contactMessages = [
-  { id: 'msg-1', name: 'Noor Ali', email: 'noor.ali@example.com', date: '2025-12-08', read: false, message: 'مرحبا، بدي أطلب علبة هدايا كبيرة للمناسبة.' },
-  { id: 'msg-2', name: 'Mohammad Zaid', email: 'm.zaid@example.com', date: '2025-12-07', read: true, message: 'Do you offer corporate gift boxes with custom branding?' },
-  { id: 'msg-3', name: 'Dana Sami', email: 'dana.sami@example.com', date: '2025-12-05', read: false, message: 'أحببت خلطة الترافل! هل متوفرة بنكهة الفستق؟' }
+  { id: 'msg-1', name: 'Noor Ali', email: 'noor.ali@example.com', date: '2025-12-08', read: false, message: 'مرحبا، بدي أطلب علبة هدايا كبيرة.' }
 ];
 
 /* =====================================================
-   4. CONFIGURATION CONSTANTS
+   4. CONFIG
    ===================================================== */
 const ADMIN_EMAIL = '123321';
 const ADMIN_PASSWORD = '123321';
 const OWNER_PHONE_DIGITS = ['0782342105', '962782342105', '782342105'];
+const EMPLOYEE_USER = 'user';
+const EMPLOYEE_PASS = 'user';
 const STATUS_FLOW = ['processing', 'packing', 'shipped', 'out_for_delivery', 'delivered'];
 
 const LS_KEYS = {
@@ -345,14 +291,15 @@ const LS_KEYS = {
   cards: 'hatcandy-cards',
   employees: 'hatcandy-employees',
   employeeOrders: 'hatcandy-employee-orders',
-  employeeShifts: 'hatcandy-employee-shifts'
+  employeeShifts: 'hatcandy-employee-shifts',
+  onlineOrders: 'hatcandy-online-orders'
 };
 
 /* =====================================================
-   5. RUNTIME STATE
+   5. RUNTIME
    ===================================================== */
 let lang = 'en';
-try { lang = localStorage.getItem('hatcandy-lang') || 'en'; } catch (e) { lang = 'en'; }
+try { lang = localStorage.getItem('hatcandy-lang') || 'en'; } catch (e) {}
 if (lang !== 'ar') lang = 'en';
 
 let isAdmin = false;
@@ -370,6 +317,10 @@ const OVERVIEW_SECRET = '123';
 let overviewUnlocked = false;
 let reportRange = 'weekly';
 
+let savedCards = [];
+let googleAccounts = [];
+let pendingGoogleAccount = null;
+
 /* =====================================================
    6. HELPERS
    ===================================================== */
@@ -383,6 +334,7 @@ function t(key, vars) {
 }
 
 function L(obj, field) {
+  if (!obj) return '';
   return (lang === 'ar' && obj[field + '_ar']) ? obj[field + '_ar'] : obj[field];
 }
 
@@ -398,12 +350,9 @@ function formatDate(d) {
 
 function statusIcon(s) {
   return {
-    processing: 'bx bx-time-five',
-    packing: 'bx bx-archive',
-    shipped: 'bx bx-package',
-    out_for_delivery: 'bx bx-cycling',
-    delivered: 'bx bx-check-circle',
-    cancelled: 'bx bx-x-circle'
+    processing: 'bx bx-time-five', packing: 'bx bx-archive',
+    shipped: 'bx bx-package', out_for_delivery: 'bx bx-cycling',
+    delivered: 'bx bx-check-circle', cancelled: 'bx bx-x-circle'
   }[s] || 'bx bx-package';
 }
 
@@ -421,14 +370,12 @@ function registerCustomer(u) {
   if (!c) {
     c = { id: 'c-' + Date.now(), name: u.name || 'Guest', email: u.email || '', phone: u.phone || '', city: 'Amman', joined: new Date().toISOString().split('T')[0], tier: 'new' };
     customers.push(c);
-  } else if (u.phone) {
-    c.phone = u.phone;
-  }
+  } else if (u.phone) c.phone = u.phone;
   return c;
 }
 
 function validateJordanPhone(p) {
-  const c = p.replace(/\D/g, '');
+  const c = (p || '').replace(/\D/g, '');
   return (c.length === 9 && c.startsWith('7')) ||
          (c.length === 10 && c.startsWith('07')) ||
          (c.length === 12 && c.startsWith('9627'));
@@ -455,15 +402,9 @@ function getUserStats() {
 }
 
 /* =====================================================
-   7. TIERED PRICING ENGINE
-   Developer enters 3 prices: price250 / price500 / price1000
-   Rules:
-     • w < 500        → price250
-     • 500 ≤ w < 1000 → price500
-     • w ≥ 1000       → price1000
+   7. TIERED PRICING
    ===================================================== */
 function getProductBasePrice(p) {
-  /* Returns minimum starting price for display on card */
   if (!p) return 0;
   if (p.pricingType === 'tiered') return Number(p.price250) || 0;
   return Number(p.price) || 0;
@@ -483,11 +424,6 @@ function calcProductPriceForWeight(p, weightGrams) {
     return tier ? tier.price : 0;
   }
   return Number(p.price) || 0;
-}
-
-function formatTierLabel(tierGrams) {
-  if (tierGrams === 1000) return lang === 'ar' ? '١ كيلو' : '1 kg';
-  return tierGrams + ' g';
 }
 
 /* =====================================================
@@ -522,7 +458,6 @@ function loadAll() {
     const ad = localStorage.getItem(LS_KEYS.addons); if (ad) addons = JSON.parse(ad);
     const dz = localStorage.getItem(LS_KEYS.deliveryZones); if (dz) deliveryZones = JSON.parse(dz);
     const sh = localStorage.getItem(LS_KEYS.storeHours); if (sh) storeHours = JSON.parse(sh);
-
     const c = localStorage.getItem(LS_KEYS.content);
     if (c) {
       contentOverrides = JSON.parse(c);
@@ -532,7 +467,6 @@ function loadAll() {
         if (I18N.ar[k] !== undefined && v.ar !== undefined) I18N.ar[k] = v.ar;
       });
     }
-
     const ct2 = localStorage.getItem(LS_KEYS.contact);
     if (ct2) {
       const obj = JSON.parse(ct2);
@@ -549,6 +483,7 @@ function loadAll() {
    ===================================================== */
 function showToast(msg, icon = 'bx-check-circle') {
   const toast = $('toast');
+  if (!toast) return;
   toast.querySelector('i').className = 'bx ' + icon;
   $('toastMessage').textContent = msg;
   toast.classList.add('show');
@@ -592,7 +527,7 @@ function closeAllPanels() {
 }
 
 /* =====================================================
-   10. EMPLOYEE MANAGEMENT
+   10. EMPLOYEE MANAGEMENT (shared with POS)
    ===================================================== */
 function loadEmployees() {
   try { const raw = localStorage.getItem(LS_KEYS.employees); return raw ? JSON.parse(raw) : []; } catch (e) { return []; }
@@ -600,6 +535,7 @@ function loadEmployees() {
 function saveEmployees(list) {
   try { localStorage.setItem(LS_KEYS.employees, JSON.stringify(list)); } catch (e) {}
 }
+
 function loadEmployeeData() {
   try {
     const orders = JSON.parse(localStorage.getItem(LS_KEYS.employeeOrders) || '[]');
@@ -607,6 +543,7 @@ function loadEmployeeData() {
     return { orders: Array.isArray(orders) ? orders : [], shifts: Array.isArray(shifts) ? shifts : [] };
   } catch (e) { return { orders: [], shifts: [] }; }
 }
+
 function syncEmployeeDataToOrders() {
   const { orders: empOrders } = loadEmployeeData();
   const existingIds = new Set(orderHistory.map(o => o.id));
@@ -641,6 +578,7 @@ function syncEmployeeDataToOrders() {
     }
   });
 }
+
 function getEmployeeStats() {
   const employees = loadEmployees();
   const { orders: empOrders, shifts } = loadEmployeeData();
@@ -653,6 +591,7 @@ function getEmployeeStats() {
     return { ...emp, orderCount: myOrders.length, revenue: totalRevenue, itemsSold: totalItems, lastShift, isActive: lastShift && !lastShift.checkOut };
   });
 }
+
 function renderAdminEmployees() {
   const stats = getEmployeeStats();
   const tbody = $('adminEmployeesBody');
@@ -700,6 +639,7 @@ function renderAdminEmployees() {
     </tr>`;
   }).join('');
 }
+
 function openAdminEmployeeModal(id) {
   const modal = $('adminEmployeeModal');
   const f = $('adminEmployeeForm');
@@ -722,6 +662,7 @@ function openAdminEmployeeModal(id) {
   }
   modal.classList.add('show');
 }
+
 function handleAdminEmployeeSubmit(e) {
   e.preventDefault();
   const id = $('empId').value;
@@ -754,8 +695,6 @@ function handleAdminEmployeeSubmit(e) {
 /* =====================================================
    11. GOOGLE AUTH
    ===================================================== */
-let googleAccounts = [];
-let pendingGoogleAccount = null;
 function loadGoogleAccounts() {
   try { const raw = localStorage.getItem(LS_KEYS.googleAccounts); googleAccounts = raw ? JSON.parse(raw) : []; if (!Array.isArray(googleAccounts)) googleAccounts = []; } catch (err) { googleAccounts = []; }
 }
@@ -782,7 +721,7 @@ function renderGoogleChooser() {
     <div class="gchooser-item" data-google-account="${i}" role="option" tabindex="0">
       <div class="gchooser-avatar">${esc((acc.name || 'G').charAt(0))}</div>
       <div class="gchooser-info"><strong>${esc(acc.name)}</strong><span>${esc(acc.email)}</span></div>
-      <button class="gchooser-del" data-google-remove="${i}" aria-label="Remove account"><i class='bx bx-x'></i></button>
+      <button class="gchooser-del" data-google-remove="${i}" aria-label="Remove"><i class='bx bx-x'></i></button>
     </div>
   `).join('');
 }
@@ -819,7 +758,6 @@ function resetGoogleSignInUI() {
 /* =====================================================
    12. USER CARDS
    ===================================================== */
-let savedCards = [];
 function loadUserCards() {
   if (!currentUser) { savedCards = []; return; }
   try {
@@ -848,11 +786,12 @@ function removeSavedCard(cardId) {
 }
 
 /* =====================================================
-   13. RENDERERS — PUBLIC
+   13. PUBLIC RENDERERS
    ===================================================== */
 function renderOffers() {
   const active = offers.filter(o => o.isActive);
   const el = $('offersGrid');
+  if (!el) return;
   if (!active.length) {
     el.innerHTML = `<div class="offers-empty"><i class='bx bx-time-five'></i><p>${t('offers.empty')}</p></div>`;
     return;
@@ -883,11 +822,11 @@ function renderCandies() {
   const grid = $('candyGrid');
   if (!grid) return;
 
-  const total   = products.length;
+  const total = products.length;
   const candies = products.filter(p => (p.category || 'candy') === 'candy').length;
-  const chocs   = products.filter(p => p.category === 'chocolate').length;
-  if ($('catCountAll'))       $('catCountAll').textContent = total;
-  if ($('catCountCandy'))     $('catCountCandy').textContent = candies;
+  const chocs = products.filter(p => p.category === 'chocolate').length;
+  if ($('catCountAll')) $('catCountAll').textContent = total;
+  if ($('catCountCandy')) $('catCountCandy').textContent = candies;
   if ($('catCountChocolate')) $('catCountChocolate').textContent = chocs;
 
   document.querySelectorAll('.cat-circle').forEach(c =>
@@ -902,7 +841,7 @@ function renderCandies() {
   if (!list.length) {
     grid.innerHTML = `<div class="offers-empty" style="grid-column:1/-1;">
       <i class='bx bx-cookie'></i>
-      <p>${lang === 'ar' ? 'لا توجد منتجات في هذا التصنيف بعد ✨' : 'No products in this category yet ✨'}</p>
+      <p>${lang === 'ar' ? 'لا توجد منتجات ✨' : 'No products yet ✨'}</p>
     </div>`;
     return;
   }
@@ -933,7 +872,9 @@ function renderCandies() {
 }
 
 function renderGallery() {
-  $('galleryGrid').innerHTML = galleryImages.map(g =>
+  const el = $('galleryGrid');
+  if (!el) return;
+  el.innerHTML = galleryImages.map(g =>
     `<div class="gallery-item reveal"><img src="${esc(g.img)}" alt="${esc(g.alt || '')}"></div>`
   ).join('');
 }
@@ -957,24 +898,19 @@ function calcMixPrice() {
   const sel = mixState.selectedTypes.map(id => candyTypes.find(c => c.id === id)).filter(Boolean);
   if (!sel.length) return 0;
   const avg = sel.reduce((s, tp) => s + effectiveKgPrice(tp), 0) / sel.length;
-  return (avg * (mixState.weight / 1000))
-    + (Number(mixState.packaging.extra) || 0)
-    + getAddonsTotal();
+  return (avg * (mixState.weight / 1000)) + (Number(mixState.packaging.extra) || 0) + getAddonsTotal();
 }
 
-function getCartSubtotal() {
-  return cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-}
-
+function getCartSubtotal() { return cart.reduce((sum, item) => sum + (item.price * item.qty), 0); }
 function getDeliveryFee() {
   if (cartDelivery.method === 'pickup') return 0;
   const z = deliveryZones.find(z => z.id === cartDelivery.zoneId);
   return z ? Number(z.price) : 0;
 }
 
-/* -------- Mix: renderers -------- */
 function renderMixWeights() {
   const el = $('mixWeightGrid');
+  if (!el) return;
   el.classList.toggle('compact', mixWeights.length > 8);
   el.innerHTML = mixWeights.map(w => {
     const sel = mixState.weight === w;
@@ -992,7 +928,9 @@ function renderMixWeights() {
   }).join('');
 }
 function renderMixPackaging() {
-  $('mixPackGrid').innerHTML = mixPackaging.map(p => {
+  const el = $('mixPackGrid');
+  if (!el) return;
+  el.innerHTML = mixPackaging.map(p => {
     const sel = mixState.packaging && mixState.packaging.id === p.id;
     const price = Number(p.extra) === 0 ? t('mix.free') : `+$${Number(p.extra).toFixed(2)}`;
     const visual = p.img ? `<img src="${esc(p.img)}" alt="${esc(L(p, 'name'))}">` : `<i class='bx ${p.icon || 'bx-box'}'></i>`;
@@ -1000,17 +938,21 @@ function renderMixPackaging() {
   }).join('');
 }
 function renderMixSlots() {
+  const el = $('mixSlots');
+  if (!el) return;
   const slots = [];
   for (let i = 0; i < mixState.typesCount; i++) {
     const id = mixState.selectedTypes[i];
     const tp = id ? candyTypes.find(c => c.id === id) : null;
     slots.push(`<div class="mix-slot"><div class="mix-slot-num">${i + 1}</div><div class="mix-slot-info"><div class="mix-slot-label">${t('mix.type')} ${i + 1}</div><div class="mix-slot-value ${tp ? '' : 'empty'}">${tp ? `<span class="mix-type-color" style="background:${tp.color};"></span>${esc(L(tp, 'name'))}` : t('mix.tapToChoose')}</div></div></div>`);
   }
-  $('mixSlots').innerHTML = slots.join('');
+  el.innerHTML = slots.join('');
 }
 function renderMixTypesGrid() {
+  const el = $('mixTypesGrid');
+  if (!el) return;
   const sel = new Set(mixState.selectedTypes);
-  $('mixTypesGrid').innerHTML = candyTypes.map(c => {
+  el.innerHTML = candyTypes.map(c => {
     const isSel = sel.has(c.id);
     const sale = Number(c.sale_price_per_kg) || 0;
     const base = Number(c.price_per_kg) || 0;
@@ -1045,6 +987,8 @@ function renderMixAddons() {
   }).join('');
 }
 function renderMixReview() {
+  const el = $('mixReview');
+  if (!el) return;
   const p = mixState.packaging;
   const total = calcMixPrice();
   const sel = mixState.selectedTypes.map(id => candyTypes.find(c => c.id === id)).filter(Boolean);
@@ -1054,7 +998,7 @@ function renderMixReview() {
   const packExtra = p ? Number(p.extra) || 0 : 0;
   const addonsCost = getAddonsTotal();
 
-  $('mixReview').innerHTML = `
+  el.innerHTML = `
     <div class="mix-review-hero"><i class='bx bxs-magic-wand'></i><h3>${t('mix.yourMix')}</h3><p>${t('mix.readyToAdd')}</p></div>
     <div class="mix-review-grid">
       <div class="mix-review-card"><div class="label">${t('mix.packaging')}</div><div class="value" style="font-size:1.15rem;">${p ? esc(L(p, 'name')) : '—'}</div></div>
@@ -1124,13 +1068,11 @@ function validateExpiry(v) {
 function validateCardNumber(num) {
   const n = (num || '').replace(/\s/g, '');
   if (n.length < 13 || n.length > 19) return false;
-  let sum = 0;
-  let alt = false;
+  let sum = 0; let alt = false;
   for (let i = n.length - 1; i >= 0; i--) {
     let d = parseInt(n[i]);
     if (alt) { d *= 2; if (d > 9) d -= 9; }
-    sum += d;
-    alt = !alt;
+    sum += d; alt = !alt;
   }
   return sum % 10 === 0;
 }
@@ -1154,11 +1096,10 @@ function renderPaymentSection() {
       <div class="saved-cards-title"><i class='bx bx-credit-card'></i> ${lang === 'ar' ? 'بطاقاتك المحفوظة' : 'Your saved cards'}</div>
       ${savedCards.map(sc => {
         const icon = sc.brand === 'Visa' ? 'bxl-visa' : sc.brand === 'Mastercard' ? 'bxl-mastercard' : 'bx-credit-card-front';
-        return `
-          <div class="saved-card ${c.savedId === sc.id ? 'selected' : ''}" data-saved-card="${sc.id}" role="button" tabindex="0">
+        return `<div class="saved-card ${c.savedId === sc.id ? 'selected' : ''}" data-saved-card="${sc.id}" role="button" tabindex="0">
             <i class='bx ${icon}'></i>
             <div class="saved-card-info"><strong>•••• ${sc.last4}</strong><span>${esc(sc.name)} · ${esc(sc.expiry)}</span></div>
-            <button class="saved-card-del" data-del-card="${sc.id}" aria-label="Delete card"><i class='bx bx-trash'></i></button>
+            <button class="saved-card-del" data-del-card="${sc.id}" aria-label="Delete"><i class='bx bx-trash'></i></button>
           </div>`;
       }).join('')}
       <button type="button" class="saved-card-new" id="newCardBtn"><i class='bx bx-plus'></i> ${lang === 'ar' ? 'استخدام بطاقة جديدة' : 'Use a new card'}</button>
@@ -1174,7 +1115,7 @@ function renderPaymentSection() {
         <div class="card-field"><label>${t('pay.cardExpiry')}</label><input type="text" inputmode="numeric" id="cardExpiry" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" value="${esc(c.expiry)}" style="padding-right:14px;"></div>
         <div class="card-field"><label>${t('pay.cardCvv')}</label><input type="text" inputmode="numeric" id="cardCvv" placeholder="123" maxlength="4" autocomplete="cc-csc" value="${esc(c.cvv)}" style="padding-right:14px;"></div>
       </div>
-      <label class="save-card-row"><input type="checkbox" id="saveCardChk" ${c.save ? 'checked' : ''}><span>${lang === 'ar' ? 'حفظ البطاقة لهذا الحساب' : 'Save this card to my account'}</span></label>
+      <label class="save-card-row"><input type="checkbox" id="saveCardChk" ${c.save ? 'checked' : ''}><span>${lang === 'ar' ? 'حفظ البطاقة' : 'Save this card to my account'}</span></label>
       <div class="card-secure"><i class='bx bx-lock-alt'></i> ${t('pay.cardSecure')}</div>
     </div>`;
 
@@ -1217,15 +1158,6 @@ function wireCardFormEvents(body) {
     const b = detectCardBrand(e.target.value);
     const iconEl = e.target.parentElement.querySelector('.card-icon');
     if (iconEl) iconEl.className = `bx ${b.icon} card-icon`;
-    const parent = e.target.parentElement.parentElement;
-    const oldHint = parent.querySelector('.card-brand-hint');
-    if (oldHint) oldHint.remove();
-    if (b.brand) {
-      const hint = document.createElement('span');
-      hint.className = 'card-brand-hint';
-      hint.innerHTML = `<i class='bx ${b.icon}'></i> ${b.brand}`;
-      parent.insertBefore(hint, e.target.parentElement);
-    }
     e.target.classList.toggle('invalid', e.target.value && !validateCardNumber(e.target.value));
   });
   nameEl.addEventListener('input', (e) => { cartPayment.card.name = e.target.value; });
@@ -1241,10 +1173,11 @@ function wireCardFormEvents(body) {
 }
 
 /* =====================================================
-   16. DELIVERY + CART RENDERERS
+   16. DELIVERY + CART
    ===================================================== */
 function renderDeliverySection() {
   const body = $('deliveryBody');
+  if (!body) return;
   document.querySelectorAll('.delivery-toggle-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.deliveryMethod === cartDelivery.method)
   );
@@ -1261,9 +1194,11 @@ function renderDeliverySection() {
 
 function renderCart() {
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-  $('cartBadge').textContent = totalQty;
-  $('cartBadge').classList.toggle('show', totalQty > 0);
-  $('cartItemCount').textContent = totalQty === 1 ? `1 ${t('cart.item')}` : `${totalQty} ${t('cart.items')}`;
+  if ($('cartBadge')) {
+    $('cartBadge').textContent = totalQty;
+    $('cartBadge').classList.toggle('show', totalQty > 0);
+  }
+  if ($('cartItemCount')) $('cartItemCount').textContent = totalQty === 1 ? `1 ${t('cart.item')}` : `${totalQty} ${t('cart.items')}`;
 
   const paySec = $('paymentSection');
 
@@ -1339,7 +1274,6 @@ function openWeightModal(productId) {
   if (!p) return;
 
   if (p.pricingType !== 'tiered') {
-    /* Fixed-price: add directly to cart */
     addFixedProductToCart(p);
     return;
   }
@@ -1374,10 +1308,9 @@ function renderWeightModal() {
   $('weightModalName').textContent = L(p, 'name');
   $('weightModalDesc').textContent = L(p, 'desc') || '';
 
-  /* Presets */
   const presets = [
-    { w: 250,  price: Number(p.price250)  || 0 },
-    { w: 500,  price: Number(p.price500)  || 0 },
+    { w: 250, price: Number(p.price250) || 0 },
+    { w: 500, price: Number(p.price500) || 0 },
     { w: 1000, price: Number(p.price1000) || 0 }
   ];
   $('weightPresets').innerHTML = presets.map(pr => {
@@ -1389,10 +1322,8 @@ function renderWeightModal() {
     </button>`;
   }).join('');
 
-  /* Custom weight input */
   $('weightInput').value = weight;
 
-  /* Tier note */
   const tier = getTierForWeight(p, weight);
   const noteEl = $('weightTierNote');
   if (tier) {
@@ -1405,10 +1336,8 @@ function renderWeightModal() {
     noteEl.classList.remove('active');
   }
 
-  /* Quantity */
   $('weightQtyValue').textContent = qty;
 
-  /* Total */
   const unitPrice = calcProductPriceForWeight(p, weight);
   const total = unitPrice * qty;
   $('weightTotalPrice').textContent = `$${total.toFixed(2)}`;
@@ -1426,28 +1355,15 @@ function addTieredProductToCart() {
   const { product: p, weight, qty } = weightModalState;
   if (!p) return;
   const unitPrice = calcProductPriceForWeight(p, weight);
-  /* Unique cart key so different weights are separate lines */
   const cartKey = p.id + '::' + weight;
   const existing = cart.find(i => i.id === cartKey);
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    cart.push({
-      id: cartKey,
-      productId: p.id,
-      qty: qty,
-      weight: weight,
-      price: unitPrice
-    });
-  }
+  if (existing) existing.qty += qty;
+  else cart.push({ id: cartKey, productId: p.id, qty: qty, weight: weight, price: unitPrice });
   renderCart();
   showToast(t('toast.added', { name: L(p, 'name') }), 'bx-cart-add');
   closeWeightModal();
 }
 
-/* =====================================================
-   18. CART LOOKUPS (handle tiered cart items)
-   ===================================================== */
 function findCartItemProduct(item) {
   if (!item) return null;
   if (item.productId) return products.find(x => x.id === item.productId) || null;
@@ -1455,7 +1371,7 @@ function findCartItemProduct(item) {
 }
 
 /* =====================================================
-   19. MIX STEP NAVIGATION
+   18. MIX STEP NAVIGATION
    ===================================================== */
 function updateMixStep() {
   document.querySelectorAll('.mix-progress-step').forEach(s => {
@@ -1524,7 +1440,7 @@ function closeMixModal() {
 }
 
 /* =====================================================
-   20. MOBILE ACCOUNT UI
+   19. MOBILE ACCOUNT UI
    ===================================================== */
 function updateMobileAccountUI() {
   const btn = $('mobileAccountBtn');
@@ -1544,7 +1460,7 @@ function updateMobileAccountUI() {
 }
 
 /* =====================================================
-   21. LOGIN FLOW
+   20. LOGIN FLOW
    ===================================================== */
 function resetLoginPanel(mode = 'default') {
   $('loginFormWrapper').style.display = 'block';
@@ -1606,7 +1522,7 @@ function signOutUser() {
 }
 
 /* =====================================================
-   22. ACCOUNT PAGE
+   21. ACCOUNT PAGE
    ===================================================== */
 function openAccountPage() {
   if (!currentUser) return;
@@ -1768,7 +1684,7 @@ function hideAddressForm() {
 }
 
 /* =====================================================
-   23. ADMIN PANEL
+   22. ADMIN PANEL
    ===================================================== */
 function signInAsAdmin() {
   isAdmin = true;
@@ -1851,14 +1767,14 @@ function renderAdminKpis() {
   const posOrders = act.filter(o => o.channel === 'pos');
   const posRev = posOrders.reduce((s, o) => s + o.total, 0);
   const cards = [
-    { icon: 'bx-dollar-circle', value: '$' + rev.toFixed(2),      label: t('admin.kpiRevenue') },
-    { icon: 'bx-receipt',       value: orders.length,             label: t('admin.kpiOrders') },
-    { icon: 'bx-group',         value: customers.length,          label: t('admin.kpiCustomers') },
-    { icon: 'bx-trending-up',   value: '$' + aov.toFixed(2),      label: t('admin.kpiAov') },
-    { icon: 'bx-time-five',     value: pend,                      label: t('admin.kpiPending') },
-    { icon: 'bx-check-shield',  value: '$' + delRev.toFixed(2),   label: t('admin.kpiDelivered') },
-    { icon: 'bx-store',         value: posOrders.length,          label: t('admin.kpiPosOrders') },
-    { icon: 'bx-cash',          value: '$' + posRev.toFixed(2),   label: t('admin.kpiPosRevenue') }
+    { icon: 'bx-dollar-circle', value: '$' + rev.toFixed(2), label: t('admin.kpiRevenue') },
+    { icon: 'bx-receipt', value: orders.length, label: t('admin.kpiOrders') },
+    { icon: 'bx-group', value: customers.length, label: t('admin.kpiCustomers') },
+    { icon: 'bx-trending-up', value: '$' + aov.toFixed(2), label: t('admin.kpiAov') },
+    { icon: 'bx-time-five', value: pend, label: t('admin.kpiPending') },
+    { icon: 'bx-check-shield', value: '$' + delRev.toFixed(2), label: t('admin.kpiDelivered') },
+    { icon: 'bx-store', value: posOrders.length, label: t('admin.kpiPosOrders') },
+    { icon: 'bx-cash', value: '$' + posRev.toFixed(2), label: t('admin.kpiPosRevenue') }
   ];
   $('adminKpis').innerHTML = cards.map(c =>
     `<div class="kpi-card"><div class="kpi-icon"><i class='bx ${c.icon}'></i></div><div><div class="kpi-value">${c.value}</div><div class="kpi-label">${c.label}</div></div></div>`
@@ -2028,7 +1944,7 @@ function renderAdminMessages() {
 }
 
 /* =====================================================
-   24. SECURED REPORTS
+   23. SECURED REPORTS
    ===================================================== */
 function getRangeStart(range) {
   const now = new Date();
@@ -2046,10 +1962,10 @@ function getReportOrders() {
 }
 function getReportRangeLabel(range) {
   const labels = {
-    daily:   { en: 'Today',           ar: 'اليوم' },
-    weekly:  { en: 'Last 7 Days',     ar: 'آخر ٧ أيام' },
-    monthly: { en: 'Last 30 Days',    ar: 'آخر ٣٠ يوماً' },
-    all:     { en: 'All Time',        ar: 'كل الفترات' }
+    daily: { en: 'Today', ar: 'اليوم' },
+    weekly: { en: 'Last 7 Days', ar: 'آخر ٧ أيام' },
+    monthly: { en: 'Last 30 Days', ar: 'آخر ٣٠ يوماً' },
+    all: { en: 'All Time', ar: 'كل الفترات' }
   };
   const l = labels[range] || labels.weekly;
   return lang === 'ar' ? l.ar : l.en;
@@ -2193,12 +2109,9 @@ function exportOrdersCsv() {
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'hat-candy-orders.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = 'hat-candy-orders.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
   showToast(t('admin.exported'), 'bx-download');
 }
 function openAdminCustomerModal(customerId) {
@@ -2249,7 +2162,7 @@ function openAdminCustomerModal(customerId) {
 }
 
 /* =====================================================
-   25. OWNER PANEL
+   24. OWNER PANEL
    ===================================================== */
 function signInAsOwner() {
   isOwner = true;
@@ -2379,6 +2292,7 @@ function renderOwnerOffers() {
 }
 function renderOwnerGallery() {
   const grid = $('ownerGalleryGrid');
+  if (!grid) return;
   grid.innerHTML = galleryImages.map(g =>
     `<div class="owner-gallery-item"><img src="${esc(g.img)}" alt="${esc(g.alt || '')}"><button class="owner-gallery-remove" data-delete-gallery="${g.id}"><i class='bx bx-trash'></i></button></div>`
   ).join('') + `<div class="owner-gallery-add" id="ownerAddGalleryTile"><i class='bx bx-plus'></i><span>Add Image</span></div>`;
@@ -2387,15 +2301,17 @@ function renderOwnerGallery() {
 }
 function renderOwnerMixBuilder() {
   const wl = $('ownerWeightsList');
-  wl.innerHTML = mixWeights.length ? [...mixWeights].sort((a, b) => a - b).map(w =>
+  if (wl) wl.innerHTML = mixWeights.length ? [...mixWeights].sort((a, b) => a - b).map(w =>
     `<div class="owner-list-item"><div class="owner-list-thumb"><i class='bx bx-weight'></i></div><div class="owner-list-info"><div class="owner-list-title">${w} g</div><div class="owner-list-meta">${(w / 1000).toFixed(3)} kg</div></div><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-weight="${w}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-weight="${w}"><i class='bx bx-trash'></i></button></div></div>`
   ).join('') : `<div class="owner-empty"><i class='bx bx-weight'></i><p>No weights yet</p></div>`;
+
   const pl = $('ownerPackagingList');
-  pl.innerHTML = mixPackaging.length ? mixPackaging.map(p =>
+  if (pl) pl.innerHTML = mixPackaging.length ? mixPackaging.map(p =>
     `<div class="owner-list-item">${p.img ? `<img class="owner-list-thumb" src="${esc(p.img)}" alt="">` : `<div class="owner-list-thumb"><i class='bx ${p.icon || 'bx-box'}'></i></div>`}<div class="owner-list-info"><div class="owner-list-title">${esc(p.name)} <span style="opacity:.6;font-weight:500">/ ${esc(p.name_ar || '')}</span></div><div class="owner-list-meta">${Number(p.extra) === 0 ? 'Free' : '+$' + Number(p.extra).toFixed(2)}</div></div><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-pack="${esc(p.id)}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-pack="${esc(p.id)}"><i class='bx bx-trash'></i></button></div></div>`
   ).join('') : `<div class="owner-empty"><i class='bx bx-package'></i><p>No packaging yet</p></div>`;
+
   const cl = $('ownerCandyTypesList');
-  cl.innerHTML = candyTypes.length ? candyTypes.map(c => {
+  if (cl) cl.innerHTML = candyTypes.length ? candyTypes.map(c => {
     const sale = Number(c.sale_price_per_kg) || 0;
     const base = Number(c.price_per_kg) || 0;
     const priceTxt = (sale > 0 && sale < base) ? `<s>$${base.toFixed(2)}</s> → $${sale.toFixed(2)} / kg` : `$${base.toFixed(2)} / kg`;
@@ -2424,6 +2340,7 @@ function renderOwnerAddons() {
 }
 function renderOwnerDelivery() {
   const zl = $('ownerZonesList');
+  if (!zl) return;
   zl.innerHTML = deliveryZones.length ? deliveryZones.map(z =>
     `<div class="owner-list-item"><div class="owner-list-thumb"><i class='bx bx-map-pin'></i></div><div class="owner-list-info"><div class="owner-list-title">${esc(z.name)} <span style="opacity:.6;font-weight:500">/ ${esc(z.name_ar || '')}</span></div><div class="owner-list-meta">$${Number(z.price).toFixed(2)}</div></div><span class="owner-chip-toggle ${z.active ? 'on' : 'off'}">${z.active ? 'Active' : 'Off'}</span><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-zone="${esc(z.id)}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-zone="${esc(z.id)}"><i class='bx bx-trash'></i></button></div></div>`
   ).join('') : `<div class="owner-empty"><i class='bx bx-cycling'></i><p>No delivery zones yet</p></div>`;
@@ -2465,7 +2382,7 @@ function confirmDelete(kind, id) {
 }
 
 /* =====================================================
-   26. OWNER MODALS (with pricing type toggle)
+   25. OWNER MODALS
    ===================================================== */
 function updateProductPricingPanels(mode) {
   document.querySelectorAll('#ownerProductModal .price-mode-btn').forEach(b =>
@@ -2493,8 +2410,7 @@ function updatePricePreview() {
     <strong>✓ Auto tier preview</strong><br>
     • 0 – 499 g &nbsp;→&nbsp; <strong>$${p250.toFixed(2)}</strong><br>
     • 500 – 999 g &nbsp;→&nbsp; <strong>$${p500.toFixed(2)}</strong><br>
-    • 1000 g + &nbsp;→&nbsp; <strong>$${p1000.toFixed(2)}</strong> (capped)
-  `;
+    • 1000 g + &nbsp;→&nbsp; <strong>$${p1000.toFixed(2)}</strong> (capped)`;
 }
 function openOwnerProductModal(id) {
   const m = $('ownerProductModal');
@@ -2635,7 +2551,7 @@ function openOwnerZoneModal(id) {
 }
 
 /* =====================================================
-   27. LANGUAGE APPLICATION
+   26. LANGUAGE
    ===================================================== */
 function applyLanguage(newLang) {
   lang = (newLang === 'ar') ? 'ar' : 'en';
@@ -2662,12 +2578,6 @@ function applyLanguage(newLang) {
     updateMixStep();
   }
   if ($('weightModal').classList.contains('show')) renderWeightModal();
-  if ($('loginPanel').classList.contains('show') && !$('loginSuccess').classList.contains('show')) {
-    if (checkoutIntent) {
-      $('loginTitle').textContent = t('login.almost');
-      $('loginSubtitle').textContent = t('login.almostSub');
-    }
-  }
   if ($('accountPage').classList.contains('show')) renderAccountPage();
   if ($('adminPage').classList.contains('show')) renderAdmin();
   if ($('ownerPage').classList.contains('show')) renderOwner();
@@ -2677,7 +2587,7 @@ function applyLanguage(newLang) {
 }
 
 /* =====================================================
-   28. SIGNBOARD
+   27. SIGNBOARD
    ===================================================== */
 function updateSign(force) {
   const now = new Date();
@@ -2698,7 +2608,7 @@ function updateSign(force) {
 }
 
 /* =====================================================
-   29. SCROLL UTILITIES
+   28. SCROLL
    ===================================================== */
 function revealOnScroll() {
   const wh = window.innerHeight;
@@ -2722,7 +2632,6 @@ function smoothScrollTo(targetY, duration = 1200) {
   requestAnimationFrame(step);
 }
 function jumpToCandyCategory(cat) {
-  /* Scroll to #candies AND set the filter */
   candyFilter = cat;
   renderCandies();
   const tgt = document.getElementById('candies');
@@ -2733,7 +2642,7 @@ function jumpToCandyCategory(cat) {
 }
 
 /* =====================================================
-   30. EVENT WIRING
+   29. EVENT WIRING
    ===================================================== */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -2748,7 +2657,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }));
   window.addEventListener('scroll', () => $('header').classList.toggle('scrolled', window.scrollY > 50));
 
-  /* ==== NAV: Candies / Chocolate shortcuts ==== */
+  /* ==== NAV SHORTCUTS ==== */
   const navCandies = $('navCandiesLink');
   const navChoc = $('navChocolateLink');
   if (navCandies) navCandies.addEventListener('click', (e) => { e.preventDefault(); jumpToCandyCategory('candy'); });
@@ -2807,20 +2716,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const cat = btn.dataset.cat;
       if (cat === candyFilter) return;
       candyFilter = cat;
-      btn.animate(
-        [{ transform: 'scale(1)' }, { transform: 'scale(.9)' }, { transform: 'scale(1)' }],
-        { duration: 320, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
-      );
       renderCandies();
     });
   }
 
-  /* ==== ADD TO CART / CART CONTROLS (delegated) ==== */
+  /* ==== ADD TO CART / CART CONTROLS ==== */
   document.addEventListener('click', (e) => {
     const ab = e.target.closest('.add-to-cart-btn');
     if (ab) {
       const pid = ab.dataset.id;
-      /* Offer? Add directly */
       const offer = offers.find(o => o.id === pid);
       if (offer) {
         const ex = cart.find(i => i.id === offer.id);
@@ -2833,12 +2737,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { ab.classList.remove('added'); ab.innerHTML = orig; }, 900);
         return;
       }
-      /* Product */
       const p = products.find(x => x.id === pid);
       if (p) {
-        if (p.pricingType === 'tiered') {
-          openWeightModal(p.id);
-        } else {
+        if (p.pricingType === 'tiered') openWeightModal(p.id);
+        else {
           addFixedProductToCart(p);
           const orig = ab.innerHTML;
           ab.classList.add('added');
@@ -2890,7 +2792,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderWeightModal();
     });
   }
-
   const wInput = $('weightInput');
   if (wInput) {
     wInput.addEventListener('input', (e) => {
@@ -2912,17 +2813,10 @@ document.addEventListener('DOMContentLoaded', () => {
     weightModalState.weight += 50;
     renderWeightModal();
   });
-
   const wqMinus = $('weightQtyMinus');
   const wqPlus  = $('weightQtyPlus');
-  if (wqMinus) wqMinus.addEventListener('click', () => {
-    if (weightModalState.qty > 1) { weightModalState.qty--; renderWeightModal(); }
-  });
-  if (wqPlus) wqPlus.addEventListener('click', () => {
-    weightModalState.qty++;
-    renderWeightModal();
-  });
-
+  if (wqMinus) wqMinus.addEventListener('click', () => { if (weightModalState.qty > 1) { weightModalState.qty--; renderWeightModal(); } });
+  if (wqPlus) wqPlus.addEventListener('click', () => { weightModalState.qty++; renderWeightModal(); });
   const wAddBtn = $('weightAddBtn');
   if (wAddBtn) wAddBtn.addEventListener('click', addTieredProductToCart);
 
@@ -3018,7 +2912,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const password = $('loginPassword').value.trim();
     const phone = $('loginPhone').value.trim();
 
-    if (email === 'user' && password === 'user') {
+    /* === EMPLOYEE REDIRECT === */
+    if (email === EMPLOYEE_USER && password === EMPLOYEE_PASS) {
       const btn = $('loginSubmit');
       btn.innerHTML = `<i class="bx bx-loader-alt bx-spin"></i> Opening Employee Portal...`;
       btn.disabled = true;
@@ -3026,6 +2921,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    /* === OWNER (Developer) === */
     if (isOwnerPhone(phone)) {
       const btn = $('loginSubmit');
       const orig = btn.innerHTML;
@@ -3035,6 +2931,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    /* === ADMIN === */
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       const btn = $('loginSubmit');
       const orig = btn.innerHTML;
@@ -3044,6 +2941,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    /* === NORMAL CUSTOMER === */
     if (!email || !password || !phone) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
     if (!email.includes('@')) { showToast(t('toast.validEmail'), 'bx-error-circle'); return; }
     if (!validateJordanPhone(phone)) { showToast(t('toast.validPhone'), 'bx-error-circle'); return; }
@@ -3175,25 +3073,27 @@ document.addEventListener('DOMContentLoaded', () => {
       channel: 'online'
     };
     orderHistory.unshift(newOrder);
-    // بعد: orderHistory.unshift(newOrder);
-try {
-  const online = JSON.parse(localStorage.getItem('hatcandy-online-orders') || '[]');
-  online.unshift({
-    id: newOrder.id,
-    date: newOrder.date,
-    status: newOrder.status,
-    customerName: currentUser?.name || 'Guest',
-    customerPhone: currentUser?.phone || '',
-    address: newOrder.address,
-    itemsList: newOrder.itemsList,
-    subtotal: newOrder.subtotal,
-    deliveryFee: newOrder.deliveryFee || 0,
-    total: newOrder.total,
-    payment: newOrder.payment,
-    placedAt: new Date().toISOString()
-  });
-  localStorage.setItem('hatcandy-online-orders', JSON.stringify(online));
-} catch(e) {}
+
+    /* === PUSH to online orders for Employee POS === */
+    try {
+      const online = JSON.parse(localStorage.getItem(LS_KEYS.onlineOrders) || '[]');
+      online.unshift({
+        id: newOrder.id,
+        date: newOrder.date,
+        status: newOrder.status,
+        customerName: currentUser?.name || 'Guest',
+        customerPhone: currentUser?.phone || '',
+        address: newOrder.address,
+        itemsList: newOrder.itemsList,
+        subtotal: newOrder.subtotal,
+        deliveryFee: newOrder.deliveryFee || 0,
+        total: newOrder.total,
+        payment: newOrder.payment,
+        placedAt: new Date().toISOString()
+      });
+      localStorage.setItem(LS_KEYS.onlineOrders, JSON.stringify(online));
+    } catch (e) {}
+
     showToast(t('toast.orderPlaced', { total: '$' + total.toFixed(2) }), 'bx-party');
     cart = [];
     cartPayment.card = { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null };
@@ -3214,11 +3114,7 @@ try {
     btn.disabled = true;
     setTimeout(() => {
       contactMessages.unshift({ id: 'msg-' + Date.now(), name, email, message, date: new Date().toISOString().split('T')[0], read: false });
-      if ($('adminPage').classList.contains('show')) {
-        renderAdmin();
-        const tag = $('adminChartTag');
-        if (tag && overviewUnlocked) tag.textContent = getReportRangeLabel(reportRange);
-      }
+      if ($('adminPage').classList.contains('show')) renderAdmin();
       showToast(t('toast.thanks', { name }), 'bx-check-circle');
       e.target.reset();
       btn.textContent = orig;
@@ -3226,7 +3122,7 @@ try {
     }, 1200);
   });
 
-  /* ==== SMOOTH SCROLL (fallback) ==== */
+  /* ==== SMOOTH SCROLL ==== */
   document.querySelectorAll('a[href^="#"]:not(#navCandiesLink):not(#navChocolateLink)').forEach(a => {
     a.addEventListener('click', function (e) {
       const href = this.getAttribute('href');
@@ -3377,7 +3273,6 @@ try {
   $('ownerAddAddon').addEventListener('click', () => openOwnerAddonModal());
   $('ownerAddZone').addEventListener('click', () => openOwnerZoneModal());
 
-  /* Owner tabs scroll buttons */
   const ownerTabsLeft = $('ownerTabsLeft');
   const ownerTabsRight = $('ownerTabsRight');
   const ownerTabsViewport = $('ownerTabsViewport');
@@ -3386,7 +3281,6 @@ try {
   if (ownerTabsViewport) ownerTabsViewport.addEventListener('scroll', updateOwnerTabsScrollBtns, { passive: true });
   window.addEventListener('resize', updateOwnerTabsScrollBtns);
 
-  /* Owner pricing mode toggle */
   document.querySelectorAll('#ownerProductModal .price-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => updateProductPricingPanels(btn.dataset.priceMode));
   });
@@ -3430,12 +3324,9 @@ try {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'hat-candy-backup.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = 'hat-candy-backup.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
     showToast(t('toast.dataExported'), 'bx-download');
   });
 
@@ -3747,7 +3638,7 @@ try {
   /* ==== LANGUAGE TOGGLE ==== */
   $('langToggle').addEventListener('click', () => applyLanguage(lang === 'ar' ? 'en' : 'ar'));
 
-  /* ==== iOS VH FIX ==== */
+  /* ==== VH FIX ==== */
   function setVH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
   setVH();
   window.addEventListener('resize', setVH);
@@ -3756,6 +3647,7 @@ try {
   /* ==== SWIPE TO CLOSE ==== */
   ['cartPanel', 'loginPanel'].forEach(id => {
     const el = $(id);
+    if (!el) return;
     let startX = 0, startY = 0, curX = 0, tracking = false;
     el.addEventListener('touchstart', (e) => {
       if (e.touches.length !== 1) return;
