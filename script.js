@@ -1,8 +1,14 @@
 /* =====================================================
    HAT CANDY — MAIN APPLICATION SCRIPT
-   Organized into logical modules for maintainability.
-   UPDATED: 5-step Mix Builder (Packaging → Weight → Types → Add-ons → Payment)
-   + Add-ons Management (Owner Panel)
+   UPDATED:
+   - Nav "Chocolate" link with category jump
+   - 3-tier pricing (250g / 500g / 1kg) + fixed pricing
+   - Tier rules:
+     • w <  500g → 250g price
+     • w ≥  500g → 500g price
+     • w ≥ 1000g → 1kg price (cap)
+   - Weight Picker Modal for tiered products
+   - Fully responsive
    ===================================================== */
 
 /* =====================================================
@@ -11,13 +17,14 @@
 const I18N = {
   en: {
     'title.page': 'Hat Candy | Every Candy Begins with Magic',
-    'nav.home': 'Home', 'nav.offers': 'Offers', 'nav.candies': 'Candies', 'nav.chocolate': 'Chocolate', 'nav.about': 'About', 'nav.gallery': 'Gallery', 'nav.contact': 'Contact',
-    'chocolate.title': 'The Chocolate Corner', 'chocolate.subtitle': 'Hand-crafted chocolate, melted into pure magic', 'chocolate.add': 'Add', 'orbit.candies': 'Candies', 'orbit.chocolate': 'Chocolate',
+    'nav.home': 'Home', 'nav.offers': 'Offers', 'nav.candies': 'Candies', 'nav.chocolate': 'Chocolate',
+    'nav.about': 'About', 'nav.gallery': 'Gallery', 'nav.contact': 'Contact',
     'hero.badge': 'Luxury Candy Brand', 'hero.text': 'Every Candy Begins with Magic. Combining premium quality, elegant presentation, and playful creativity to transform every sweet treat into a memorable experience.',
     'hero.seeOffers': 'See Offers', 'hero.buildMix': 'Build Your Mix',
     'offers.title': 'Limited-Time Offers', 'offers.subtitle': "Sweet deals that won't last forever — grab them before they're gone!", 'offers.empty': 'No active offers right now.<br>Check back soon for more magic ✨', 'offers.grab': 'Grab this Offer', 'offers.save': 'Save',
     'banner.title': 'Mix It <span>Your Way</span> ✨', 'banner.text': 'Choose your weight, pick your packaging, and combine your favorite candies into one magical custom mix.', 'banner.cta': 'Start Building',
     'candies.title': 'Signature Collection', 'candies.subtitle': 'Indulge in our curated selection — add your favorites to the cart', 'candies.add': 'Add', 'candies.added': 'Added',
+    'cat.all': 'All', 'cat.candy': 'Candies', 'cat.chocolate': 'Chocolate',
     'about.title': 'Our Magical Story', 'about.p1': 'Hat Candy is a luxury candy brand created to transform every sweet treat into a memorable experience.', 'about.p2': 'Inspired by our slogan, "Every Candy Begins with Magic," we believe that every piece of candy starts with imagination, care, and a little magic.', 'about.f1': 'Premium Ingredients', 'about.f2': 'Elegant Presentation', 'about.f3': 'Luxury Gift Boxes', 'about.f4': 'Made with Love',
     'gallery.title': 'Magic in Every Detail', 'gallery.subtitle': 'A glimpse into our world of premium sweets and elegant packaging',
     'contact.title': 'Get in Touch', 'contact.subtitle': 'Order your magical treats — online orders are accepted 24/7', 'contact.infoTitle': 'Contact Information', 'contact.infoText': "We'd love to hear from you! Place your order online any time, or visit our boutique during opening hours.",
@@ -31,6 +38,12 @@ const I18N = {
     'login.google': 'Continue with Google', 'login.divider': 'Or continue with email',
     'login.email': 'Email Address <span class="req">*</span>', 'login.password': 'Password <span class="req">*</span>', 'login.phone': 'Phone Number <span class="req">*</span>',
     'login.remember': 'Remember me', 'login.forgot': 'Forgot password?', 'login.signin': 'Sign In', 'login.signingIn': 'Signing in...', 'login.noAccount': 'Not a member?', 'login.createAccount': 'Create an account', 'login.change': 'Change', 'login.continue': 'Continue',
+    'weight.choose': 'Choose your weight', 'weight.unit': 'g', 'weight.quantity': 'Quantity', 'weight.addToCart': 'Add to Cart',
+    'weight.tierNoteTitle': 'Pricing tier',
+    'weight.tierNote250': 'You are paying the <strong>250 g tier</strong> price ({price}).',
+    'weight.tierNote500': 'You are paying the <strong>500 g tier</strong> price ({price}).',
+    'weight.tierNote1000': 'You are paying the <strong>1 kg tier</strong> price ({price}). Max tier reached.',
+    'weight.customHint': 'Custom weight',
     'mix.title': 'Build Your Own Mix', 'mix.subtitle': 'Every Candy Begins with Magic',
     'mix.step1': 'Packaging', 'mix.step2': 'Weight', 'mix.step3': 'Candy Types', 'mix.step4': 'Add-ons', 'mix.step5': 'Payment',
     'mix.weightTitle': 'Choose Your Weight', 'mix.weightSub': 'From 100 g up to 1 kg — pick the perfect size for your magic mix.',
@@ -86,13 +99,14 @@ const I18N = {
   },
   ar: {
     'title.page': 'هات كاندي | كل قطعة حلوى تبدأ بالسحر',
-    'nav.home': 'الرئيسية', 'nav.offers': 'العروض', 'nav.candies': 'الحلويات', 'nav.chocolate': 'الشوكولاتة', 'nav.about': 'من نحن', 'nav.gallery': 'المعرض', 'nav.contact': 'تواصل معنا',
-    'chocolate.title': 'ركن الشوكولاتة', 'chocolate.subtitle': 'شوكولاتة مصنوعة يدوياً — ذائبة كالسحر', 'chocolate.add': 'أضف', 'orbit.candies': 'حلويات', 'orbit.chocolate': 'شوكولاتة',
+    'nav.home': 'الرئيسية', 'nav.offers': 'العروض', 'nav.candies': 'كانديز', 'nav.chocolate': 'تشوكليت',
+    'nav.about': 'من نحن', 'nav.gallery': 'المعرض', 'nav.contact': 'تواصل معنا',
     'hero.badge': 'علامة حلويات فاخرة', 'hero.text': 'كل قطعة حلوى تبدأ بالسحر. نجمع بين الجودة الفاخرة والتقديم الأنيق والإبداع المرح لتحويل كل قطعة حلوى إلى تجربة لا تُنسى.',
     'hero.seeOffers': 'شاهد العروض', 'hero.buildMix': 'اصنع خلطتك',
     'offers.title': 'عروض لفترة محدودة', 'offers.subtitle': 'عروض حلوة لن تدوم للأبد — احصل عليها قبل أن تنتهي!', 'offers.empty': 'لا توجد عروض فعّالة حالياً.<br>عُد قريباً لمزيد من السحر ✨', 'offers.grab': 'احصل على العرض', 'offers.save': 'وفّر',
     'banner.title': 'امزجها <span>على طريقتك</span> ✨', 'banner.text': 'اختر الوزن، واختر التغليف، وامزج حلوياتك المفضلة في خلطة سحرية خاصة بك.', 'banner.cta': 'ابدأ الآن',
     'candies.title': 'التشكيلة المميزة', 'candies.subtitle': 'استمتع بتشكيلتنا المنتقاة — أضف مفضلاتك إلى السلة', 'candies.add': 'أضف', 'candies.added': 'تمت الإضافة',
+    'cat.all': 'الكل', 'cat.candy': 'كانديز', 'cat.chocolate': 'تشوكليت',
     'about.title': 'قصتنا السحرية', 'about.p1': 'هات كاندي هي علامة حلويات فاخرة أُنشئت لتحويل كل قطعة حلوى إلى تجربة لا تُنسى.', 'about.p2': 'مستوحاة من شعارنا «كل قطعة حلوى تبدأ بالسحر»، نؤمن أن كل قطعة حلوى تبدأ من الخيال والعناية وقليل من السحر.', 'about.f1': 'مكونات فاخرة', 'about.f2': 'تقديم أنيق', 'about.f3': 'علب هدايا فاخرة', 'about.f4': 'مصنوعة بحب',
     'gallery.title': 'السحر في كل تفصيلة', 'gallery.subtitle': 'لمحة عن عالمنا من الحلويات الفاخرة والتغليف الأنيق',
     'contact.title': 'تواصل معنا', 'contact.subtitle': 'اطلب حلوياتك السحرية — الطلبات الإلكترونية متاحة ٢٤/٧', 'contact.infoTitle': 'معلومات التواصل', 'contact.infoText': 'يسعدنا سماعك! اطلب عبر الإنترنت في أي وقت، أو زُر متجرنا خلال ساعات العمل.',
@@ -106,6 +120,12 @@ const I18N = {
     'login.google': 'المتابعة عبر جوجل', 'login.divider': 'أو تابع بالبريد الإلكتروني',
     'login.email': 'البريد الإلكتروني <span class="req">*</span>', 'login.password': 'كلمة المرور <span class="req">*</span>', 'login.phone': 'رقم الهاتف <span class="req">*</span>',
     'login.remember': 'تذكرني', 'login.forgot': 'نسيت كلمة المرور؟', 'login.signin': 'تسجيل الدخول', 'login.signingIn': 'جارٍ تسجيل الدخول...', 'login.noAccount': 'لست عضواً؟', 'login.createAccount': 'أنشئ حساباً', 'login.change': 'تغيير', 'login.continue': 'متابعة',
+    'weight.choose': 'اختر الوزن', 'weight.unit': 'غرام', 'weight.quantity': 'الكمية', 'weight.addToCart': 'أضف إلى السلة',
+    'weight.tierNoteTitle': 'فئة السعر',
+    'weight.tierNote250': 'تدفع سعر <strong>فئة ٢٥٠ غرام</strong> ({price}).',
+    'weight.tierNote500': 'تدفع سعر <strong>فئة ٥٠٠ غرام</strong> ({price}).',
+    'weight.tierNote1000': 'تدفع سعر <strong>فئة ١ كيلو</strong> ({price}). وصلت للحد الأقصى.',
+    'weight.customHint': 'وزن مخصص',
     'mix.title': 'اصنع خلطتك الخاصة', 'mix.subtitle': 'كل قطعة حلوى تبدأ بالسحر',
     'mix.step1': 'التغليف', 'mix.step2': 'الوزن', 'mix.step3': 'الأنواع', 'mix.step4': 'الإضافات', 'mix.step5': 'الدفع',
     'mix.weightTitle': 'اختر الوزن', 'mix.weightSub': 'من ١٠٠ غرام حتى ١ كيلو — اختر الحجم المثالي لخلطتك السحرية.',
@@ -165,18 +185,20 @@ const I18N = {
    2. DEFAULT DATA
    ===================================================== */
 const DEFAULT_PRODUCTS = [
-  { id: 'gummies', name: 'Gourmet Gummies', name_ar: 'حلوى الجيلي الفاخرة', desc: 'Soft, fruity, and bursting with natural flavors.', desc_ar: 'ناعمة، فاكهية، ومليئة بالنكهات الطبيعية.', price: 8.99, oldPrice: 12.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 140, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
-  { id: 'truffles', name: 'Velvet Truffles', name_ar: 'ترافل مخملي', desc: 'Rich, creamy chocolate ganache coated in premium Belgian cocoa.', desc_ar: 'غاناش شوكولاتة غني وكريمي مغطى بمسحوق الكاكاو البلجيكي.', price: 14.99, oldPrice: 19.99, badge: 'Premium', badge_ar: 'فاخر', stock: 62, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' },
-  { id: 'lollipops', name: 'Honey Swirl Pops', name_ar: 'مصاصات العسل', desc: 'Colorful artisan lollipops crafted with real honey.', desc_ar: 'مصاصات ملونة حرفية مصنوعة من العسل الطبيعي.', price: 6.99, oldPrice: 9.99, badge: 'New', badge_ar: 'جديد', stock: 18, img: 'https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=600' },
-  { id: 'cloud', name: 'Cloud Candy', name_ar: 'حلوى السحاب', desc: 'Fluffy, melt-in-your-mouth cotton candy.', desc_ar: 'غزل البنات الهش الذائب في الفم.', price: 7.99, oldPrice: 10.99, badge: 'New', badge_ar: 'جديد', stock: 95, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
-  { id: 'sours', name: 'Zesty Sours', name_ar: 'حلوى حامضة', desc: 'Tangy and sweet gummy worms with a sour sugar coating.', desc_ar: 'ديدان جيلي حامضة وحلوة مع طبقة من السكر الحامض.', price: 8.49, oldPrice: 11.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 8, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
-  { id: 'caramel', name: 'Golden Caramel Corn', name_ar: 'فشار الكراميل الذهبي', desc: 'Crunchy popcorn coated in buttery caramel glaze.', desc_ar: 'فشار مقرمش مغطى بطبقة الكراميل بالزبدة.', price: 9.99, oldPrice: 13.99, badge: 'Premium', badge_ar: 'فاخر', stock: 34, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' }
-];
+  /* ===== CANDIES — FIXED PRICING ===== */
+  { id: 'gummies', category: 'candy', pricingType: 'fixed', name: 'Gourmet Gummies', name_ar: 'حلوى الجيلي الفاخرة', desc: 'Soft, fruity, and bursting with natural flavors.', desc_ar: 'ناعمة، فاكهية، ومليئة بالنكهات الطبيعية.', price: 8.99, oldPrice: 12.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 140, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
+  { id: 'lollipops', category: 'candy', pricingType: 'fixed', name: 'Honey Swirl Pops', name_ar: 'مصاصات العسل', desc: 'Colorful artisan lollipops crafted with real honey.', desc_ar: 'مصاصات ملونة حرفية مصنوعة من العسل الطبيعي.', price: 6.99, oldPrice: 9.99, badge: 'New', badge_ar: 'جديد', stock: 18, img: 'https://images.unsplash.com/photo-1575224300306-1b8da36134ec?w=600' },
+  { id: 'cloud', category: 'candy', pricingType: 'fixed', name: 'Cloud Candy', name_ar: 'حلوى السحاب', desc: 'Fluffy, melt-in-your-mouth cotton candy.', desc_ar: 'غزل البنات الهش الذائب في الفم.', price: 7.99, oldPrice: 10.99, badge: 'New', badge_ar: 'جديد', stock: 95, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
+  { id: 'sours', category: 'candy', pricingType: 'fixed', name: 'Zesty Sours', name_ar: 'حلوى حامضة', desc: 'Tangy and sweet gummy worms with a sour sugar coating.', desc_ar: 'ديدان جيلي حامضة وحلوة مع طبقة من السكر الحامض.', price: 8.49, oldPrice: 11.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 8, img: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600' },
+  { id: 'caramel', category: 'candy', pricingType: 'fixed', name: 'Golden Caramel Corn', name_ar: 'فشار الكراميل الذهبي', desc: 'Crunchy popcorn coated in buttery caramel glaze.', desc_ar: 'فشار مقرمش مغطى بطبقة الكراميل بالزبدة.', price: 9.99, oldPrice: 13.99, badge: 'Premium', badge_ar: 'فاخر', stock: 34, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
 
-const DEFAULT_CHOCOLATE_PRODUCTS = [
-  { id: 'dark-truffle-bar', name: 'Midnight Dark Bar', name_ar: 'لوح منتصف الليل الداكن', desc: '70% single-origin dark chocolate with a velvet snap.', desc_ar: 'شوكولاتة داكنة ٧٠٪ من مصدر واحد بقوام مخملي.', price: 11.99, oldPrice: 15.99, badge: 'Premium', badge_ar: 'فاخر', stock: 40, img: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=600' },
-  { id: 'hazelnut-praline', name: 'Hazelnut Praline Clusters', name_ar: 'عناقيد البندق البراليه', desc: 'Roasted hazelnuts folded into silky milk chocolate.', desc_ar: 'بندق محمص ملفوف بشوكولاتة الحليب الحريرية.', price: 12.99, oldPrice: 16.99, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 55, img: 'https://images.unsplash.com/photo-1481391319762-47dff72954d9?w=600' },
-  { id: 'white-raspberry', name: 'White Raspberry Bites', name_ar: 'قطع التوت الأبيض', desc: 'Creamy white chocolate with a raspberry heart.', desc_ar: 'شوكولاتة بيضاء كريمية بقلب من التوت.', price: 10.99, oldPrice: 13.99, badge: 'New', badge_ar: 'جديد', stock: 30, img: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=600' }
+  /* ===== CHOCOLATE — TIERED PRICING (250g / 500g / 1kg) ===== */
+  { id: 'truffles', category: 'chocolate', pricingType: 'tiered', name: 'Velvet Truffles', name_ar: 'ترافل مخملي', desc: 'Rich, creamy chocolate ganache coated in premium Belgian cocoa.', desc_ar: 'غاناش شوكولاتة غني وكريمي مغطى بمسحوق الكاكاو البلجيكي.', price250: 5.99, price500: 10.99, price1000: 19.99, oldPrice: 24.99, badge: 'Premium', badge_ar: 'فاخر', stock: 62, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' },
+  { id: 'dark-bar', category: 'chocolate', pricingType: 'tiered', name: 'Dark Chocolate Bar', name_ar: 'لوح شوكولاتة داكنة', desc: '70% cocoa single-origin dark chocolate, intense and smooth.', desc_ar: 'شوكولاتة داكنة ٧٠٪ من مصدر واحد، غنية وناعمة.', price250: 4.99, price500: 8.99, price1000: 16.99, badge: 'Premium', badge_ar: 'فاخر', stock: 48, img: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=600' },
+  { id: 'milk-pralines', category: 'chocolate', pricingType: 'tiered', name: 'Milk Chocolate Pralines', name_ar: 'برالين شوكولاتة بالحليب', desc: 'Creamy milk chocolate filled with roasted hazelnut praline.', desc_ar: 'شوكولاتة بالحليب كريمية محشوة ببرالين البندق المحمص.', price250: 5.49, price500: 9.99, price1000: 18.49, badge: 'Bestseller', badge_ar: 'الأكثر مبيعاً', stock: 55, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' },
+  { id: 'white-truffles', category: 'chocolate', pricingType: 'tiered', name: 'White Chocolate Truffles', name_ar: 'ترافل شوكولاتة بيضاء', desc: 'Silky white chocolate truffles with a hint of vanilla.', desc_ar: 'ترافل شوكولاتة بيضاء حريرية مع لمسة فانيليا.', price250: 6.49, price500: 11.99, price1000: 21.99, badge: 'New', badge_ar: 'جديد', stock: 30, img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=600' },
+  { id: 'hazelnut-box', category: 'chocolate', pricingType: 'tiered', name: 'Hazelnut Chocolate Box', name_ar: 'علبة شوكولاتة بالبندق', desc: 'Luxury assorted chocolate box with whole roasted hazelnuts.', desc_ar: 'علبة شوكولاتة فاخرة مشكّلة مع بندق محمص كامل.', price250: 6.99, price500: 12.99, price1000: 23.99, oldPrice: 27.99, badge: 'Premium', badge_ar: 'فاخر', stock: 26, img: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=600' },
+  { id: 'choco-trio', category: 'chocolate', pricingType: 'tiered', name: 'Chocolate Lover Trio', name_ar: 'ثلاثية عشّاق الشوكولاتة', desc: 'Dark, milk & white chocolate — 3 premium flavors in one mix.', desc_ar: 'داكنة، حليب، وبيضاء — ٣ نكهات فاخرة في خلطة واحدة.', price250: 5.99, price500: 10.49, price1000: 19.49, badge: 'Bundle', badge_ar: 'مجمّع', stock: 40, img: 'https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600' }
 ];
 
 const DEFAULT_OFFERS = [
@@ -213,7 +235,6 @@ const DEFAULT_CANDY_TYPES = [
   { id: 'caramel', name: 'Caramel Bites', name_ar: 'قطع الكراميل', img: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=300', color: '#d97706', price_per_kg: 15.00, sale_price_per_kg: 0 }
 ];
 
-/* ===== NEW: DEFAULT ADD-ONS ===== */
 const DEFAULT_ADDONS = [
   { id: 'sprinkles', name: 'Rainbow Sprinkles', name_ar: 'شبر ملون', desc: 'Colorful sugar sprinkles', desc_ar: 'رشات سكرية ملونة', price: 0.99, icon: 'bx-dot', img: '', active: true },
   { id: 'choco-sauce', name: 'Chocolate Sauce', name_ar: 'صوص شوكولاتة', desc: 'Rich melted chocolate dip', desc_ar: 'صوص شوكولاتة ذائبة غني', price: 1.50, icon: 'bx-water', img: '', active: true },
@@ -234,13 +255,12 @@ const DEFAULT_DELIVERY_ZONES = [
    3. APPLICATION STATE
    ===================================================== */
 let products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
-let chocolateProducts = JSON.parse(JSON.stringify(DEFAULT_CHOCOLATE_PRODUCTS));
 let offers = JSON.parse(JSON.stringify(DEFAULT_OFFERS));
 let galleryImages = JSON.parse(JSON.stringify(DEFAULT_GALLERY));
 let mixWeights = [...DEFAULT_MIX_WEIGHTS];
 let mixPackaging = JSON.parse(JSON.stringify(DEFAULT_MIX_PACKAGING));
 let candyTypes = JSON.parse(JSON.stringify(DEFAULT_CANDY_TYPES));
-let addons = JSON.parse(JSON.stringify(DEFAULT_ADDONS));   /* NEW */
+let addons = JSON.parse(JSON.stringify(DEFAULT_ADDONS));
 let deliveryZones = JSON.parse(JSON.stringify(DEFAULT_DELIVERY_ZONES));
 let contentOverrides = {};
 let storeHours = { open: 8, close: 17 };
@@ -251,16 +271,26 @@ let checkoutIntent = false;
 let cartDelivery = { method: 'delivery', zoneId: null };
 let cartPayment = { method: 'cash', card: { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null } };
 
-/* ===== Mix state (5 steps) ===== */
+/* Mix state (5 steps) */
 const mixState = {
   step: 1,
-  packaging: null,        /* step 1 */
-  weight: null,           /* step 2 */
-  typesCount: 1,          /* step 3 */
+  packaging: null,
+  weight: null,
+  typesCount: 1,
   selectedTypes: [],
-  selectedAddons: [],     /* step 4 */
-  payment: 'cash',        /* step 5 */
+  selectedAddons: [],
+  payment: 'cash',
   card: { number: '', name: '', expiry: '', cvv: '' }
+};
+
+/* Candy category filter */
+let candyFilter = 'all';
+
+/* Weight modal runtime state */
+let weightModalState = {
+  product: null,
+  weight: 250,
+  qty: 1
 };
 
 let customers = [
@@ -301,7 +331,6 @@ const STATUS_FLOW = ['processing', 'packing', 'shipped', 'out_for_delivery', 'de
 
 const LS_KEYS = {
   products: 'hatcandy-products',
-  chocolateProducts: 'hatcandy-chocolate-products',
   offers: 'hatcandy-offers',
   gallery: 'hatcandy-gallery',
   content: 'hatcandy-content',
@@ -309,7 +338,7 @@ const LS_KEYS = {
   mixWeights: 'hatcandy-mix-weights',
   mixPackaging: 'hatcandy-mix-packaging',
   candyTypes: 'hatcandy-candy-types',
-  addons: 'hatcandy-addons',                 /* NEW */
+  addons: 'hatcandy-addons',
   deliveryZones: 'hatcandy-delivery-zones',
   storeHours: 'hatcandy-store-hours',
   googleAccounts: 'hatcandy-google-accounts',
@@ -320,7 +349,7 @@ const LS_KEYS = {
 };
 
 /* =====================================================
-   5. APPLICATION RUNTIME STATE
+   5. RUNTIME STATE
    ===================================================== */
 let lang = 'en';
 try { lang = localStorage.getItem('hatcandy-lang') || 'en'; } catch (e) { lang = 'en'; }
@@ -334,7 +363,7 @@ let accountTab = 'orders';
 let adminOrderFilter = 'all';
 let adminCustomerSearch = '';
 let pendingDeleteId = null;
-let pendingAddonDeleteId = null;   /* NEW */
+let pendingAddonDeleteId = null;
 let previousSignState = null;
 
 const OVERVIEW_SECRET = '123';
@@ -342,363 +371,7 @@ let overviewUnlocked = false;
 let reportRange = 'weekly';
 
 /* =====================================================
-   6. EMPLOYEE MANAGEMENT MODULE
-   ===================================================== */
-function loadEmployees() {
-  try {
-    const raw = localStorage.getItem(LS_KEYS.employees);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) { return []; }
-}
-
-function saveEmployees(list) {
-  try { localStorage.setItem(LS_KEYS.employees, JSON.stringify(list)); } catch (e) {}
-}
-
-function loadEmployeeData() {
-  try {
-    const orders = JSON.parse(localStorage.getItem(LS_KEYS.employeeOrders) || '[]');
-    const shifts = JSON.parse(localStorage.getItem(LS_KEYS.employeeShifts) || '[]');
-    return {
-      orders: Array.isArray(orders) ? orders : [],
-      shifts: Array.isArray(shifts) ? shifts : []
-    };
-  } catch (e) {
-    return { orders: [], shifts: [] };
-  }
-}
-
-function syncEmployeeDataToOrders() {
-  const { orders: empOrders } = loadEmployeeData();
-  const existingIds = new Set(orderHistory.map(o => o.id));
-
-  empOrders.forEach(eo => {
-    if (!existingIds.has(eo.id)) {
-      orderHistory.push({
-        id: eo.id,
-        customerId: eo.customerId || 'c-guest-pos',
-        date: eo.date,
-        status: eo.status || 'delivered',
-        payment: eo.payment || 'cash',
-        itemsList: eo.itemsList || [],
-        total: Number(eo.total) || 0,
-        subtotal: Number(eo.subtotal) || 0,
-        tax: Number(eo.tax) || 0,
-        address: eo.address || 'In-store',
-        tracking: eo.tracking || null,
-        placedAt: eo.date,
-        packedAt: eo.date,
-        shippedAt: eo.date,
-        outAt: eo.date,
-        deliveredAt: eo.date,
-        eta: eo.date,
-        servedBy: eo.servedBy || '',
-        servedByUsername: eo.employeeUsername || '',
-        channel: 'pos'
-      });
-      existingIds.add(eo.id);
-
-      if (eo.customerInfo && eo.customerInfo.name) {
-        const exists = customers.find(c =>
-          (eo.customerInfo.email && c.email && c.email === eo.customerInfo.email) ||
-          (c.name === eo.customerInfo.name && c.phone === eo.customerInfo.phone)
-        );
-        if (!exists) {
-          customers.push({
-            id: eo.customerId || ('c-pos-' + Date.now() + '-' + Math.random().toString(36).slice(2,6)),
-            name: eo.customerInfo.name,
-            email: eo.customerInfo.email || '',
-            phone: eo.customerInfo.phone || '',
-            city: 'Amman',
-            joined: eo.date,
-            tier: 'new'
-          });
-        }
-      }
-    }
-  });
-}
-
-function getEmployeeStats() {
-  const employees = loadEmployees();
-  const { orders: empOrders, shifts } = loadEmployeeData();
-
-  return employees.map(emp => {
-    const myOrders = empOrders.filter(o => o.employeeUsername === emp.username);
-    const myShifts = shifts.filter(s => s.username === emp.username)
-      .sort((a,b) => (b.checkIn || '').localeCompare(a.checkIn || ''));
-    const lastShift = myShifts[0];
-
-    const totalRevenue = myOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-    const totalItems = myOrders.reduce((sum, o) =>
-      sum + (o.itemsList || []).reduce((s, i) => s + Number(i.qty || 0), 0), 0);
-
-    return {
-      ...emp,
-      orderCount: myOrders.length,
-      revenue: totalRevenue,
-      itemsSold: totalItems,
-      lastShift,
-      isActive: lastShift && !lastShift.checkOut
-    };
-  });
-}
-
-function renderAdminEmployees() {
-  const stats = getEmployeeStats();
-  const tbody = $('adminEmployeesBody');
-  const kpis = $('adminEmployeeKpis');
-  if (!tbody || !kpis) return;
-
-  const totalRevenue = stats.reduce((s, e) => s + e.revenue, 0);
-  const totalSales = stats.reduce((s, e) => s + e.orderCount, 0);
-  const activeCount = stats.filter(e => e.isActive).length;
-
-  kpis.innerHTML = `
-    <div class="kpi-card"><div class="kpi-icon"><i class='bx bx-id-card'></i></div><div><div class="kpi-value">${stats.length}</div><div class="kpi-label">${t('admin.kpiTotalEmployees')}</div></div></div>
-    <div class="kpi-card"><div class="kpi-icon" style="background:linear-gradient(135deg,#22c55e,#15803d);"><i class='bx bx-user-check'></i></div><div><div class="kpi-value">${activeCount}</div><div class="kpi-label">${t('admin.kpiActiveNow')}</div></div></div>
-    <div class="kpi-card"><div class="kpi-icon"><i class='bx bx-receipt'></i></div><div><div class="kpi-value">${totalSales}</div><div class="kpi-label">${t('admin.kpiTotalSales')}</div></div></div>
-    <div class="kpi-card"><div class="kpi-icon" style="background:linear-gradient(135deg,#facc43,#e2015d);"><i class='bx bx-dollar-circle'></i></div><div><div class="kpi-value">$${totalRevenue.toFixed(2)}</div><div class="kpi-label">${t('admin.kpiTotalRevenue')}</div></div></div>
-  `;
-
-  if (!stats.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="admin-empty-note">${t('admin.noEmployees')}</div></td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = stats.map(e => {
-    const shift = e.lastShift;
-    let shiftText = '—';
-    let status = `<span class="admin-tier" style="background:rgba(107,114,128,0.15);color:#4b5563;">${t('admin.offline')}</span>`;
-
-    if (shift) {
-      const startStr = new Date(shift.checkIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      if (shift.checkOut) {
-        const endStr = new Date(shift.checkOut).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        shiftText = `${startStr} → ${endStr}`;
-      } else {
-        shiftText = `${startStr} → ${t('admin.now')}`;
-        status = `<span class="admin-tier active" style="background:rgba(34,197,94,0.15);color:#15803d;">● ${t('admin.online')}</span>`;
-      }
-    }
-
-    return `<tr>
-      <td><div class="admin-user"><div class="admin-user-avatar">${esc((e.name||'E').charAt(0))}</div><div><div class="admin-user-name">${esc(e.name)}</div><div class="admin-sub">${esc(e.role || 'Cashier')}</div></div></div></td>
-      <td><strong>${esc(e.username)}</strong></td>
-      <td>${esc(e.phone || '—')}</td>
-      <td>${esc(e.address || '—')}</td>
-      <td>${e.orderCount}</td>
-      <td><strong>$${e.revenue.toFixed(2)}</strong></td>
-      <td>${status}<div class="admin-sub" style="margin-top:4px;">${shiftText}</div></td>
-      <td><div class="admin-row-actions">
-        <button class="admin-mini-btn primary" data-edit-employee="${esc(e.id)}"><i class='bx bx-edit'></i></button>
-        <button class="admin-mini-btn danger" data-del-employee="${esc(e.id)}"><i class='bx bx-trash'></i></button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-function openAdminEmployeeModal(id) {
-  const modal = $('adminEmployeeModal');
-  const f = $('adminEmployeeForm');
-  f.reset();
-  $('empId').value = '';
-  $('adminEmployeeModalTitle').textContent = id ? t('admin.editEmployee') : t('admin.addEmployee');
-
-  if (id) {
-    const emp = loadEmployees().find(e => e.id === id);
-    if (emp) {
-      $('empId').value = emp.id;
-      $('empName').value = emp.name || '';
-      $('empUsername').value = emp.username || '';
-      $('empPassword').value = emp.password || '';
-      $('empPhone').value = emp.phone || '';
-      $('empRole').value = emp.role || 'Cashier';
-      $('empAddress').value = emp.address || '';
-    }
-  } else {
-    $('empRole').value = 'Cashier';
-  }
-  modal.classList.add('show');
-}
-
-function handleAdminEmployeeSubmit(e) {
-  e.preventDefault();
-  const id = $('empId').value;
-  const list = loadEmployees();
-
-  const data = {
-    id: id || 'emp-' + Date.now(),
-    name: $('empName').value.trim(),
-    username: $('empUsername').value.trim().toLowerCase(),
-    password: $('empPassword').value.trim(),
-    phone: $('empPhone').value.trim(),
-    role: $('empRole').value.trim() || 'Cashier',
-    address: $('empAddress').value.trim()
-  };
-
-  if (!data.name || !data.username || !data.password) {
-    showToast(t('toast.employeeFields'), 'bx-error-circle');
-    return;
-  }
-
-  const duplicate = list.find(x => x.username === data.username && x.id !== data.id);
-  if (duplicate) {
-    showToast(t('toast.employeeExists'), 'bx-error-circle');
-    return;
-  }
-
-  if (id) {
-    const i = list.findIndex(x => x.id === id);
-    if (i !== -1) list[i] = { ...list[i], ...data };
-    showToast(t('toast.employeeUpdated'), 'bx-check-circle');
-  } else {
-    list.push(data);
-    showToast(t('toast.employeeAdded'), 'bx-check-circle');
-  }
-
-  saveEmployees(list);
-  renderAdminEmployees();
-  $('adminEmployeeModal').classList.remove('show');
-}
-
-/* =====================================================
-   7. GOOGLE AUTH MODULE
-   ===================================================== */
-let googleAccounts = [];
-let pendingGoogleAccount = null;
-
-function loadGoogleAccounts() {
-  try {
-    const raw = localStorage.getItem(LS_KEYS.googleAccounts);
-    googleAccounts = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(googleAccounts)) googleAccounts = [];
-  } catch (err) { googleAccounts = []; }
-}
-
-function persistGoogleAccounts() {
-  try { localStorage.setItem(LS_KEYS.googleAccounts, JSON.stringify(googleAccounts)); } catch (err) {}
-}
-
-function rememberGoogleAccount(account) {
-  if (!account || !account.email) return;
-  if (!googleAccounts.some(a => a.email === account.email)) {
-    googleAccounts.push({ name: account.name || 'User', email: account.email });
-    persistGoogleAccounts();
-  }
-}
-
-function openGoogleChooser() {
-  pendingGoogleAccount = null;
-  renderGoogleChooser();
-  $('gChooser').classList.add('show');
-}
-
-function closeGoogleChooser() {
-  $('gChooser').classList.remove('show');
-}
-
-function renderGoogleChooser() {
-  const list = $('gChooserList');
-  if (!list) return;
-  if (!googleAccounts.length) {
-    list.innerHTML = `<div style="padding:24px;text-align:center;font-size:.85rem;color:#5f6368;">No saved accounts on this device.</div>`;
-    return;
-  }
-  list.innerHTML = googleAccounts.map((acc, i) => `
-    <div class="gchooser-item" data-google-account="${i}" role="option" tabindex="0">
-      <div class="gchooser-avatar">${esc((acc.name || 'G').charAt(0))}</div>
-      <div class="gchooser-info">
-        <strong>${esc(acc.name)}</strong>
-        <span>${esc(acc.email)}</span>
-      </div>
-      <button class="gchooser-del" data-google-remove="${i}" aria-label="Remove account">
-        <i class='bx bx-x'></i>
-      </button>
-    </div>
-  `).join('');
-}
-
-function handleGoogleAccountSelected(index) {
-  const acc = googleAccounts[index];
-  if (!acc) return;
-  closeGoogleChooser();
-  const linked = customers.find(c => c.email && c.email.toLowerCase() === acc.email.toLowerCase() && c.phone);
-  if (linked) {
-    onSignInSuccess({ name: acc.name, email: acc.email, phone: linked.phone });
-  } else {
-    pendingGoogleAccount = acc;
-    openGooglePhoneStep(acc);
-  }
-}
-
-function openGooglePhoneStep(acc) {
-  $('googleName').textContent = acc.name;
-  $('googleEmail').textContent = acc.email;
-  $('googleAvatar').textContent = (acc.name || 'G').charAt(0).toUpperCase();
-  $('googleBtn').style.display = 'none';
-  $('loginDivider').style.display = 'none';
-  $('loginForm').style.display = 'none';
-  $('googlePreview').classList.add('show');
-  $('googlePhoneReveal').classList.add('show');
-  $('googlePhone').value = '';
-  setTimeout(() => $('googlePhone').focus(), 220);
-}
-
-function resetGoogleSignInUI() {
-  $('googlePreview').classList.remove('show');
-  $('googlePhoneReveal').classList.remove('show');
-  $('googleBtn').style.display = 'flex';
-  $('loginDivider').style.display = 'flex';
-  $('loginForm').style.display = 'flex';
-  $('googlePhone').value = '';
-  pendingGoogleAccount = null;
-}
-
-/* =====================================================
-   8. USER CARDS MODULE
-   ===================================================== */
-let savedCards = [];
-
-function loadUserCards() {
-  if (!currentUser) { savedCards = []; return; }
-  try {
-    const all = JSON.parse(localStorage.getItem(LS_KEYS.cards) || '[]');
-    savedCards = Array.isArray(all) ? all.filter(c => c.customerId === currentUser.id) : [];
-  } catch (err) { savedCards = []; }
-}
-
-function persistUserCards() {
-  if (!currentUser) return;
-  try {
-    const all = JSON.parse(localStorage.getItem(LS_KEYS.cards) || '[]');
-    const others = Array.isArray(all) ? all.filter(c => c.customerId !== currentUser.id) : [];
-    localStorage.setItem(LS_KEYS.cards, JSON.stringify([...others, ...savedCards]));
-  } catch (err) {}
-}
-
-function saveCardForCurrentUser(card) {
-  if (!currentUser || !card) return;
-  const duplicate = savedCards.some(c => c.last4 === card.last4 && c.brand === card.brand);
-  if (duplicate) return;
-  savedCards.push({
-    id: 'card-' + Date.now(),
-    customerId: currentUser.id,
-    brand: card.brand || 'Card',
-    last4: card.last4,
-    name: card.name,
-    expiry: card.expiry
-  });
-  persistUserCards();
-}
-
-function removeSavedCard(cardId) {
-  savedCards = savedCards.filter(c => c.id !== cardId);
-  persistUserCards();
-}
-
-/* =====================================================
-   9. HELPERS
+   6. HELPERS
    ===================================================== */
 const $ = id => document.getElementById(id);
 
@@ -746,15 +419,7 @@ function customerStats(id) {
 function registerCustomer(u) {
   let c = customers.find(x => x.email && u.email && x.email.toLowerCase() === u.email.toLowerCase());
   if (!c) {
-    c = {
-      id: 'c-' + Date.now(),
-      name: u.name || 'Guest',
-      email: u.email || '',
-      phone: u.phone || '',
-      city: 'Amman',
-      joined: new Date().toISOString().split('T')[0],
-      tier: 'new'
-    };
+    c = { id: 'c-' + Date.now(), name: u.name || 'Guest', email: u.email || '', phone: u.phone || '', city: 'Amman', joined: new Date().toISOString().split('T')[0], tier: 'new' };
     customers.push(c);
   } else if (u.phone) {
     c.phone = u.phone;
@@ -790,40 +455,71 @@ function getUserStats() {
 }
 
 /* =====================================================
-   10. PERSISTENCE
+   7. TIERED PRICING ENGINE
+   Developer enters 3 prices: price250 / price500 / price1000
+   Rules:
+     • w < 500        → price250
+     • 500 ≤ w < 1000 → price500
+     • w ≥ 1000       → price1000
+   ===================================================== */
+function getProductBasePrice(p) {
+  /* Returns minimum starting price for display on card */
+  if (!p) return 0;
+  if (p.pricingType === 'tiered') return Number(p.price250) || 0;
+  return Number(p.price) || 0;
+}
+
+function getTierForWeight(p, weightGrams) {
+  if (!p || p.pricingType !== 'tiered') return null;
+  if (weightGrams >= 1000) return { tier: 1000, price: Number(p.price1000) || 0 };
+  if (weightGrams >= 500)  return { tier: 500,  price: Number(p.price500)  || 0 };
+  return { tier: 250, price: Number(p.price250) || 0 };
+}
+
+function calcProductPriceForWeight(p, weightGrams) {
+  if (!p) return 0;
+  if (p.pricingType === 'tiered') {
+    const tier = getTierForWeight(p, weightGrams);
+    return tier ? tier.price : 0;
+  }
+  return Number(p.price) || 0;
+}
+
+function formatTierLabel(tierGrams) {
+  if (tierGrams === 1000) return lang === 'ar' ? '١ كيلو' : '1 kg';
+  return tierGrams + ' g';
+}
+
+/* =====================================================
+   8. PERSISTENCE
    ===================================================== */
 function saveAll() {
   try {
     localStorage.setItem(LS_KEYS.products, JSON.stringify(products));
-    localStorage.setItem(LS_KEYS.chocolateProducts, JSON.stringify(chocolateProducts));
     localStorage.setItem(LS_KEYS.offers, JSON.stringify(offers));
     localStorage.setItem(LS_KEYS.gallery, JSON.stringify(galleryImages));
     localStorage.setItem(LS_KEYS.content, JSON.stringify(contentOverrides));
     localStorage.setItem(LS_KEYS.mixWeights, JSON.stringify(mixWeights));
     localStorage.setItem(LS_KEYS.mixPackaging, JSON.stringify(mixPackaging));
     localStorage.setItem(LS_KEYS.candyTypes, JSON.stringify(candyTypes));
-    localStorage.setItem(LS_KEYS.addons, JSON.stringify(addons));       /* NEW */
+    localStorage.setItem(LS_KEYS.addons, JSON.stringify(addons));
     localStorage.setItem(LS_KEYS.deliveryZones, JSON.stringify(deliveryZones));
     localStorage.setItem(LS_KEYS.storeHours, JSON.stringify(storeHours));
     const ph = document.querySelector('[data-contact-phone]');
     const em = document.querySelector('[data-contact-email]');
-    localStorage.setItem(LS_KEYS.contact, JSON.stringify({
-      phone: ph ? ph.textContent : '',
-      email: em ? em.textContent : ''
-    }));
+    localStorage.setItem(LS_KEYS.contact, JSON.stringify({ phone: ph ? ph.textContent : '', email: em ? em.textContent : '' }));
   } catch (e) {}
 }
 
 function loadAll() {
   try {
     const p = localStorage.getItem(LS_KEYS.products); if (p) products = JSON.parse(p);
-    const cp = localStorage.getItem(LS_KEYS.chocolateProducts); if (cp) chocolateProducts = JSON.parse(cp);
     const o = localStorage.getItem(LS_KEYS.offers); if (o) offers = JSON.parse(o);
     const g = localStorage.getItem(LS_KEYS.gallery); if (g) galleryImages = JSON.parse(g);
     const mw = localStorage.getItem(LS_KEYS.mixWeights); if (mw) mixWeights = JSON.parse(mw);
     const mp = localStorage.getItem(LS_KEYS.mixPackaging); if (mp) mixPackaging = JSON.parse(mp);
     const ct = localStorage.getItem(LS_KEYS.candyTypes); if (ct) candyTypes = JSON.parse(ct);
-    const ad = localStorage.getItem(LS_KEYS.addons); if (ad) addons = JSON.parse(ad);   /* NEW */
+    const ad = localStorage.getItem(LS_KEYS.addons); if (ad) addons = JSON.parse(ad);
     const dz = localStorage.getItem(LS_KEYS.deliveryZones); if (dz) deliveryZones = JSON.parse(dz);
     const sh = localStorage.getItem(LS_KEYS.storeHours); if (sh) storeHours = JSON.parse(sh);
 
@@ -849,7 +545,7 @@ function loadAll() {
 }
 
 /* =====================================================
-   11. TOAST & PANELS
+   9. TOAST & PANELS
    ===================================================== */
 function showToast(msg, icon = 'bx-check-circle') {
   const toast = $('toast');
@@ -861,7 +557,6 @@ function showToast(msg, icon = 'bx-check-circle') {
 }
 
 let _savedScrollY = 0;
-
 function lockBodyScroll() {
   _savedScrollY = window.scrollY || window.pageYOffset || 0;
   document.body.style.position = 'fixed';
@@ -871,7 +566,6 @@ function lockBodyScroll() {
   document.body.style.width = '100%';
   document.body.classList.add('no-scroll');
 }
-
 function unlockBodyScroll() {
   document.body.style.position = '';
   document.body.style.top = '';
@@ -898,50 +592,263 @@ function closeAllPanels() {
 }
 
 /* =====================================================
-   12. MIX PRICING
+   10. EMPLOYEE MANAGEMENT
    ===================================================== */
-function effectiveKgPrice(c) {
-  const sale = Number(c.sale_price_per_kg) || 0;
-  const base = Number(c.price_per_kg) || 0;
-  return sale > 0 ? sale : base;
+function loadEmployees() {
+  try { const raw = localStorage.getItem(LS_KEYS.employees); return raw ? JSON.parse(raw) : []; } catch (e) { return []; }
 }
-
-function getSelectedAddonsObjects() {
-  return mixState.selectedAddons
-    .map(id => addons.find(a => a.id === id))
-    .filter(Boolean);
+function saveEmployees(list) {
+  try { localStorage.setItem(LS_KEYS.employees, JSON.stringify(list)); } catch (e) {}
 }
-
-function getAddonsTotal() {
-  return getSelectedAddonsObjects().reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+function loadEmployeeData() {
+  try {
+    const orders = JSON.parse(localStorage.getItem(LS_KEYS.employeeOrders) || '[]');
+    const shifts = JSON.parse(localStorage.getItem(LS_KEYS.employeeShifts) || '[]');
+    return { orders: Array.isArray(orders) ? orders : [], shifts: Array.isArray(shifts) ? shifts : [] };
+  } catch (e) { return { orders: [], shifts: [] }; }
 }
-
-function calcMixPrice() {
-  if (!mixState.weight || !mixState.packaging || !mixState.selectedTypes.length) return 0;
-  const sel = mixState.selectedTypes.map(id => candyTypes.find(c => c.id === id)).filter(Boolean);
-  if (!sel.length) return 0;
-  const avg = sel.reduce((s, tp) => s + effectiveKgPrice(tp), 0) / sel.length;
-  return (avg * (mixState.weight / 1000))
-    + (Number(mixState.packaging.extra) || 0)
-    + getAddonsTotal();
+function syncEmployeeDataToOrders() {
+  const { orders: empOrders } = loadEmployeeData();
+  const existingIds = new Set(orderHistory.map(o => o.id));
+  empOrders.forEach(eo => {
+    if (!existingIds.has(eo.id)) {
+      orderHistory.push({
+        id: eo.id, customerId: eo.customerId || 'c-guest-pos', date: eo.date,
+        status: eo.status || 'delivered', payment: eo.payment || 'cash',
+        itemsList: eo.itemsList || [], total: Number(eo.total) || 0,
+        subtotal: Number(eo.subtotal) || 0, tax: Number(eo.tax) || 0,
+        address: eo.address || 'In-store', tracking: eo.tracking || null,
+        placedAt: eo.date, packedAt: eo.date, shippedAt: eo.date, outAt: eo.date,
+        deliveredAt: eo.date, eta: eo.date,
+        servedBy: eo.servedBy || '', servedByUsername: eo.employeeUsername || '',
+        channel: 'pos'
+      });
+      existingIds.add(eo.id);
+      if (eo.customerInfo && eo.customerInfo.name) {
+        const exists = customers.find(c =>
+          (eo.customerInfo.email && c.email && c.email === eo.customerInfo.email) ||
+          (c.name === eo.customerInfo.name && c.phone === eo.customerInfo.phone)
+        );
+        if (!exists) {
+          customers.push({
+            id: eo.customerId || ('c-pos-' + Date.now() + '-' + Math.random().toString(36).slice(2,6)),
+            name: eo.customerInfo.name, email: eo.customerInfo.email || '',
+            phone: eo.customerInfo.phone || '', city: 'Amman',
+            joined: eo.date, tier: 'new'
+          });
+        }
+      }
+    }
+  });
 }
-
-function getCartSubtotal() {
-  return cart.reduce((sum, item) => {
-    if (item.isMix) return sum + item.price * item.qty;
-    const p = products.find(x => x.id === item.id) || chocolateProducts.find(x => x.id === item.id) || offers.find(x => x.id === item.id);
-    return p ? sum + p.price * item.qty : sum;
-  }, 0);
+function getEmployeeStats() {
+  const employees = loadEmployees();
+  const { orders: empOrders, shifts } = loadEmployeeData();
+  return employees.map(emp => {
+    const myOrders = empOrders.filter(o => o.employeeUsername === emp.username);
+    const myShifts = shifts.filter(s => s.username === emp.username).sort((a,b) => (b.checkIn || '').localeCompare(a.checkIn || ''));
+    const lastShift = myShifts[0];
+    const totalRevenue = myOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const totalItems = myOrders.reduce((sum, o) => sum + (o.itemsList || []).reduce((s, i) => s + Number(i.qty || 0), 0), 0);
+    return { ...emp, orderCount: myOrders.length, revenue: totalRevenue, itemsSold: totalItems, lastShift, isActive: lastShift && !lastShift.checkOut };
+  });
 }
-
-function getDeliveryFee() {
-  if (cartDelivery.method === 'pickup') return 0;
-  const z = deliveryZones.find(z => z.id === cartDelivery.zoneId);
-  return z ? Number(z.price) : 0;
+function renderAdminEmployees() {
+  const stats = getEmployeeStats();
+  const tbody = $('adminEmployeesBody');
+  const kpis = $('adminEmployeeKpis');
+  if (!tbody || !kpis) return;
+  const totalRevenue = stats.reduce((s, e) => s + e.revenue, 0);
+  const totalSales = stats.reduce((s, e) => s + e.orderCount, 0);
+  const activeCount = stats.filter(e => e.isActive).length;
+  kpis.innerHTML = `
+    <div class="kpi-card"><div class="kpi-icon"><i class='bx bx-id-card'></i></div><div><div class="kpi-value">${stats.length}</div><div class="kpi-label">${t('admin.kpiTotalEmployees')}</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="background:linear-gradient(135deg,#22c55e,#15803d);"><i class='bx bx-user-check'></i></div><div><div class="kpi-value">${activeCount}</div><div class="kpi-label">${t('admin.kpiActiveNow')}</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon"><i class='bx bx-receipt'></i></div><div><div class="kpi-value">${totalSales}</div><div class="kpi-label">${t('admin.kpiTotalSales')}</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="background:linear-gradient(135deg,#facc43,#e2015d);"><i class='bx bx-dollar-circle'></i></div><div><div class="kpi-value">$${totalRevenue.toFixed(2)}</div><div class="kpi-label">${t('admin.kpiTotalRevenue')}</div></div></div>
+  `;
+  if (!stats.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="admin-empty-note">${t('admin.noEmployees')}</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = stats.map(e => {
+    const shift = e.lastShift;
+    let shiftText = '—';
+    let status = `<span class="admin-tier" style="background:rgba(107,114,128,0.15);color:#4b5563;">${t('admin.offline')}</span>`;
+    if (shift) {
+      const startStr = new Date(shift.checkIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      if (shift.checkOut) {
+        const endStr = new Date(shift.checkOut).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        shiftText = `${startStr} → ${endStr}`;
+      } else {
+        shiftText = `${startStr} → ${t('admin.now')}`;
+        status = `<span class="admin-tier active" style="background:rgba(34,197,94,0.15);color:#15803d;">● ${t('admin.online')}</span>`;
+      }
+    }
+    return `<tr>
+      <td><div class="admin-user"><div class="admin-user-avatar">${esc((e.name||'E').charAt(0))}</div><div><div class="admin-user-name">${esc(e.name)}</div><div class="admin-sub">${esc(e.role || 'Cashier')}</div></div></div></td>
+      <td><strong>${esc(e.username)}</strong></td>
+      <td>${esc(e.phone || '—')}</td>
+      <td>${esc(e.address || '—')}</td>
+      <td>${e.orderCount}</td>
+      <td><strong>$${e.revenue.toFixed(2)}</strong></td>
+      <td>${status}<div class="admin-sub" style="margin-top:4px;">${shiftText}</div></td>
+      <td><div class="admin-row-actions">
+        <button class="admin-mini-btn primary" data-edit-employee="${esc(e.id)}"><i class='bx bx-edit'></i></button>
+        <button class="admin-mini-btn danger" data-del-employee="${esc(e.id)}"><i class='bx bx-trash'></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+function openAdminEmployeeModal(id) {
+  const modal = $('adminEmployeeModal');
+  const f = $('adminEmployeeForm');
+  f.reset();
+  $('empId').value = '';
+  $('adminEmployeeModalTitle').textContent = id ? t('admin.editEmployee') : t('admin.addEmployee');
+  if (id) {
+    const emp = loadEmployees().find(e => e.id === id);
+    if (emp) {
+      $('empId').value = emp.id;
+      $('empName').value = emp.name || '';
+      $('empUsername').value = emp.username || '';
+      $('empPassword').value = emp.password || '';
+      $('empPhone').value = emp.phone || '';
+      $('empRole').value = emp.role || 'Cashier';
+      $('empAddress').value = emp.address || '';
+    }
+  } else {
+    $('empRole').value = 'Cashier';
+  }
+  modal.classList.add('show');
+}
+function handleAdminEmployeeSubmit(e) {
+  e.preventDefault();
+  const id = $('empId').value;
+  const list = loadEmployees();
+  const data = {
+    id: id || 'emp-' + Date.now(),
+    name: $('empName').value.trim(),
+    username: $('empUsername').value.trim().toLowerCase(),
+    password: $('empPassword').value.trim(),
+    phone: $('empPhone').value.trim(),
+    role: $('empRole').value.trim() || 'Cashier',
+    address: $('empAddress').value.trim()
+  };
+  if (!data.name || !data.username || !data.password) { showToast(t('toast.employeeFields'), 'bx-error-circle'); return; }
+  const duplicate = list.find(x => x.username === data.username && x.id !== data.id);
+  if (duplicate) { showToast(t('toast.employeeExists'), 'bx-error-circle'); return; }
+  if (id) {
+    const i = list.findIndex(x => x.id === id);
+    if (i !== -1) list[i] = { ...list[i], ...data };
+    showToast(t('toast.employeeUpdated'), 'bx-check-circle');
+  } else {
+    list.push(data);
+    showToast(t('toast.employeeAdded'), 'bx-check-circle');
+  }
+  saveEmployees(list);
+  renderAdminEmployees();
+  $('adminEmployeeModal').classList.remove('show');
 }
 
 /* =====================================================
-   13. RENDERERS — PUBLIC SITE
+   11. GOOGLE AUTH
+   ===================================================== */
+let googleAccounts = [];
+let pendingGoogleAccount = null;
+function loadGoogleAccounts() {
+  try { const raw = localStorage.getItem(LS_KEYS.googleAccounts); googleAccounts = raw ? JSON.parse(raw) : []; if (!Array.isArray(googleAccounts)) googleAccounts = []; } catch (err) { googleAccounts = []; }
+}
+function persistGoogleAccounts() {
+  try { localStorage.setItem(LS_KEYS.googleAccounts, JSON.stringify(googleAccounts)); } catch (err) {}
+}
+function rememberGoogleAccount(account) {
+  if (!account || !account.email) return;
+  if (!googleAccounts.some(a => a.email === account.email)) {
+    googleAccounts.push({ name: account.name || 'User', email: account.email });
+    persistGoogleAccounts();
+  }
+}
+function openGoogleChooser() { pendingGoogleAccount = null; renderGoogleChooser(); $('gChooser').classList.add('show'); }
+function closeGoogleChooser() { $('gChooser').classList.remove('show'); }
+function renderGoogleChooser() {
+  const list = $('gChooserList');
+  if (!list) return;
+  if (!googleAccounts.length) {
+    list.innerHTML = `<div style="padding:24px;text-align:center;font-size:.85rem;color:#5f6368;">No saved accounts on this device.</div>`;
+    return;
+  }
+  list.innerHTML = googleAccounts.map((acc, i) => `
+    <div class="gchooser-item" data-google-account="${i}" role="option" tabindex="0">
+      <div class="gchooser-avatar">${esc((acc.name || 'G').charAt(0))}</div>
+      <div class="gchooser-info"><strong>${esc(acc.name)}</strong><span>${esc(acc.email)}</span></div>
+      <button class="gchooser-del" data-google-remove="${i}" aria-label="Remove account"><i class='bx bx-x'></i></button>
+    </div>
+  `).join('');
+}
+function handleGoogleAccountSelected(index) {
+  const acc = googleAccounts[index];
+  if (!acc) return;
+  closeGoogleChooser();
+  const linked = customers.find(c => c.email && c.email.toLowerCase() === acc.email.toLowerCase() && c.phone);
+  if (linked) onSignInSuccess({ name: acc.name, email: acc.email, phone: linked.phone });
+  else { pendingGoogleAccount = acc; openGooglePhoneStep(acc); }
+}
+function openGooglePhoneStep(acc) {
+  $('googleName').textContent = acc.name;
+  $('googleEmail').textContent = acc.email;
+  $('googleAvatar').textContent = (acc.name || 'G').charAt(0).toUpperCase();
+  $('googleBtn').style.display = 'none';
+  $('loginDivider').style.display = 'none';
+  $('loginForm').style.display = 'none';
+  $('googlePreview').classList.add('show');
+  $('googlePhoneReveal').classList.add('show');
+  $('googlePhone').value = '';
+  setTimeout(() => $('googlePhone').focus(), 220);
+}
+function resetGoogleSignInUI() {
+  $('googlePreview').classList.remove('show');
+  $('googlePhoneReveal').classList.remove('show');
+  $('googleBtn').style.display = 'flex';
+  $('loginDivider').style.display = 'flex';
+  $('loginForm').style.display = 'flex';
+  $('googlePhone').value = '';
+  pendingGoogleAccount = null;
+}
+
+/* =====================================================
+   12. USER CARDS
+   ===================================================== */
+let savedCards = [];
+function loadUserCards() {
+  if (!currentUser) { savedCards = []; return; }
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_KEYS.cards) || '[]');
+    savedCards = Array.isArray(all) ? all.filter(c => c.customerId === currentUser.id) : [];
+  } catch (err) { savedCards = []; }
+}
+function persistUserCards() {
+  if (!currentUser) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_KEYS.cards) || '[]');
+    const others = Array.isArray(all) ? all.filter(c => c.customerId !== currentUser.id) : [];
+    localStorage.setItem(LS_KEYS.cards, JSON.stringify([...others, ...savedCards]));
+  } catch (err) {}
+}
+function saveCardForCurrentUser(card) {
+  if (!currentUser || !card) return;
+  const duplicate = savedCards.some(c => c.last4 === card.last4 && c.brand === card.brand);
+  if (duplicate) return;
+  savedCards.push({ id: 'card-' + Date.now(), customerId: currentUser.id, brand: card.brand || 'Card', last4: card.last4, name: card.name, expiry: card.expiry });
+  persistUserCards();
+}
+function removeSavedCard(cardId) {
+  savedCards = savedCards.filter(c => c.id !== cardId);
+  persistUserCards();
+}
+
+/* =====================================================
+   13. RENDERERS — PUBLIC
    ===================================================== */
 function renderOffers() {
   const active = offers.filter(o => o.isActive);
@@ -973,8 +880,40 @@ function renderOffers() {
 }
 
 function renderCandies() {
-  $('candyGrid').innerHTML = products.map(p => `
-    <div class="candy-card reveal">
+  const grid = $('candyGrid');
+  if (!grid) return;
+
+  const total   = products.length;
+  const candies = products.filter(p => (p.category || 'candy') === 'candy').length;
+  const chocs   = products.filter(p => p.category === 'chocolate').length;
+  if ($('catCountAll'))       $('catCountAll').textContent = total;
+  if ($('catCountCandy'))     $('catCountCandy').textContent = candies;
+  if ($('catCountChocolate')) $('catCountChocolate').textContent = chocs;
+
+  document.querySelectorAll('.cat-circle').forEach(c =>
+    c.classList.toggle('active', c.dataset.cat === candyFilter)
+  );
+
+  const list = products.filter(p => {
+    if (candyFilter === 'all') return true;
+    return (p.category || 'candy') === candyFilter;
+  });
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="offers-empty" style="grid-column:1/-1;">
+      <i class='bx bx-cookie'></i>
+      <p>${lang === 'ar' ? 'لا توجد منتجات في هذا التصنيف بعد ✨' : 'No products in this category yet ✨'}</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map((p, i) => {
+    const isTiered = p.pricingType === 'tiered';
+    const priceHtml = isTiered
+      ? `<span class="price">$${Number(p.price250).toFixed(2)} <span style="font-size:.7em;opacity:.7;">/ 250g+</span>${p.oldPrice ? ` <s>$${Number(p.oldPrice).toFixed(2)}</s>` : ''}</span>`
+      : `<span class="price">$${Number(p.price).toFixed(2)}${p.oldPrice ? ` <s>$${Number(p.oldPrice).toFixed(2)}</s>` : ''}</span>`;
+    return `
+    <div class="candy-card reveal" style="animation-delay:${i * 0.05}s;">
       <div class="candy-card-img">
         <span class="candy-badge">${esc(L(p, 'badge') || '')}</span>
         <img src="${esc(p.img)}" alt="${esc(L(p, 'name'))}">
@@ -983,30 +922,13 @@ function renderCandies() {
         <h3>${esc(L(p, 'name'))}</h3>
         <p>${esc(L(p, 'desc') || '')}</p>
         <div class="candy-price-row">
-          <span class="price">$${Number(p.price).toFixed(2)}${p.oldPrice ? `<s>$${Number(p.oldPrice).toFixed(2)}</s>` : ''}</span>
+          ${priceHtml}
           <button class="add-to-cart-btn" data-id="${esc(p.id)}"><i class='bx bx-cart-add'></i> ${t('candies.add')}</button>
         </div>
       </div>
-    </div>`).join('');
-  renderChocolate();
-}
+    </div>`;
+  }).join('');
 
-function renderChocolate() {
-  $('chocolateGrid').innerHTML = chocolateProducts.map(p => `
-    <div class="candy-card reveal" data-chocolate-card="${esc(p.id)}">
-      <div class="candy-card-img">
-        <span class="candy-badge">${esc(L(p, 'badge') || '')}</span>
-        <img src="${esc(p.img)}" alt="${esc(L(p, 'name'))}">
-      </div>
-      <div class="candy-card-body">
-        <h3>${esc(L(p, 'name'))}</h3>
-        <p>${esc(L(p, 'desc') || '')}</p>
-        <div class="candy-price-row">
-          <span class="price">$${Number(p.price).toFixed(2)}${p.oldPrice ? `<s>$${Number(p.oldPrice).toFixed(2)}</s>` : ''}</span>
-          <button class="add-to-cart-btn" data-id="${esc(p.id)}"><i class='bx bx-cart-add'></i> ${t('chocolate.add')}</button>
-        </div>
-      </div>
-    </div>`).join('');
   revealOnScroll();
 }
 
@@ -1016,7 +938,41 @@ function renderGallery() {
   ).join('');
 }
 
-/* -------- Weight grid (Step 2) -------- */
+/* =====================================================
+   14. MIX BUILDERS
+   ===================================================== */
+function effectiveKgPrice(c) {
+  const sale = Number(c.sale_price_per_kg) || 0;
+  const base = Number(c.price_per_kg) || 0;
+  return sale > 0 ? sale : base;
+}
+function getSelectedAddonsObjects() {
+  return mixState.selectedAddons.map(id => addons.find(a => a.id === id)).filter(Boolean);
+}
+function getAddonsTotal() {
+  return getSelectedAddonsObjects().reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+}
+function calcMixPrice() {
+  if (!mixState.weight || !mixState.packaging || !mixState.selectedTypes.length) return 0;
+  const sel = mixState.selectedTypes.map(id => candyTypes.find(c => c.id === id)).filter(Boolean);
+  if (!sel.length) return 0;
+  const avg = sel.reduce((s, tp) => s + effectiveKgPrice(tp), 0) / sel.length;
+  return (avg * (mixState.weight / 1000))
+    + (Number(mixState.packaging.extra) || 0)
+    + getAddonsTotal();
+}
+
+function getCartSubtotal() {
+  return cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+}
+
+function getDeliveryFee() {
+  if (cartDelivery.method === 'pickup') return 0;
+  const z = deliveryZones.find(z => z.id === cartDelivery.zoneId);
+  return z ? Number(z.price) : 0;
+}
+
+/* -------- Mix: renderers -------- */
 function renderMixWeights() {
   const el = $('mixWeightGrid');
   el.classList.toggle('compact', mixWeights.length > 8);
@@ -1035,20 +991,14 @@ function renderMixWeights() {
     </div>`;
   }).join('');
 }
-
-/* -------- Packaging grid (Step 1) -------- */
 function renderMixPackaging() {
   $('mixPackGrid').innerHTML = mixPackaging.map(p => {
     const sel = mixState.packaging && mixState.packaging.id === p.id;
     const price = Number(p.extra) === 0 ? t('mix.free') : `+$${Number(p.extra).toFixed(2)}`;
-    const visual = p.img
-      ? `<img src="${esc(p.img)}" alt="${esc(L(p, 'name'))}">`
-      : `<i class='bx ${p.icon || 'bx-box'}'></i>`;
+    const visual = p.img ? `<img src="${esc(p.img)}" alt="${esc(L(p, 'name'))}">` : `<i class='bx ${p.icon || 'bx-box'}'></i>`;
     return `<div class="mix-pack-card ${sel ? 'selected' : ''}" data-pack="${esc(p.id)}"><div class="mix-pack-icon">${visual}</div><div class="mix-pack-name">${esc(L(p, 'name'))}</div><div class="mix-pack-desc">${esc(L(p, 'desc') || '')}</div><div class="mix-pack-price ${Number(p.extra) === 0 ? 'free' : ''}">${price}</div></div>`;
   }).join('');
 }
-
-/* -------- Slots (Step 3) -------- */
 function renderMixSlots() {
   const slots = [];
   for (let i = 0; i < mixState.typesCount; i++) {
@@ -1058,8 +1008,6 @@ function renderMixSlots() {
   }
   $('mixSlots').innerHTML = slots.join('');
 }
-
-/* -------- Candy Types grid (Step 3) -------- */
 function renderMixTypesGrid() {
   const sel = new Set(mixState.selectedTypes);
   $('mixTypesGrid').innerHTML = candyTypes.map(c => {
@@ -1073,8 +1021,6 @@ function renderMixTypesGrid() {
     return `<div class="mix-type-card ${isSel ? 'selected' : ''}" data-type="${c.id}"><img class="mix-type-img" src="${esc(c.img)}" alt="${esc(L(c, 'name'))}"><div class="mix-type-info"><div class="mix-type-name"><span class="mix-type-color" style="background:${c.color};"></span>${esc(L(c, 'name'))}</div><div class="mix-type-price-wrap">${priceHtml}</div></div></div>`;
   }).join('');
 }
-
-/* ===== NEW: Add-ons grid (Step 4) ===== */
 function renderMixAddons() {
   const el = $('mixAddonsGrid');
   if (!el) return;
@@ -1086,9 +1032,7 @@ function renderMixAddons() {
   const sel = new Set(mixState.selectedAddons);
   el.innerHTML = active.map(a => {
     const isSel = sel.has(a.id);
-    const visual = a.img
-      ? `<img src="${esc(a.img)}" alt="${esc(L(a, 'name'))}">`
-      : `<i class='bx ${a.icon || 'bx-plus-circle'}'></i>`;
+    const visual = a.img ? `<img src="${esc(a.img)}" alt="${esc(L(a, 'name'))}">` : `<i class='bx ${a.icon || 'bx-plus-circle'}'></i>`;
     const priceTxt = Number(a.price) === 0 ? t('mix.free') : `+$${Number(a.price).toFixed(2)}`;
     return `<div class="mix-addon-card ${isSel ? 'selected' : ''}" data-addon="${esc(a.id)}">
       <div class="mix-addon-icon">${visual}</div>
@@ -1100,8 +1044,6 @@ function renderMixAddons() {
     </div>`;
   }).join('');
 }
-
-/* -------- Review (Step 5) -------- */
 function renderMixReview() {
   const p = mixState.packaging;
   const total = calcMixPrice();
@@ -1135,7 +1077,7 @@ function renderMixReview() {
     <div class="mix-review-types">
       <div class="label">${t('mix.addonsSelection')}</div>
       <div class="mix-review-types-list">
-        ${selectedAddons.map(a => `<span class="mix-review-type-chip"><i class='bx ${a.icon || "bx-plus-circle"}' style="color:${'#e2015d'};"></i>${esc(L(a, 'name'))} · +$${Number(a.price).toFixed(2)}</span>`).join('')}
+        ${selectedAddons.map(a => `<span class="mix-review-type-chip"><i class='bx ${a.icon || "bx-plus-circle"}' style="color:#e2015d;"></i>${esc(L(a, 'name'))} · +$${Number(a.price).toFixed(2)}</span>`).join('')}
       </div>
     </div>` : ''}
     <div class="mix-review-total">
@@ -1149,153 +1091,8 @@ function renderMixReview() {
     </div>`;
 }
 
-/* ===== NEW: Payment inside mix (Step 5) ===== */
-function renderMixPayment() {
-  const body = $('mixPaymentBody');
-  if (!body) return;
-  document.querySelectorAll('.mix-payment-toggle .payment-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.mixPayment === mixState.payment)
-  );
-
-  if (mixState.payment === 'cash') {
-    body.innerHTML = `<div class="payment-cash-note"><i class='bx bx-money'></i><div><strong>${t('pay.cashTitle')}</strong><span>${t('pay.cashText')}</span></div></div>`;
-    return;
-  }
-
-  const c = mixState.card;
-  const brand = detectCardBrand(c.number);
-  body.innerHTML = `
-    <div class="card-form">
-      ${brand.brand ? `<span class="card-brand-hint"><i class='bx ${brand.icon}'></i> ${brand.brand}</span>` : ''}
-      <div class="card-field">
-        <label>${t('pay.cardNumber')}</label>
-        <input type="text" inputmode="numeric" id="mixCardNumber" placeholder="1234 5678 9012 3456" maxlength="19" value="${esc(c.number)}">
-        <i class='bx ${brand.icon} card-icon'></i>
-      </div>
-      <div class="card-field">
-        <label>${t('pay.cardName')}</label>
-        <input type="text" id="mixCardName" placeholder="AHMAD AL-RASHID" maxlength="40" value="${esc(c.name)}" style="text-transform:uppercase;padding-right:14px;">
-      </div>
-      <div class="card-field-row">
-        <div class="card-field"><label>${t('pay.cardExpiry')}</label><input type="text" inputmode="numeric" id="mixCardExpiry" placeholder="MM/YY" maxlength="5" value="${esc(c.expiry)}" style="padding-right:14px;"></div>
-        <div class="card-field"><label>${t('pay.cardCvv')}</label><input type="text" inputmode="numeric" id="mixCardCvv" placeholder="123" maxlength="4" value="${esc(c.cvv)}" style="padding-right:14px;"></div>
-      </div>
-      <div class="card-secure"><i class='bx bx-lock-alt'></i> ${t('pay.cardSecure')}</div>
-    </div>`;
-
-  const numEl = $('mixCardNumber');
-  const nameEl = $('mixCardName');
-  const expEl = $('mixCardExpiry');
-  const cvvEl = $('mixCardCvv');
-
-  if (numEl) {
-    numEl.addEventListener('input', (e) => {
-      e.target.value = formatCardNumber(e.target.value);
-      mixState.card.number = e.target.value;
-      const b = detectCardBrand(e.target.value);
-      const iconEl = e.target.parentElement.querySelector('.card-icon');
-      if (iconEl) iconEl.className = `bx ${b.icon} card-icon`;
-    });
-    nameEl.addEventListener('input', (e) => { mixState.card.name = e.target.value; });
-    expEl.addEventListener('input', (e) => {
-      e.target.value = formatExpiry(e.target.value);
-      mixState.card.expiry = e.target.value;
-    });
-    cvvEl.addEventListener('input', (e) => {
-      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
-      mixState.card.cvv = e.target.value;
-    });
-  }
-}
-
-/* -------- Step navigation (5 steps) -------- */
-function updateMixStep() {
-  document.querySelectorAll('.mix-progress-step').forEach(s => {
-    const step = parseInt(s.dataset.step);
-    s.classList.toggle('active', step === mixState.step);
-    s.classList.toggle('done', step < mixState.step);
-  });
-  document.querySelectorAll('.mix-progress-line').forEach((line, i) =>
-    line.classList.toggle('done', i + 1 < mixState.step)
-  );
-  document.querySelectorAll('.mix-pane').forEach(p =>
-    p.classList.toggle('active', parseInt(p.dataset.pane) === mixState.step)
-  );
-
-  $('mixBackBtn').disabled = mixState.step === 1;
-  const nextIcon = lang === 'ar' ? 'bx-left-arrow-alt' : 'bx-right-arrow-alt';
-  const nextBtn = $('mixNextBtn');
-
-  if (mixState.step === 5) {
-    nextBtn.innerHTML = `<i class='bx bx-check-shield'></i> <span>${t('mix.completeOrder')}</span>`;
-    nextBtn.classList.add('grab');
-  } else {
-    nextBtn.innerHTML = `<span>${t('mix.next')}</span> <i class='bx ${nextIcon}'></i>`;
-    nextBtn.classList.remove('grab');
-  }
-
-  /* Enable / disable Next button per step */
-  if (mixState.step === 1) nextBtn.disabled = !mixState.packaging;
-  else if (mixState.step === 2) nextBtn.disabled = !mixState.weight;
-  else if (mixState.step === 3) nextBtn.disabled = mixState.selectedTypes.filter(Boolean).length < mixState.typesCount;
-  else nextBtn.disabled = false;
-}
-
-function goToMixStep(step) {
-  mixState.step = step;
-  if (step === 3) {
-    renderMixSlots();
-    renderMixTypesGrid();
-    $('mixCountNumber').textContent = mixState.typesCount;
-    $('mixCountMinus').disabled = mixState.typesCount <= 1;
-    $('mixCountPlus').disabled = mixState.typesCount >= 6;
-  }
-  if (step === 4) renderMixAddons();
-  if (step === 5) {
-    renderMixReview();
-    renderMixPayment();
-  }
-  updateMixStep();
-  document.querySelector('.mix-body').scrollTop = 0;
-}
-
-function openMixModal() {
-  mixState.step = 1;
-  mixState.packaging = null;
-  mixState.weight = null;
-  mixState.typesCount = 1;
-  mixState.selectedTypes = [];
-  mixState.selectedAddons = [];
-  mixState.payment = 'cash';
-  mixState.card = { number: '', name: '', expiry: '', cvv: '' };
-
-  renderMixPackaging();
-  renderMixWeights();
-  renderMixSlots();
-  renderMixTypesGrid();
-  renderMixAddons();
-  renderMixReview();
-  renderMixPayment();
-  updateMixStep();
-  $('mixModal').classList.add('show');
-  lockBodyScroll();
-  $('floatingSign').classList.add('hide');
-}
-
-function closeMixModal() {
-  $('mixModal').classList.remove('show');
-  if (!$('cartPanel').classList.contains('show') &&
-      !$('loginPanel').classList.contains('show') &&
-      !$('accountPage').classList.contains('show') &&
-      !$('adminPage').classList.contains('show') &&
-      !$('ownerPage').classList.contains('show')) {
-    unlockBodyScroll();
-    $('floatingSign').classList.remove('hide');
-  }
-}
-
 /* =====================================================
-   14. PAYMENT UTILITIES
+   15. PAYMENT UTILITIES
    ===================================================== */
 function detectCardBrand(num) {
   const n = (num || '').replace(/\s/g, '');
@@ -1304,18 +1101,15 @@ function detectCardBrand(num) {
   if (/^3[47]/.test(n)) return { brand: 'Amex', icon: 'bxl-paypal' };
   return { brand: '', icon: 'bx-credit-card-front' };
 }
-
 function formatCardNumber(v) {
   const n = (v || '').replace(/\D/g, '').slice(0, 16);
   return n.replace(/(.{4})/g, '$1 ').trim();
 }
-
 function formatExpiry(v) {
   let n = (v || '').replace(/\D/g, '').slice(0, 4);
   if (n.length >= 3) n = n.slice(0, 2) + '/' + n.slice(2);
   return n;
 }
-
 function validateExpiry(v) {
   const m = v.match(/^(\d{2})\/(\d{2})$/);
   if (!m) return false;
@@ -1327,7 +1121,6 @@ function validateExpiry(v) {
   const curMo = now.getMonth() + 1;
   return yr > curYr || (yr === curYr && mo >= curMo);
 }
-
 function validateCardNumber(num) {
   const n = (num || '').replace(/\s/g, '');
   if (n.length < 13 || n.length > 19) return false;
@@ -1348,12 +1141,10 @@ function renderPaymentSection() {
   document.querySelectorAll('.payment-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.payment === cartPayment.method)
   );
-
   if (cartPayment.method === 'cash') {
     body.innerHTML = `<div class="payment-cash-note"><i class='bx bx-money'></i><div><strong>${t('pay.cashTitle')}</strong><span>${t('pay.cashText')}</span></div></div>`;
     return;
   }
-
   const c = cartPayment.card;
   const brand = detectCardBrand(c.number);
   const usingSavedCard = !!(c.savedId && savedCards.some(sc => sc.id === c.savedId));
@@ -1362,51 +1153,33 @@ function renderPaymentSection() {
     <div class="saved-cards">
       <div class="saved-cards-title"><i class='bx bx-credit-card'></i> ${lang === 'ar' ? 'بطاقاتك المحفوظة' : 'Your saved cards'}</div>
       ${savedCards.map(sc => {
-        const icon = sc.brand === 'Visa' ? 'bxl-visa'
-          : sc.brand === 'Mastercard' ? 'bxl-mastercard'
-          : 'bx-credit-card-front';
+        const icon = sc.brand === 'Visa' ? 'bxl-visa' : sc.brand === 'Mastercard' ? 'bxl-mastercard' : 'bx-credit-card-front';
         return `
           <div class="saved-card ${c.savedId === sc.id ? 'selected' : ''}" data-saved-card="${sc.id}" role="button" tabindex="0">
             <i class='bx ${icon}'></i>
-            <div class="saved-card-info">
-              <strong>•••• ${sc.last4}</strong>
-              <span>${esc(sc.name)} · ${esc(sc.expiry)}</span>
-            </div>
+            <div class="saved-card-info"><strong>•••• ${sc.last4}</strong><span>${esc(sc.name)} · ${esc(sc.expiry)}</span></div>
             <button class="saved-card-del" data-del-card="${sc.id}" aria-label="Delete card"><i class='bx bx-trash'></i></button>
           </div>`;
       }).join('')}
-      <button type="button" class="saved-card-new" id="newCardBtn">
-        <i class='bx bx-plus'></i> ${lang === 'ar' ? 'استخدام بطاقة جديدة' : 'Use a new card'}
-      </button>
+      <button type="button" class="saved-card-new" id="newCardBtn"><i class='bx bx-plus'></i> ${lang === 'ar' ? 'استخدام بطاقة جديدة' : 'Use a new card'}</button>
     </div>` : '';
 
   body.innerHTML = `
     ${savedHtml}
     <div class="card-form" id="cardFormEl" style="${usingSavedCard ? 'display:none;' : ''}">
       ${brand.brand ? `<span class="card-brand-hint"><i class='bx ${brand.icon}'></i> ${brand.brand}</span>` : ''}
-      <div class="card-field">
-        <label>${t('pay.cardNumber')}</label>
-        <input type="text" inputmode="numeric" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" value="${esc(c.number)}">
-        <i class='bx ${brand.icon} card-icon'></i>
-      </div>
-      <div class="card-field">
-        <label>${t('pay.cardName')}</label>
-        <input type="text" id="cardName" placeholder="AHMAD AL-RASHID" maxlength="40" autocomplete="cc-name" value="${esc(c.name)}" style="text-transform:uppercase;padding-right:14px;">
-      </div>
+      <div class="card-field"><label>${t('pay.cardNumber')}</label><input type="text" inputmode="numeric" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" value="${esc(c.number)}"><i class='bx ${brand.icon} card-icon'></i></div>
+      <div class="card-field"><label>${t('pay.cardName')}</label><input type="text" id="cardName" placeholder="AHMAD AL-RASHID" maxlength="40" autocomplete="cc-name" value="${esc(c.name)}" style="text-transform:uppercase;padding-right:14px;"></div>
       <div class="card-field-row">
         <div class="card-field"><label>${t('pay.cardExpiry')}</label><input type="text" inputmode="numeric" id="cardExpiry" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" value="${esc(c.expiry)}" style="padding-right:14px;"></div>
         <div class="card-field"><label>${t('pay.cardCvv')}</label><input type="text" inputmode="numeric" id="cardCvv" placeholder="123" maxlength="4" autocomplete="cc-csc" value="${esc(c.cvv)}" style="padding-right:14px;"></div>
       </div>
-      <label class="save-card-row">
-        <input type="checkbox" id="saveCardChk" ${c.save ? 'checked' : ''}>
-        <span>${lang === 'ar' ? 'حفظ البطاقة لهذا الحساب' : 'Save this card to my account'}</span>
-      </label>
+      <label class="save-card-row"><input type="checkbox" id="saveCardChk" ${c.save ? 'checked' : ''}><span>${lang === 'ar' ? 'حفظ البطاقة لهذا الحساب' : 'Save this card to my account'}</span></label>
       <div class="card-secure"><i class='bx bx-lock-alt'></i> ${t('pay.cardSecure')}</div>
     </div>`;
 
   wireCardFormEvents(body);
 }
-
 function wireCardFormEvents(body) {
   body.querySelectorAll('[data-saved-card]').forEach(el => {
     const activate = (e) => {
@@ -1414,55 +1187,30 @@ function wireCardFormEvents(body) {
       const id = el.dataset.savedCard;
       const sc = savedCards.find(x => x.id === id);
       if (!sc) return;
-      cartPayment.card = {
-        number: '•••• ' + sc.last4,
-        name: sc.name,
-        expiry: sc.expiry,
-        cvv: '',
-        savedId: sc.id,
-        save: false
-      };
+      cartPayment.card = { number: '•••• ' + sc.last4, name: sc.name, expiry: sc.expiry, cvv: '', savedId: sc.id, save: false };
       renderPaymentSection();
     };
     el.addEventListener('click', activate);
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(e); }
-    });
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(e); } });
   });
-
   body.querySelectorAll('[data-del-card]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const id = btn.dataset.delCard;
       removeSavedCard(id);
-      if (cartPayment.card.savedId === id) {
-        cartPayment.card = { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null };
-      }
+      if (cartPayment.card.savedId === id) cartPayment.card = { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null };
       renderPaymentSection();
       showToast(lang === 'ar' ? 'تم حذف البطاقة' : 'Card removed', 'bx-trash');
     });
   });
-
   const newBtn = body.querySelector('#newCardBtn');
-  if (newBtn) {
-    newBtn.addEventListener('click', () => {
-      cartPayment.card = { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null };
-      renderPaymentSection();
-    });
-  }
-
-  const numEl = $('cardNumber');
-  const nameEl = $('cardName');
-  const expEl = $('cardExpiry');
-  const cvvEl = $('cardCvv');
-  const saveChk = $('saveCardChk');
-
+  if (newBtn) newBtn.addEventListener('click', () => {
+    cartPayment.card = { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null };
+    renderPaymentSection();
+  });
+  const numEl = $('cardNumber'), nameEl = $('cardName'), expEl = $('cardExpiry'), cvvEl = $('cardCvv'), saveChk = $('saveCardChk');
   if (!numEl) return;
-
-  if (saveChk) {
-    saveChk.addEventListener('change', () => { cartPayment.card.save = saveChk.checked; });
-  }
-
+  if (saveChk) saveChk.addEventListener('change', () => { cartPayment.card.save = saveChk.checked; });
   numEl.addEventListener('input', (e) => {
     e.target.value = formatCardNumber(e.target.value);
     cartPayment.card.number = e.target.value;
@@ -1480,15 +1228,12 @@ function wireCardFormEvents(body) {
     }
     e.target.classList.toggle('invalid', e.target.value && !validateCardNumber(e.target.value));
   });
-
   nameEl.addEventListener('input', (e) => { cartPayment.card.name = e.target.value; });
-
   expEl.addEventListener('input', (e) => {
     e.target.value = formatExpiry(e.target.value);
     cartPayment.card.expiry = e.target.value;
     e.target.classList.toggle('invalid', e.target.value.length === 5 && !validateExpiry(e.target.value));
   });
-
   cvvEl.addEventListener('input', (e) => {
     e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
     cartPayment.card.cvv = e.target.value;
@@ -1496,34 +1241,22 @@ function wireCardFormEvents(body) {
 }
 
 /* =====================================================
-   15. CART RENDERERS
+   16. DELIVERY + CART RENDERERS
    ===================================================== */
 function renderDeliverySection() {
   const body = $('deliveryBody');
   document.querySelectorAll('.delivery-toggle-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.deliveryMethod === cartDelivery.method)
   );
-
   if (cartDelivery.method === 'pickup') {
     body.innerHTML = `<div class="delivery-pickup-info"><i class='bx bx-store'></i><div><strong>${t('delivery.pickupTitle')}</strong><span>${t('delivery.pickupAddress')}<br>${t('delivery.pickupHours')}</span></div></div>`;
     return;
   }
-
   const active = deliveryZones.filter(z => z.active);
-  if (!active.length) {
-    body.innerHTML = `<div class="delivery-empty">${t('delivery.noZones')}</div>`;
-    return;
-  }
-
+  if (!active.length) { body.innerHTML = `<div class="delivery-empty">${t('delivery.noZones')}</div>`; return; }
   body.innerHTML = `<label>${t('delivery.zone')}</label><select class="delivery-select" id="deliveryZoneSelect"><option value="">${t('delivery.selectZone')}</option>${active.map(z => `<option value="${z.id}" ${cartDelivery.zoneId === z.id ? 'selected' : ''}>${esc(L(z, 'name'))} — $${Number(z.price).toFixed(2)}</option>`).join('')}</select>${cartDelivery.zoneId ? (function () { const z = deliveryZones.find(x => x.id === cartDelivery.zoneId); return z ? `<div class="delivery-fee-row"><span>${t('delivery.fee')}</span><span class="fee-value">$${Number(z.price).toFixed(2)}</span></div>` : ''; })() : ''}`;
-
   const sel = $('deliveryZoneSelect');
-  if (sel) {
-    sel.addEventListener('change', (e) => {
-      cartDelivery.zoneId = e.target.value || null;
-      renderCart();
-    });
-  }
+  if (sel) sel.addEventListener('change', (e) => { cartDelivery.zoneId = e.target.value || null; renderCart(); });
 }
 
 function renderCart() {
@@ -1553,12 +1286,12 @@ function renderCart() {
       const typesList = (item.types || []).map(x => L(x, 'name')).join(' • ');
       const addonsList = (item.addons || []).map(a => L(a, 'name')).join(' • ');
       const meta = `${item.weight}${t('mix.unitG')} • ${esc(L(item.packaging, 'name'))}${addonsList ? `<br>${esc(addonsList)}` : ''}<br>${esc(typesList)}`;
-      const payTag = item.mixPayment ? `<div style="font-size:.65rem;color:var(--text-light);margin-top:2px;">${item.mixPayment === 'card' ? '💳 Card' : '💵 Cash'}</div>` : '';
-      return `<div class="cart-item" data-id="${item.id}"><div class="cart-item-img"><img src="${item.img}" alt="${t('mix.customMix')}"></div><div class="cart-item-info"><h4>${t('cart.customMix')}</h4><div class="item-meta">${meta}</div><span class="item-price">$${(item.price * item.qty).toFixed(2)}</span>${payTag}<div class="cart-item-controls"><button class="qty-btn" data-action="dec" data-id="${item.id}">−</button><span class="qty-value">${item.qty}</span><button class="qty-btn" data-action="inc" data-id="${item.id}">+</button></div></div><button class="item-remove" data-action="remove" data-id="${item.id}"><i class='bx bx-trash'></i></button></div>`;
+      return `<div class="cart-item" data-id="${item.id}"><div class="cart-item-img"><img src="${item.img}" alt="${t('cart.customMix')}"></div><div class="cart-item-info"><h4>${t('cart.customMix')}</h4><div class="item-meta">${meta}</div><span class="item-price">$${(item.price * item.qty).toFixed(2)}</span><div class="cart-item-controls"><button class="qty-btn" data-action="dec" data-id="${item.id}">−</button><span class="qty-value">${item.qty}</span><button class="qty-btn" data-action="inc" data-id="${item.id}">+</button></div></div><button class="item-remove" data-action="remove" data-id="${item.id}"><i class='bx bx-trash'></i></button></div>`;
     }
-    const p = products.find(x => x.id === item.id) || chocolateProducts.find(x => x.id === item.id) || offers.find(x => x.id === item.id);
+    const p = products.find(x => x.id === item.id) || offers.find(x => x.id === item.id);
     if (!p) return '';
-    return `<div class="cart-item" data-id="${p.id}"><div class="cart-item-img"><img src="${p.img}" alt="${esc(L(p, 'name'))}"></div><div class="cart-item-info"><h4>${esc(L(p, 'name'))}</h4><span class="item-price">$${(p.price * item.qty).toFixed(2)}</span><div class="cart-item-controls"><button class="qty-btn" data-action="dec" data-id="${p.id}">−</button><span class="qty-value">${item.qty}</span><button class="qty-btn" data-action="inc" data-id="${p.id}">+</button></div></div><button class="item-remove" data-action="remove" data-id="${p.id}"><i class='bx bx-trash'></i></button></div>`;
+    const weightTag = item.weight ? `<div class="item-meta">${item.weight} ${t('weight.unit')}</div>` : '';
+    return `<div class="cart-item" data-id="${p.id}"><div class="cart-item-img"><img src="${p.img}" alt="${esc(L(p, 'name'))}"></div><div class="cart-item-info"><h4>${esc(L(p, 'name'))}</h4>${weightTag}<span class="item-price">$${(item.price * item.qty).toFixed(2)}</span><div class="cart-item-controls"><button class="qty-btn" data-action="dec" data-id="${p.id}">−</button><span class="qty-value">${item.qty}</span><button class="qty-btn" data-action="inc" data-id="${p.id}">+</button></div></div><button class="item-remove" data-action="remove" data-id="${p.id}"><i class='bx bx-trash'></i></button></div>`;
   }).join('');
 
   renderDeliverySection();
@@ -1581,20 +1314,10 @@ function renderCart() {
   $('cartTotal').textContent = '$' + total.toFixed(2);
 }
 
-function addToCart(id) {
-  const e = cart.find(i => i.id === id);
-  if (e) e.qty += 1;
-  else cart.push({ id, qty: 1 });
-  renderCart();
-  const p = products.find(x => x.id === id) || chocolateProducts.find(x => x.id === id) || offers.find(x => x.id === id);
-  if (p) showToast(t('toast.added', { name: L(p, 'name') }), 'bx-cart-add');
-}
-
 function increaseQty(id) {
   const i = cart.find(c => c.id === id);
   if (i) { i.qty++; renderCart(); }
 }
-
 function decreaseQty(id) {
   const i = cart.find(c => c.id === id);
   if (!i) return;
@@ -1602,7 +1325,6 @@ function decreaseQty(id) {
   else cart = cart.filter(c => c.id !== id);
   renderCart();
 }
-
 function removeItem(id) {
   cart = cart.filter(i => i.id !== id);
   renderCart();
@@ -1610,21 +1332,210 @@ function removeItem(id) {
 }
 
 /* =====================================================
-   16. MOBILE ACCOUNT UI
+   17. WEIGHT PICKER MODAL
+   ===================================================== */
+function openWeightModal(productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+
+  if (p.pricingType !== 'tiered') {
+    /* Fixed-price: add directly to cart */
+    addFixedProductToCart(p);
+    return;
+  }
+
+  weightModalState = { product: p, weight: 250, qty: 1 };
+  renderWeightModal();
+  $('weightModal').classList.add('show');
+  lockBodyScroll();
+  $('floatingSign').classList.add('hide');
+}
+
+function closeWeightModal() {
+  $('weightModal').classList.remove('show');
+  weightModalState = { product: null, weight: 250, qty: 1 };
+  if (!$('cartPanel').classList.contains('show') &&
+      !$('loginPanel').classList.contains('show') &&
+      !$('mixModal').classList.contains('show') &&
+      !$('accountPage').classList.contains('show') &&
+      !$('adminPage').classList.contains('show') &&
+      !$('ownerPage').classList.contains('show')) {
+    unlockBodyScroll();
+    $('floatingSign').classList.remove('hide');
+  }
+}
+
+function renderWeightModal() {
+  const { product: p, weight, qty } = weightModalState;
+  if (!p) return;
+
+  $('weightModalImg').src = p.img;
+  $('weightModalImg').alt = L(p, 'name');
+  $('weightModalName').textContent = L(p, 'name');
+  $('weightModalDesc').textContent = L(p, 'desc') || '';
+
+  /* Presets */
+  const presets = [
+    { w: 250,  price: Number(p.price250)  || 0 },
+    { w: 500,  price: Number(p.price500)  || 0 },
+    { w: 1000, price: Number(p.price1000) || 0 }
+  ];
+  $('weightPresets').innerHTML = presets.map(pr => {
+    const label = pr.w === 1000 ? (lang === 'ar' ? '١ كيلو' : '1 kg') : `${pr.w} g`;
+    const active = weight === pr.w;
+    return `<button type="button" class="weight-preset ${active ? 'active' : ''}" data-w="${pr.w}">
+      <span class="weight-preset-amount">${label}</span>
+      <span class="weight-preset-price">$${pr.price.toFixed(2)}</span>
+    </button>`;
+  }).join('');
+
+  /* Custom weight input */
+  $('weightInput').value = weight;
+
+  /* Tier note */
+  const tier = getTierForWeight(p, weight);
+  const noteEl = $('weightTierNote');
+  if (tier) {
+    const priceStr = `$${tier.price.toFixed(2)}`;
+    const key = tier.tier === 1000 ? 'weight.tierNote1000' : tier.tier === 500 ? 'weight.tierNote500' : 'weight.tierNote250';
+    noteEl.innerHTML = `<i class='bx bx-info-circle'></i><span>${t(key, { price: priceStr })}</span>`;
+    noteEl.classList.add('active');
+  } else {
+    noteEl.innerHTML = '';
+    noteEl.classList.remove('active');
+  }
+
+  /* Quantity */
+  $('weightQtyValue').textContent = qty;
+
+  /* Total */
+  const unitPrice = calcProductPriceForWeight(p, weight);
+  const total = unitPrice * qty;
+  $('weightTotalPrice').textContent = `$${total.toFixed(2)}`;
+}
+
+function addFixedProductToCart(p) {
+  const existing = cart.find(i => i.id === p.id);
+  if (existing) existing.qty += 1;
+  else cart.push({ id: p.id, qty: 1, price: Number(p.price) || 0 });
+  renderCart();
+  showToast(t('toast.added', { name: L(p, 'name') }), 'bx-cart-add');
+}
+
+function addTieredProductToCart() {
+  const { product: p, weight, qty } = weightModalState;
+  if (!p) return;
+  const unitPrice = calcProductPriceForWeight(p, weight);
+  /* Unique cart key so different weights are separate lines */
+  const cartKey = p.id + '::' + weight;
+  const existing = cart.find(i => i.id === cartKey);
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({
+      id: cartKey,
+      productId: p.id,
+      qty: qty,
+      weight: weight,
+      price: unitPrice
+    });
+  }
+  renderCart();
+  showToast(t('toast.added', { name: L(p, 'name') }), 'bx-cart-add');
+  closeWeightModal();
+}
+
+/* =====================================================
+   18. CART LOOKUPS (handle tiered cart items)
+   ===================================================== */
+function findCartItemProduct(item) {
+  if (!item) return null;
+  if (item.productId) return products.find(x => x.id === item.productId) || null;
+  return products.find(x => x.id === item.id) || offers.find(x => x.id === item.id) || null;
+}
+
+/* =====================================================
+   19. MIX STEP NAVIGATION
+   ===================================================== */
+function updateMixStep() {
+  document.querySelectorAll('.mix-progress-step').forEach(s => {
+    const step = parseInt(s.dataset.step);
+    s.classList.toggle('active', step === mixState.step);
+    s.classList.toggle('done', step < mixState.step);
+  });
+  document.querySelectorAll('.mix-progress-line').forEach((line, i) =>
+    line.classList.toggle('done', i + 1 < mixState.step)
+  );
+  document.querySelectorAll('.mix-pane').forEach(p =>
+    p.classList.toggle('active', parseInt(p.dataset.pane) === mixState.step)
+  );
+  $('mixBackBtn').disabled = mixState.step === 1;
+  const nextIcon = lang === 'ar' ? 'bx-left-arrow-alt' : 'bx-right-arrow-alt';
+  const nextBtn = $('mixNextBtn');
+  if (mixState.step === 5) {
+    nextBtn.innerHTML = `<i class='bx bx-check-shield'></i> <span>${t('mix.completeOrder')}</span>`;
+    nextBtn.classList.add('grab');
+  } else {
+    nextBtn.innerHTML = `<span>${t('mix.next')}</span> <i class='bx ${nextIcon}'></i>`;
+    nextBtn.classList.remove('grab');
+  }
+  if (mixState.step === 1) nextBtn.disabled = !mixState.packaging;
+  else if (mixState.step === 2) nextBtn.disabled = !mixState.weight;
+  else if (mixState.step === 3) nextBtn.disabled = mixState.selectedTypes.filter(Boolean).length < mixState.typesCount;
+  else nextBtn.disabled = false;
+}
+function goToMixStep(step) {
+  mixState.step = step;
+  if (step === 3) {
+    renderMixSlots(); renderMixTypesGrid();
+    $('mixCountNumber').textContent = mixState.typesCount;
+    $('mixCountMinus').disabled = mixState.typesCount <= 1;
+    $('mixCountPlus').disabled = mixState.typesCount >= 6;
+  }
+  if (step === 4) renderMixAddons();
+  if (step === 5) renderMixReview();
+  updateMixStep();
+  document.querySelector('.mix-body').scrollTop = 0;
+}
+function openMixModal() {
+  mixState.step = 1;
+  mixState.packaging = null;
+  mixState.weight = null;
+  mixState.typesCount = 1;
+  mixState.selectedTypes = [];
+  mixState.selectedAddons = [];
+  renderMixPackaging(); renderMixWeights(); renderMixSlots(); renderMixTypesGrid(); renderMixAddons(); renderMixReview();
+  updateMixStep();
+  $('mixModal').classList.add('show');
+  lockBodyScroll();
+  $('floatingSign').classList.add('hide');
+}
+function closeMixModal() {
+  $('mixModal').classList.remove('show');
+  if (!$('cartPanel').classList.contains('show') &&
+      !$('loginPanel').classList.contains('show') &&
+      !$('accountPage').classList.contains('show') &&
+      !$('adminPage').classList.contains('show') &&
+      !$('ownerPage').classList.contains('show') &&
+      !$('weightModal').classList.contains('show')) {
+    unlockBodyScroll();
+    $('floatingSign').classList.remove('hide');
+  }
+}
+
+/* =====================================================
+   20. MOBILE ACCOUNT UI
    ===================================================== */
 function updateMobileAccountUI() {
   const btn = $('mobileAccountBtn');
   const nameEl = $('mobileAccountName');
   const av = $('mobileUserAvatar');
   if (!btn) return;
-
   if (currentUser) {
     btn.classList.add('signed-in');
     nameEl.textContent = currentUser.name || currentUser.email || 'My Account';
     const initial = (currentUser.name || currentUser.email || 'H').charAt(0).toUpperCase();
-    av.innerHTML = isOwner
-      ? "<i class='bx bx-code-alt'></i>"
-      : (isAdmin ? "<i class='bx bx-shield-quarter'></i>" : initial);
+    av.innerHTML = isOwner ? "<i class='bx bx-code-alt'></i>" : (isAdmin ? "<i class='bx bx-shield-quarter'></i>" : initial);
   } else {
     btn.classList.remove('signed-in');
     nameEl.textContent = lang === 'ar' ? 'تسجيل الدخول / حسابي' : 'Sign In / My Account';
@@ -1633,14 +1544,13 @@ function updateMobileAccountUI() {
 }
 
 /* =====================================================
-   17. LOGIN FLOW
+   21. LOGIN FLOW
    ===================================================== */
 function resetLoginPanel(mode = 'default') {
   $('loginFormWrapper').style.display = 'block';
   $('loginSuccess').classList.remove('show');
   $('loginForm').reset();
   resetGoogleSignInUI();
-
   if (mode === 'checkout') {
     checkoutIntent = true;
     $('loginTitle').textContent = t('login.almost');
@@ -1653,23 +1563,18 @@ function resetLoginPanel(mode = 'default') {
     $('loginCallout').style.display = 'none';
   }
 }
-
 function onSignInSuccess(user) {
   isAdmin = false;
   isOwner = false;
   const c = registerCustomer(user);
   currentUser = { ...user, id: c.id, role: 'customer' };
   loadUserCards();
-
   $('loginFormWrapper').style.display = 'none';
   $('loginSuccess').classList.add('show');
-  $('successMessage').textContent = checkoutIntent
-    ? t('login.successSub')
-    : t('login.successWelcome', { name: user.name || 'Sweet Friend' });
+  $('successMessage').textContent = checkoutIntent ? t('login.successSub') : t('login.successWelcome', { name: user.name || 'Sweet Friend' });
   $('loginBtn').classList.add('signed-in');
   $('userInitial').textContent = (user.name || user.email || 'H').charAt(0).toUpperCase();
   updateMobileAccountUI();
-
   setTimeout(() => {
     $('cartPanel').classList.remove('show');
     $('loginPanel').classList.remove('show');
@@ -1684,7 +1589,6 @@ function onSignInSuccess(user) {
     }
   }, 1400);
 }
-
 function signOutUser() {
   isAdmin = false;
   isOwner = false;
@@ -1702,7 +1606,7 @@ function signOutUser() {
 }
 
 /* =====================================================
-   18. ACCOUNT PAGE
+   22. ACCOUNT PAGE
    ===================================================== */
 function openAccountPage() {
   if (!currentUser) return;
@@ -1715,19 +1619,18 @@ function openAccountPage() {
   renderAccountPage();
   switchAccountTab(accountTab);
 }
-
 function closeAccountPage() {
   $('accountPage').classList.remove('show');
   if (!$('cartPanel').classList.contains('show') &&
       !$('loginPanel').classList.contains('show') &&
       !$('mixModal').classList.contains('show') &&
       !$('adminPage').classList.contains('show') &&
-      !$('ownerPage').classList.contains('show')) {
+      !$('ownerPage').classList.contains('show') &&
+      !$('weightModal').classList.contains('show')) {
     unlockBodyScroll();
     $('floatingSign').classList.remove('hide');
   }
 }
-
 function switchAccountTab(tab) {
   accountTab = tab;
   document.querySelectorAll('#accountPage .account-tab').forEach(x =>
@@ -1737,7 +1640,6 @@ function switchAccountTab(tab) {
     p.classList.toggle('active', p.dataset.pane === tab)
   );
 }
-
 function renderAccountPage() {
   const orders = getUserOrders();
   const active = orders.filter(o => ['processing', 'packing', 'shipped', 'out_for_delivery'].includes(o.status)).length;
@@ -1750,7 +1652,6 @@ function renderAccountPage() {
   renderTracking();
   renderAddresses();
 }
-
 function renderAccountNotice() {
   const el = $('accountNotice');
   const qty = cart.reduce((s, i) => s + i.qty, 0);
@@ -1764,7 +1665,6 @@ function renderAccountNotice() {
     el.innerHTML = '';
   }
 }
-
 function renderAccountStats() {
   const s = getUserStats();
   $('accountStats').innerHTML = `
@@ -1773,7 +1673,6 @@ function renderAccountStats() {
     <div class="account-stat"><div class="account-stat-icon"><i class='bx bx-check-circle'></i></div><div class="account-stat-info"><div class="account-stat-value">${s.delivered}</div><div class="account-stat-label">${t('account.statDelivered')}</div></div></div>
     <div class="account-stat"><div class="account-stat-icon"><i class='bx bx-dollar-circle'></i></div><div class="account-stat-info"><div class="account-stat-value">$${s.spent.toFixed(2)}</div><div class="account-stat-label">${t('account.statSpent')}</div></div></div>`;
 }
-
 function renderOrders() {
   const list = $('ordersList');
   const myOrders = getUserOrders();
@@ -1798,7 +1697,6 @@ function renderOrders() {
       </div>
     </div>`).join('');
 }
-
 function renderTracking() {
   const list = $('trackingList');
   const tracked = getUserOrders().filter(o => ['packing', 'shipped', 'out_for_delivery', 'delivered'].includes(o.status));
@@ -1821,7 +1719,6 @@ function renderTracking() {
     return `<div class="tracking-card"><div class="tracking-head"><div class="tracking-head-info"><h3>${t('account.trackingFor')} ${o.id}</h3><p>${formatDate(o.date)} • ${qty} ${qty === 1 ? t('cart.item') : t('cart.items')}</p></div><div class="tracking-num"><i class='bx bx-package'></i> ${o.tracking || '—'}</div></div><div class="tracking-timeline">${steps.map((s, i) => `<div class="tracking-step ${i <= cur ? 'done' : ''} ${i === cur && o.status !== 'delivered' ? 'current' : ''}"><div class="tracking-step-dot"><i class='${s.icon}'></i></div><div class="tracking-step-text"><div class="tracking-step-label">${s.label}</div><div class="tracking-step-time">${s.time ? formatDate(s.time) : ''}</div></div></div>`).join('')}</div><div class="tracking-foot"><div class="tracking-eta"><i class='bx bx-time-five'></i> ${t('account.eta')}: ${o.eta ? formatDate(o.eta) : '—'}</div><div>${t('account.deliveringTo')}: ${o.address}</div></div></div>`;
   }).join('');
 }
-
 function renderAddresses() {
   const grid = $('addressesGrid');
   const icons = { home: 'bx-home', work: 'bx-briefcase', other: 'bx-map-pin' };
@@ -1842,7 +1739,6 @@ function renderAddresses() {
     `<div class="address-add-card" id="addAddressBtn"><div class="address-add-icon"><i class='bx bx-plus'></i></div><span>${t('account.addNew')}</span></div>`;
   $('addAddressBtn').addEventListener('click', () => showAddressForm());
 }
-
 function showAddressForm(id) {
   const form = $('addressForm');
   const el = $('addressFormEl');
@@ -1866,14 +1762,13 @@ function showAddressForm(id) {
   form.classList.add('show');
   form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-
 function hideAddressForm() {
   $('addressForm').classList.remove('show');
   $('addressFormEl').reset();
 }
 
 /* =====================================================
-   19. ADMIN PANEL
+   23. ADMIN PANEL
    ===================================================== */
 function signInAsAdmin() {
   isAdmin = true;
@@ -1891,7 +1786,6 @@ function signInAsAdmin() {
     showToast(t('toast.adminWelcome'), 'bx-shield-quarter');
   }, 900);
 }
-
 function openAdminPage() {
   if (!isAdmin) return;
   syncEmployeeDataToOrders();
@@ -1900,7 +1794,6 @@ function openAdminPage() {
   $('adminPage').classList.add('show');
   lockBodyScroll();
   $('floatingSign').classList.add('hide');
-
   if (overviewUnlocked) {
     $('overviewGate').style.display = 'none';
     $('overviewContent').style.display = 'block';
@@ -1908,23 +1801,21 @@ function openAdminPage() {
     $('overviewGate').style.display = 'flex';
     $('overviewContent').style.display = 'none';
   }
-
   renderAdmin();
   switchAdminTab(adminTab);
 }
-
 function closeAdminPage() {
   $('adminPage').classList.remove('show');
   if (!$('cartPanel').classList.contains('show') &&
       !$('loginPanel').classList.contains('show') &&
       !$('mixModal').classList.contains('show') &&
       !$('accountPage').classList.contains('show') &&
-      !$('ownerPage').classList.contains('show')) {
+      !$('ownerPage').classList.contains('show') &&
+      !$('weightModal').classList.contains('show')) {
     unlockBodyScroll();
     $('floatingSign').classList.remove('hide');
   }
 }
-
 function switchAdminTab(tab) {
   adminTab = tab;
   document.querySelectorAll('#adminPage .account-tab').forEach(x =>
@@ -1934,14 +1825,12 @@ function switchAdminTab(tab) {
     p.classList.toggle('active', p.dataset.apane === tab)
   );
 }
-
 function renderAdmin() {
   syncEmployeeDataToOrders();
   $('adminOrdersCount').textContent = orderHistory.length;
   $('adminCustomersCount').textContent = customers.length;
   $('adminMessagesCount').textContent = contactMessages.filter(m => !m.read).length;
   if ($('adminEmployeesCount')) $('adminEmployeesCount').textContent = loadEmployees().length;
-
   renderAdminKpis();
   renderAdminChart();
   renderAdminTopProducts();
@@ -1952,7 +1841,6 @@ function renderAdmin() {
   renderAdminMessages();
   renderAdminEmployees();
 }
-
 function renderAdminKpis() {
   const orders = getReportOrders();
   const act = orders.filter(o => o.status !== 'cancelled');
@@ -1960,10 +1848,8 @@ function renderAdminKpis() {
   const delRev = orders.filter(o => o.status === 'delivered').reduce((s, o) => s + o.total, 0);
   const pend = orders.filter(o => ['processing', 'packing'].includes(o.status)).length;
   const aov = act.length ? rev / act.length : 0;
-
   const posOrders = act.filter(o => o.channel === 'pos');
   const posRev = posOrders.reduce((s, o) => s + o.total, 0);
-
   const cards = [
     { icon: 'bx-dollar-circle', value: '$' + rev.toFixed(2),      label: t('admin.kpiRevenue') },
     { icon: 'bx-receipt',       value: orders.length,             label: t('admin.kpiOrders') },
@@ -1974,17 +1860,14 @@ function renderAdminKpis() {
     { icon: 'bx-store',         value: posOrders.length,          label: t('admin.kpiPosOrders') },
     { icon: 'bx-cash',          value: '$' + posRev.toFixed(2),   label: t('admin.kpiPosRevenue') }
   ];
-
   $('adminKpis').innerHTML = cards.map(c =>
     `<div class="kpi-card"><div class="kpi-icon"><i class='bx ${c.icon}'></i></div><div><div class="kpi-value">${c.value}</div><div class="kpi-label">${c.label}</div></div></div>`
   ).join('');
 }
-
 function renderAdminChart() {
   const orders = orderHistory.filter(o => o.status !== 'cancelled');
   const now = new Date();
   let data = [];
-
   if (reportRange === 'daily') {
     const key = now.toISOString().split('T')[0];
     const value = orders.filter(o => o.date === key).reduce((s, o) => s + o.total, 0);
@@ -2000,10 +1883,7 @@ function renderAdminChart() {
     for (let b = 5; b >= 0; b--) {
       const end = new Date(now); end.setDate(end.getDate() - b * 5);
       const start = new Date(end); start.setDate(start.getDate() - 4);
-      const value = orders.filter(o => {
-        const d = new Date(o.date);
-        return d >= start && d <= end;
-      }).reduce((s, o) => s + o.total, 0);
+      const value = orders.filter(o => { const d = new Date(o.date); return d >= start && d <= end; }).reduce((s, o) => s + o.total, 0);
       data.push({ label: `${start.getDate()}/${start.getMonth() + 1}`, value });
     }
   } else {
@@ -2011,19 +1891,12 @@ function renderAdminChart() {
       const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
       const start = new Date(d);
       const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      const value = orders.filter(o => {
-        const od = new Date(o.date);
-        return od >= start && od <= end;
-      }).reduce((s, o) => s + o.total, 0);
+      const value = orders.filter(o => { const od = new Date(o.date); return od >= start && od <= end; }).reduce((s, o) => s + o.total, 0);
       data.push({ label: start.toLocaleDateString(lang === 'ar' ? 'ar-JO' : 'en-GB', { month: 'short' }), value });
     }
   }
-
   const el = $('adminChartBars');
-  if (!data.length) {
-    el.innerHTML = `<p class="admin-empty-note">${t('admin.noData')}</p>`;
-    return;
-  }
+  if (!data.length) { el.innerHTML = `<p class="admin-empty-note">${t('admin.noData')}</p>`; return; }
   const max = Math.max(...data.map(d => d.value), 1);
   el.innerHTML = data.map(d => `
     <div class="admin-bar-col">
@@ -2032,7 +1905,6 @@ function renderAdminChart() {
       <div class="admin-bar-label">${d.label}</div>
     </div>`).join('');
 }
-
 function productSales() {
   const map = {};
   orderHistory.filter(o => o.status !== 'cancelled').forEach(o => o.itemsList.forEach(it => {
@@ -2042,14 +1914,10 @@ function productSales() {
   }));
   return Object.values(map).sort((a, b) => b.revenue - a.revenue);
 }
-
 function renderAdminTopProducts() {
   const list = productSales().slice(0, 5);
   const el = $('adminTopProducts');
-  if (!list.length) {
-    el.innerHTML = `<p class="admin-empty-note">${t('admin.noData')}</p>`;
-    return;
-  }
+  if (!list.length) { el.innerHTML = `<p class="admin-empty-note">${t('admin.noData')}</p>`; return; }
   const max = Math.max(...list.map(p => p.revenue), 1);
   el.innerHTML = list.map((p, i) => `
     <div class="admin-rank-item">
@@ -2061,15 +1929,11 @@ function renderAdminTopProducts() {
       <div class="admin-rank-value">$${p.revenue.toFixed(2)}</div>
     </div>`).join('');
 }
-
 function orderRowHtml(o, compact) {
   const c = custById(o.customerId);
   const items = o.itemsList.map(i => `${lang === 'ar' && i.name_ar ? i.name_ar : i.name} ×${i.qty}`).join(' • ');
   const pay = (o.payment === 'cod' || o.payment === 'cash') ? t('admin.payCod') : t('admin.payCard');
-  const channelBadge = o.channel === 'pos'
-    ? `<span class="admin-tier" style="background:rgba(226,1,93,0.15);color:#9f0b3b;margin-inline-start:6px;">POS</span>`
-    : '';
-
+  const channelBadge = o.channel === 'pos' ? `<span class="admin-tier" style="background:rgba(226,1,93,0.15);color:#9f0b3b;margin-inline-start:6px;">POS</span>` : '';
   return `<tr>
     <td><strong>${o.id}</strong>${channelBadge}<div class="admin-sub">${formatDate(o.date)}</div></td>
     <td><div class="admin-user"><div class="admin-user-avatar">${esc((c.name || 'G').charAt(0))}</div><div><div class="admin-user-name">${esc(c.name)}</div><div class="admin-sub">${esc(c.email || '')}</div></div></div></td>
@@ -2079,25 +1943,17 @@ function orderRowHtml(o, compact) {
     ${compact ? '' : `<td><select class="admin-status-select" data-status-order="${o.id}">${['processing', 'packing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${t('account.status_' + s)}</option>`).join('')}</select></td><td><div class="admin-row-actions"><button class="admin-mini-btn primary" data-advance="${o.id}" ${(o.status === 'delivered' || o.status === 'cancelled') ? 'disabled' : ''}><i class='bx bx-right-arrow-alt'></i> ${t('admin.advance')}</button><button class="admin-mini-btn danger" data-cancel-order="${o.id}" ${(o.status === 'delivered' || o.status === 'cancelled') ? 'disabled' : ''}><i class='bx bx-x'></i></button></div></td>`}
   </tr>`;
 }
-
 function renderAdminRecentOrders() {
-  const recent = getReportOrders()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5);
+  const recent = getReportOrders().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const tbody = $('adminRecentOrders');
-  if (!recent.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="admin-empty-note">${t('admin.noData')}</div></td></tr>`;
-    return;
-  }
+  if (!recent.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="admin-empty-note">${t('admin.noData')}</div></td></tr>`; return; }
   tbody.innerHTML = recent.map(o => orderRowHtml(o, true)).join('');
 }
-
 function renderAdminOrders() {
   const counts = { all: orderHistory.length };
   ['processing', 'packing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'].forEach(s => {
     counts[s] = orderHistory.filter(o => o.status === s).length;
   });
-
   const filters = [
     ['all', t('admin.all')],
     ['processing', t('account.status_processing')],
@@ -2107,27 +1963,16 @@ function renderAdminOrders() {
     ['delivered', t('account.status_delivered')],
     ['cancelled', t('account.status_cancelled')]
   ];
-
   $('adminOrderFilters').innerHTML = filters.map(([k, l]) =>
     `<button class="admin-filter ${adminOrderFilter === k ? 'active' : ''}" data-ofilter="${k}">${l} <span class="flt-count">${counts[k] || 0}</span></button>`
   ).join('');
-
-  const rows = orderHistory
-    .filter(o => adminOrderFilter === 'all' || o.status === adminOrderFilter)
-    .sort((a, b) => b.date.localeCompare(a.date));
-
-  $('adminOrdersBody').innerHTML = rows.length
-    ? rows.map(o => orderRowHtml(o, false)).join('')
-    : `<tr><td colspan="7"><div class="admin-empty-note">${t('admin.noData')}</div></td></tr>`;
+  const rows = orderHistory.filter(o => adminOrderFilter === 'all' || o.status === adminOrderFilter).sort((a, b) => b.date.localeCompare(a.date));
+  $('adminOrdersBody').innerHTML = rows.length ? rows.map(o => orderRowHtml(o, false)).join('') : `<tr><td colspan="7"><div class="admin-empty-note">${t('admin.noData')}</div></td></tr>`;
 }
-
 function renderAdminCustomers() {
   const q = adminCustomerSearch.toLowerCase();
-  const list = customers.filter(c =>
-    !q || (c.name + ' ' + c.email + ' ' + c.phone + ' ' + c.city).toLowerCase().includes(q)
-  );
+  const list = customers.filter(c => !q || (c.name + ' ' + c.email + ' ' + c.phone + ' ' + c.city).toLowerCase().includes(q));
   const tierLabels = { vip: t('admin.tierVip'), active: t('admin.tierActive'), new: t('admin.tierNew') };
-
   $('adminCustomersBody').innerHTML = list.length ? list.map(c => {
     const st = customerStats(c.id);
     return `<tr>
@@ -2145,23 +1990,24 @@ function renderAdminCustomers() {
     </tr>`;
   }).join('') : `<tr><td colspan="8"><div class="admin-empty-note">${t('admin.noData')}</div></td></tr>`;
 }
-
 function renderAdminProducts() {
   const sales = productSales();
   $('adminProductsBody').innerHTML = products.map(p => {
     const s = sales.find(x => x.name === p.name) || { qty: 0, revenue: 0 };
     const cls = p.stock > 20 ? 'in' : (p.stock > 0 ? 'low' : 'out');
     const lbl = p.stock > 20 ? t('admin.stockIn') : (p.stock > 0 ? t('admin.stockLow') : t('admin.stockOut'));
+    const priceShow = p.pricingType === 'tiered'
+      ? `$${Number(p.price250).toFixed(2)}+`
+      : `$${Number(p.price).toFixed(2)}`;
     return `<tr>
       <td><div class="admin-user"><img class="admin-prod-thumb" src="${esc(p.img)}" alt=""><div><div class="admin-user-name">${esc(L(p, 'name'))}</div><div class="admin-sub">${esc(L(p, 'badge') || '')}</div></div></div></td>
-      <td><strong>$${Number(p.price).toFixed(2)}</strong>${p.oldPrice ? `<div class="admin-sub"><s style="opacity:.6">$${Number(p.oldPrice).toFixed(2)}</s></div>` : ''}</td>
+      <td><strong>${priceShow}</strong></td>
       <td>${s.qty} <span class="admin-sub">${t('admin.units')}</span></td>
       <td><strong>$${s.revenue.toFixed(2)}</strong></td>
       <td><span class="admin-stock ${cls}"><i class='bx bx-package'></i> ${lbl} (${p.stock})</span></td>
     </tr>`;
   }).join('');
 }
-
 function renderAdminMessages() {
   const el = $('adminMessagesList');
   if (!contactMessages.length) {
@@ -2182,7 +2028,7 @@ function renderAdminMessages() {
 }
 
 /* =====================================================
-   20. SECURED REPORTS
+   24. SECURED REPORTS
    ===================================================== */
 function getRangeStart(range) {
   const now = new Date();
@@ -2193,13 +2039,11 @@ function getRangeStart(range) {
   if (range === 'monthly') { start.setDate(start.getDate() - 29); return start; }
   return null;
 }
-
 function getReportOrders() {
   const start = getRangeStart(reportRange);
   if (!start) return orderHistory.slice();
   return orderHistory.filter(o => new Date(o.date) >= start);
 }
-
 function getReportRangeLabel(range) {
   const labels = {
     daily:   { en: 'Today',           ar: 'اليوم' },
@@ -2210,12 +2054,10 @@ function getReportRangeLabel(range) {
   const l = labels[range] || labels.weekly;
   return lang === 'ar' ? l.ar : l.en;
 }
-
 function tryUnlockOverview() {
   const input = $('overviewPassword');
   const error = $('overviewGateError');
   const value = (input.value || '').trim();
-
   if (value === OVERVIEW_SECRET) {
     overviewUnlocked = true;
     $('overviewGate').style.display = 'none';
@@ -2233,7 +2075,6 @@ function tryUnlockOverview() {
     input.focus();
   }
 }
-
 function lockOverview() {
   overviewUnlocked = false;
   $('overviewGate').style.display = 'flex';
@@ -2242,17 +2083,12 @@ function lockOverview() {
   $('overviewGateError').textContent = '';
   showToast(lang === 'ar' ? 'تم قفل التقارير' : 'Reports locked', 'bx-lock-alt');
 }
-
 function refreshOverviewReports() {
   if (!overviewUnlocked) return;
-  renderAdminKpis();
-  renderAdminChart();
-  renderAdminTopProducts();
-  renderAdminRecentOrders();
+  renderAdminKpis(); renderAdminChart(); renderAdminTopProducts(); renderAdminRecentOrders();
   const tag = $('adminChartTag');
   if (tag) tag.textContent = getReportRangeLabel(reportRange);
 }
-
 function buildPrintReportHTML() {
   const orders = getReportOrders();
   const act = orders.filter(o => o.status !== 'cancelled');
@@ -2261,7 +2097,6 @@ function buildPrintReportHTML() {
   const pending = orders.filter(o => ['processing', 'packing'].includes(o.status)).length;
   const aov = act.length ? revenue / act.length : 0;
   const now = new Date();
-
   const salesMap = {};
   act.forEach(o => o.itemsList.forEach(it => {
     const key = it.name;
@@ -2270,10 +2105,8 @@ function buildPrintReportHTML() {
     salesMap[key].revenue += it.qty * it.price;
   }));
   const topProducts = Object.values(salesMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
-
   const recent = [...orders].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 25);
   const rangeLabel = getReportRangeLabel(reportRange);
-
   return `
     <div class="print-header">
       <div class="print-brand">Hat Candy<span>.</span></div>
@@ -2285,7 +2118,6 @@ function buildPrintReportHTML() {
         <span><strong>Orders:</strong> ${orders.length}</span>
       </div>
     </div>
-
     <div class="print-kpis">
       <div class="print-kpi"><div class="print-kpi-value">$${revenue.toFixed(2)}</div><div class="print-kpi-label">Total Revenue</div></div>
       <div class="print-kpi"><div class="print-kpi-value">${orders.length}</div><div class="print-kpi-label">Total Orders</div></div>
@@ -2294,78 +2126,42 @@ function buildPrintReportHTML() {
       <div class="print-kpi"><div class="print-kpi-value">${pending}</div><div class="print-kpi-label">Pending Orders</div></div>
       <div class="print-kpi"><div class="print-kpi-value">$${deliveredRev.toFixed(2)}</div><div class="print-kpi-label">Delivered Revenue</div></div>
     </div>
-
     <div class="print-section">
       <h2>Top Selling Products</h2>
-      <table class="print-table">
-        <thead><tr><th style="width:40px;">#</th><th>Product</th><th style="width:90px;">Units</th><th style="width:110px;">Revenue</th></tr></thead>
-        <tbody>
-          ${topProducts.length
-            ? topProducts.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}</td><td>${p.qty}</td><td>$${p.revenue.toFixed(2)}</td></tr>`).join('')
-            : `<tr><td colspan="4" class="print-empty">No sales data in this range</td></tr>`}
-        </tbody>
-      </table>
+      <table class="print-table"><thead><tr><th>#</th><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
+      <tbody>${topProducts.length ? topProducts.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}</td><td>${p.qty}</td><td>$${p.revenue.toFixed(2)}</td></tr>`).join('') : `<tr><td colspan="4" class="print-empty">No sales data</td></tr>`}</tbody></table>
     </div>
-
     <div class="print-section">
       <h2>Order Details</h2>
-      <table class="print-table">
-        <thead>
-          <tr>
-            <th style="width:110px;">Order ID</th>
-            <th style="width:90px;">Date</th>
-            <th>Customer</th>
-            <th style="width:60px;">Items</th>
-            <th style="width:90px;">Total</th>
-            <th style="width:110px;">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${recent.length
-            ? recent.map(o => {
-                const c = custById(o.customerId);
-                const qty = o.itemsList.reduce((s, i) => s + i.qty, 0);
-                return `<tr>
-                  <td><strong>${o.id}</strong></td>
-                  <td>${formatDate(o.date)}</td>
-                  <td>${esc(c.name)}</td>
-                  <td>${qty}</td>
-                  <td>$${o.total.toFixed(2)}</td>
-                  <td>${t('account.status_' + o.status)}</td>
-                </tr>`;
-              }).join('')
-            : `<tr><td colspan="6" class="print-empty">No orders in this range</td></tr>`}
-        </tbody>
-      </table>
+      <table class="print-table"><thead><tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+      <tbody>${recent.length ? recent.map(o => {
+        const c = custById(o.customerId);
+        const qty = o.itemsList.reduce((s, i) => s + i.qty, 0);
+        return `<tr><td><strong>${o.id}</strong></td><td>${formatDate(o.date)}</td><td>${esc(c.name)}</td><td>${qty}</td><td>$${o.total.toFixed(2)}</td><td>${t('account.status_' + o.status)}</td></tr>`;
+      }).join('') : `<tr><td colspan="6" class="print-empty">No orders in this range</td></tr>`}</tbody></table>
       <div class="print-total-row"><span>REPORT TOTAL</span><span>$${revenue.toFixed(2)}</span></div>
     </div>
-
     <div class="print-signature">
       <div><span class="line"></span>Prepared By</div>
       <div><span class="line"></span>Reviewed By</div>
       <div><span class="line"></span>Authorized Signature</div>
     </div>
-
     <div class="print-footer">
       <strong>Hat Candy</strong> — Amman, Jordan · Magic Avenue<br>
       Every Candy Begins with Magic ✨<br>
       Generated ${now.toLocaleString('en-GB')} · Computer-generated report
-    </div>
-  `;
+    </div>`;
 }
-
 function printReport() {
   const el = $('printReport');
   if (!el) return;
   el.innerHTML = buildPrintReportHTML();
   setTimeout(() => { window.print(); }, 120);
 }
-
 function setOrderStatus(id, status) {
   const o = orderHistory.find(x => x.id === id);
   if (!o) return;
   if (o.status === status) { renderAdmin(); return; }
-
   o.status = status;
   const today = new Date().toISOString().split('T')[0];
   if (status === 'packing' && !o.packedAt) o.packedAt = today;
@@ -2375,12 +2171,10 @@ function setOrderStatus(id, status) {
   }
   if (status === 'out_for_delivery') o.outAt = o.outAt || today;
   if (status === 'delivered') { o.deliveredAt = o.deliveredAt || today; o.eta = o.eta || today; }
-
   renderAdmin();
   if ($('accountPage').classList.contains('show')) renderAccountPage();
   showToast(t('admin.statusUpdated', { id: o.id, status: t('account.status_' + status) }), 'bx-check-circle');
 }
-
 function advanceOrder(id) {
   const o = orderHistory.find(x => x.id === id);
   if (!o) return;
@@ -2388,7 +2182,6 @@ function advanceOrder(id) {
   if (i === -1 || i >= STATUS_FLOW.length - 1) return;
   setOrderStatus(id, STATUS_FLOW[i + 1]);
 }
-
 function exportOrdersCsv() {
   const rows = [['Order ID', 'Customer', 'Email', 'Date', 'Items', 'Total', 'Status', 'Payment', 'Channel', 'Served By']];
   orderHistory.forEach(o => {
@@ -2408,16 +2201,13 @@ function exportOrdersCsv() {
   URL.revokeObjectURL(url);
   showToast(t('admin.exported'), 'bx-download');
 }
-
 function openAdminCustomerModal(customerId) {
   const c = customers.find(x => x.id === customerId);
   if (!c) return;
   const stats = customerStats(c.id);
   const orders = orderHistory.filter(o => o.customerId === c.id);
-
   $('adminCustomerName').textContent = c.name || 'Customer';
   $('adminCustomerEmail').textContent = c.email || '';
-
   $('adminCustomerBody').innerHTML = `
     <div class="account-stats" style="margin-bottom:16px;">
       <div class="account-stat"><div class="account-stat-icon"><i class='bx bx-receipt'></i></div><div><div class="account-stat-value">${stats.orders}</div><div class="account-stat-label">Orders</div></div></div>
@@ -2440,9 +2230,7 @@ function openAdminCustomerModal(customerId) {
         <button class="owner-btn primary" id="adminCustSave"><i class='bx bx-save'></i> Save</button>
       </div>
     </div>`;
-
   $('adminCustomerModal').classList.add('show');
-
   $('adminCustSave').addEventListener('click', () => {
     c.phone = $('adminCustPhone').value.trim();
     c.city = $('adminCustCity').value.trim();
@@ -2451,7 +2239,6 @@ function openAdminCustomerModal(customerId) {
     $('adminCustomerModal').classList.remove('show');
     showToast('Customer updated', 'bx-check-circle');
   });
-
   $('adminCustDelete').addEventListener('click', () => {
     if (!confirm('Delete this customer? Their orders will remain.')) return;
     customers = customers.filter(x => x.id !== c.id);
@@ -2462,7 +2249,7 @@ function openAdminCustomerModal(customerId) {
 }
 
 /* =====================================================
-   21. OWNER PANEL
+   25. OWNER PANEL
    ===================================================== */
 function signInAsOwner() {
   isOwner = true;
@@ -2480,7 +2267,6 @@ function signInAsOwner() {
     showToast(t('toast.ownerWelcome'), 'bx-code-alt');
   }, 900);
 }
-
 function openOwnerPage() {
   if (!isOwner) return;
   $('ownerPage').classList.add('show');
@@ -2488,20 +2274,20 @@ function openOwnerPage() {
   $('floatingSign').classList.add('hide');
   renderOwner();
   switchOwnerTab(ownerTab);
+  setTimeout(updateOwnerTabsScrollBtns, 60);
 }
-
 function closeOwnerPage() {
   $('ownerPage').classList.remove('show');
   if (!$('cartPanel').classList.contains('show') &&
       !$('loginPanel').classList.contains('show') &&
       !$('mixModal').classList.contains('show') &&
       !$('accountPage').classList.contains('show') &&
-      !$('adminPage').classList.contains('show')) {
+      !$('adminPage').classList.contains('show') &&
+      !$('weightModal').classList.contains('show')) {
     unlockBodyScroll();
     $('floatingSign').classList.remove('hide');
   }
 }
-
 function switchOwnerTab(tab) {
   ownerTab = tab;
   document.querySelectorAll('#ownerPage .account-tab').forEach(x =>
@@ -2511,7 +2297,16 @@ function switchOwnerTab(tab) {
     p.classList.toggle('active', p.dataset.opane === tab)
   );
 }
-
+function updateOwnerTabsScrollBtns() {
+  const vp = $('ownerTabsViewport');
+  const left = $('ownerTabsLeft');
+  const right = $('ownerTabsRight');
+  if (!vp || !left || !right) return;
+  const atStart = vp.scrollLeft <= 4;
+  const atEnd = vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4;
+  left.disabled = atStart;
+  right.disabled = atEnd;
+}
 function renderOwner() {
   $('ownerProductsCount').textContent = products.length;
   $('ownerOffersCount').textContent = offers.length;
@@ -2521,20 +2316,18 @@ function renderOwner() {
   renderOwnerOffers();
   renderOwnerGallery();
   renderOwnerMixBuilder();
-  renderOwnerAddons();            /* NEW */
+  renderOwnerAddons();
   renderOwnerDelivery();
   renderStoreHours();
   renderOwnerCMS();
 }
-
 function renderStoreHours() {
   if ($('ownerOpenHour')) $('ownerOpenHour').value = storeHours.open;
   if ($('ownerCloseHour')) $('ownerCloseHour').value = storeHours.close;
 }
-
 function renderOwnerStats() {
   const stats = [
-    { icon: 'bx-package', value: products.length + chocolateProducts.length, label: 'Products' },
+    { icon: 'bx-package', value: products.length, label: 'Products' },
     { icon: 'bx-purchase-tag', value: offers.length, label: 'Offers' },
     { icon: 'bx-check-circle', value: offers.filter(o => o.isActive).length, label: 'Active Offers' },
     { icon: 'bx-image', value: galleryImages.length, label: 'Gallery Items' },
@@ -2545,30 +2338,35 @@ function renderOwnerStats() {
     `<div class="owner-stat"><div class="owner-stat-icon"><i class='bx ${s.icon}'></i></div><div class="owner-stat-value">${s.value}</div><div class="owner-stat-label">${s.label}</div></div>`
   ).join('');
 }
-
 function renderOwnerProducts() {
   const body = $('ownerProductsBody');
+  if (!body) return;
   if (!products.length) {
-    body.innerHTML = `<tr><td colspan="6"><div class="owner-empty"><i class='bx bx-package'></i><p>No products yet</p></div></td></tr>`;
+    body.innerHTML = `<tr><td colspan="8"><div class="owner-empty"><i class='bx bx-package'></i><p>No products yet</p></div></td></tr>`;
     return;
   }
-  body.innerHTML = [...products, ...chocolateProducts.map(c => ({ ...c, isChocolate: true }))].map(p => `
+  body.innerHTML = products.map(p => {
+    const cat = p.category === 'chocolate' ? 'Chocolate' : 'Candy';
+    const mode = p.pricingType === 'tiered' ? '<span class="owner-chip-toggle on">Tiered</span>' : '<span class="owner-chip-toggle off">Fixed</span>';
+    const p250  = p.pricingType === 'tiered' ? `$${Number(p.price250  || 0).toFixed(2)}` : '—';
+    const p500  = p.pricingType === 'tiered' ? `$${Number(p.price500  || 0).toFixed(2)}` : '—';
+    const p1000 = p.pricingType === 'tiered' ? `$${Number(p.price1000 || 0).toFixed(2)}` : `$${Number(p.price || 0).toFixed(2)}`;
+    return `
     <tr>
-      <td><div class="admin-user"><img class="owner-thumb" src="${esc(p.img)}" alt=""><div><div class="admin-user-name">${esc(p.name)}${p.isChocolate ? ' <span class="owner-pill" style="font-size:.65rem;padding:2px 8px;margin-inline-start:6px;">Chocolate</span>' : ''}</div><div class="admin-sub">${esc(p.name_ar || '')}</div></div></div></td>
-      <td><strong>$${Number(p.price).toFixed(2)}</strong></td>
-      <td>${p.oldPrice ? `$${Number(p.oldPrice).toFixed(2)}` : '—'}</td>
-      <td>${esc(p.badge || '—')}</td>
+      <td><div class="admin-user"><img class="owner-thumb" src="${esc(p.img)}" alt=""><div><div class="admin-user-name">${esc(p.name)}</div><div class="admin-sub">${esc(p.name_ar || '')}</div></div></div></td>
+      <td><span class="owner-chip-toggle ${p.category === 'chocolate' ? 'on' : 'off'}">${cat}</span></td>
+      <td>${mode}</td>
+      <td>${p250}</td>
+      <td>${p500}</td>
+      <td>${p1000}</td>
       <td>${p.stock}</td>
       <td><div class="admin-row-actions"><button class="owner-btn primary" data-edit-product="${esc(p.id)}"><i class='bx bx-edit'></i> Edit</button><button class="owner-btn danger" data-delete-product="${esc(p.id)}"><i class='bx bx-trash'></i></button></div></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
-
 function renderOwnerOffers() {
   const body = $('ownerOffersBody');
-  if (!offers.length) {
-    body.innerHTML = `<tr><td colspan="6"><div class="owner-empty"><i class='bx bx-purchase-tag'></i><p>No offers yet</p></div></td></tr>`;
-    return;
-  }
+  if (!offers.length) { body.innerHTML = `<tr><td colspan="6"><div class="owner-empty"><i class='bx bx-purchase-tag'></i><p>No offers yet</p></div></td></tr>`; return; }
   body.innerHTML = offers.map(o => `
     <tr>
       <td><div class="admin-user"><img class="owner-thumb" src="${esc(o.img)}" alt=""><div><div class="admin-user-name">${esc(o.name)}</div><div class="admin-sub">${esc(o.name_ar || '')}</div></div></div></td>
@@ -2579,7 +2377,6 @@ function renderOwnerOffers() {
       <td><div class="admin-row-actions"><button class="owner-btn primary" data-edit-offer="${esc(o.id)}"><i class='bx bx-edit'></i> Edit</button><button class="owner-btn danger" data-delete-offer="${esc(o.id)}"><i class='bx bx-trash'></i></button></div></td>
     </tr>`).join('');
 }
-
 function renderOwnerGallery() {
   const grid = $('ownerGalleryGrid');
   grid.innerHTML = galleryImages.map(g =>
@@ -2588,41 +2385,29 @@ function renderOwnerGallery() {
   const tile = $('ownerAddGalleryTile');
   if (tile) tile.addEventListener('click', openOwnerGalleryModal);
 }
-
 function renderOwnerMixBuilder() {
   const wl = $('ownerWeightsList');
   wl.innerHTML = mixWeights.length ? [...mixWeights].sort((a, b) => a - b).map(w =>
     `<div class="owner-list-item"><div class="owner-list-thumb"><i class='bx bx-weight'></i></div><div class="owner-list-info"><div class="owner-list-title">${w} g</div><div class="owner-list-meta">${(w / 1000).toFixed(3)} kg</div></div><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-weight="${w}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-weight="${w}"><i class='bx bx-trash'></i></button></div></div>`
   ).join('') : `<div class="owner-empty"><i class='bx bx-weight'></i><p>No weights yet</p></div>`;
-
   const pl = $('ownerPackagingList');
   pl.innerHTML = mixPackaging.length ? mixPackaging.map(p =>
-    `<div class="owner-list-item">${p.img ? `<img class="owner-list-thumb" src="${esc(p.img)}" alt="">` : `<div class="owner-list-thumb"><i class='bx ${p.icon || 'bx-box'}'></i></div>`}<div class="owner-list-info"><div class="owner-list-title">${esc(p.name)} <span style="opacity:.6;font-weight:500">/ ${esc(p.name_ar || '')}</span></div><div class="owner-list-meta">${Number(p.extra) === 0 ? 'Free' : '+$' + Number(p.extra).toFixed(2)} · ${p.img ? 'custom image' : 'icon: ' + (p.icon || 'bx-box')}</div></div><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-pack="${esc(p.id)}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-pack="${esc(p.id)}"><i class='bx bx-trash'></i></button></div></div>`
+    `<div class="owner-list-item">${p.img ? `<img class="owner-list-thumb" src="${esc(p.img)}" alt="">` : `<div class="owner-list-thumb"><i class='bx ${p.icon || 'bx-box'}'></i></div>`}<div class="owner-list-info"><div class="owner-list-title">${esc(p.name)} <span style="opacity:.6;font-weight:500">/ ${esc(p.name_ar || '')}</span></div><div class="owner-list-meta">${Number(p.extra) === 0 ? 'Free' : '+$' + Number(p.extra).toFixed(2)}</div></div><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-pack="${esc(p.id)}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-pack="${esc(p.id)}"><i class='bx bx-trash'></i></button></div></div>`
   ).join('') : `<div class="owner-empty"><i class='bx bx-package'></i><p>No packaging yet</p></div>`;
-
   const cl = $('ownerCandyTypesList');
   cl.innerHTML = candyTypes.length ? candyTypes.map(c => {
     const sale = Number(c.sale_price_per_kg) || 0;
     const base = Number(c.price_per_kg) || 0;
-    const priceTxt = (sale > 0 && sale < base)
-      ? `<s>$${base.toFixed(2)}</s> → $${sale.toFixed(2)} / kg`
-      : `$${base.toFixed(2)} / kg`;
+    const priceTxt = (sale > 0 && sale < base) ? `<s>$${base.toFixed(2)}</s> → $${sale.toFixed(2)} / kg` : `$${base.toFixed(2)} / kg`;
     return `<div class="owner-list-item"><img class="owner-list-thumb" src="${esc(c.img)}" alt=""><div class="owner-list-info"><div class="owner-list-title"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.color};margin-inline-end:6px;vertical-align:middle;"></span>${esc(c.name)} <span style="opacity:.6;font-weight:500">/ ${esc(c.name_ar || '')}</span></div><div class="owner-list-meta">${priceTxt}</div></div><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-candy="${esc(c.id)}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-candy="${esc(c.id)}"><i class='bx bx-trash'></i></button></div></div>`;
   }).join('') : `<div class="owner-empty"><i class='bx bx-candy'></i><p>No candy types yet</p></div>`;
 }
-
-/* ===== NEW: Add-ons management ===== */
 function renderOwnerAddons() {
   const list = $('ownerAddonsList');
   if (!list) return;
-  if (!addons.length) {
-    list.innerHTML = `<div class="owner-empty"><i class='bx bx-plus-circle'></i><p>No add-ons yet</p></div>`;
-    return;
-  }
+  if (!addons.length) { list.innerHTML = `<div class="owner-empty"><i class='bx bx-plus-circle'></i><p>No add-ons yet</p></div>`; return; }
   list.innerHTML = addons.map(a => {
-    const visual = a.img
-      ? `<img class="owner-list-thumb" src="${esc(a.img)}" alt="">`
-      : `<div class="owner-list-thumb"><i class='bx ${a.icon || 'bx-plus-circle'}'></i></div>`;
+    const visual = a.img ? `<img class="owner-list-thumb" src="${esc(a.img)}" alt="">` : `<div class="owner-list-thumb"><i class='bx ${a.icon || 'bx-plus-circle'}'></i></div>`;
     return `<div class="owner-list-item">
       ${visual}
       <div class="owner-list-info">
@@ -2637,14 +2422,12 @@ function renderOwnerAddons() {
     </div>`;
   }).join('');
 }
-
 function renderOwnerDelivery() {
   const zl = $('ownerZonesList');
   zl.innerHTML = deliveryZones.length ? deliveryZones.map(z =>
     `<div class="owner-list-item"><div class="owner-list-thumb"><i class='bx bx-map-pin'></i></div><div class="owner-list-info"><div class="owner-list-title">${esc(z.name)} <span style="opacity:.6;font-weight:500">/ ${esc(z.name_ar || '')}</span></div><div class="owner-list-meta">$${Number(z.price).toFixed(2)}</div></div><span class="owner-chip-toggle ${z.active ? 'on' : 'off'}">${z.active ? 'Active' : 'Off'}</span><div class="owner-list-actions"><button class="owner-icon-btn edit" data-edit-zone="${esc(z.id)}"><i class='bx bx-edit'></i></button><button class="owner-icon-btn del" data-del-zone="${esc(z.id)}"><i class='bx bx-trash'></i></button></div></div>`
   ).join('') : `<div class="owner-empty"><i class='bx bx-cycling'></i><p>No delivery zones yet</p></div>`;
 }
-
 function renderOwnerCMS() {
   document.querySelectorAll('[data-cms]').forEach(el => {
     const key = el.dataset.cms;
@@ -2652,7 +2435,6 @@ function renderOwnerCMS() {
     const dict = I18N[la] || I18N.en;
     el.value = dict[key] || '';
   });
-
   const phE = document.querySelector('[data-cms-contact="phone"]');
   const emE = document.querySelector('[data-cms-contact="email"]');
   const phS = document.querySelector('[data-contact-phone]');
@@ -2660,29 +2442,19 @@ function renderOwnerCMS() {
   if (phE && phS) phE.value = phS.textContent || '';
   if (emE && emS) emE.value = emS.textContent || '';
 }
-
 function closeOwnerModals() {
   document.querySelectorAll('.owner-modal.show').forEach(m => m.classList.remove('show'));
 }
-
 function confirmDelete(kind, id) {
   if (pendingDeleteId === id) {
     pendingDeleteId = null;
     if (kind === 'product') {
-      if (chocolateProducts.some(c => c.id === id)) {
-        chocolateProducts = chocolateProducts.filter(p => p.id !== id);
-      } else {
-        products = products.filter(p => p.id !== id);
-      }
-      saveAll();
-      renderCandies();
-      renderOwner();
+      products = products.filter(p => p.id !== id);
+      saveAll(); renderCandies(); renderOwner();
       showToast(t('toast.productDeleted'), 'bx-trash');
     } else if (kind === 'offer') {
       offers = offers.filter(o => o.id !== id);
-      saveAll();
-      renderOffers();
-      renderOwner();
+      saveAll(); renderOffers(); renderOwner();
       showToast(t('toast.offerDeleted'), 'bx-trash');
     }
   } else {
@@ -2693,28 +2465,61 @@ function confirmDelete(kind, id) {
 }
 
 /* =====================================================
-   22. OWNER MODALS
+   26. OWNER MODALS (with pricing type toggle)
    ===================================================== */
+function updateProductPricingPanels(mode) {
+  document.querySelectorAll('#ownerProductModal .price-mode-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.priceMode === mode)
+  );
+  document.querySelectorAll('#ownerProductModal .owner-price-panel').forEach(p =>
+    p.style.display = (p.dataset.pricePanel === mode) ? 'block' : 'none'
+  );
+  const hidden = $('ownerProductForm').querySelector('[data-field="pricingType"]');
+  if (hidden) hidden.value = mode;
+  updatePricePreview();
+}
+function updatePricePreview() {
+  const f = $('ownerProductForm');
+  if (!f) return;
+  const mode = f.querySelector('[data-field="pricingType"]').value;
+  const preview = $('ownerPricePreview');
+  if (!preview) return;
+  if (mode !== 'tiered') { preview.classList.remove('show'); return; }
+  const p250 = parseFloat(f.querySelector('[data-field="price250"]').value) || 0;
+  const p500 = parseFloat(f.querySelector('[data-field="price500"]').value) || 0;
+  const p1000 = parseFloat(f.querySelector('[data-field="price1000"]').value) || 0;
+  preview.classList.add('show');
+  preview.innerHTML = `
+    <strong>✓ Auto tier preview</strong><br>
+    • 0 – 499 g &nbsp;→&nbsp; <strong>$${p250.toFixed(2)}</strong><br>
+    • 500 – 999 g &nbsp;→&nbsp; <strong>$${p500.toFixed(2)}</strong><br>
+    • 1000 g + &nbsp;→&nbsp; <strong>$${p1000.toFixed(2)}</strong> (capped)
+  `;
+}
 function openOwnerProductModal(id) {
   const m = $('ownerProductModal');
   const f = $('ownerProductForm');
   f.reset();
   f.querySelector('[data-field="id"]').value = '';
   $('ownerProductModalTitle').textContent = id ? 'Edit Product' : 'Add Product';
+
   if (id) {
-    const p = chocolateProducts.find(x => x.id === id) || products.find(x => x.id === id);
+    const p = products.find(x => x.id === id);
     if (p) {
-      ['id', 'name', 'name_ar', 'desc', 'desc_ar', 'price', 'oldPrice', 'badge', 'badge_ar', 'stock', 'img'].forEach(k => {
+      ['id', 'name', 'name_ar', 'desc', 'desc_ar', 'price', 'oldPrice', 'badge', 'badge_ar', 'stock', 'img', 'category', 'price250', 'price500', 'price1000'].forEach(k => {
         const el = f.querySelector(`[data-field="${k}"]`);
         if (el) el.value = p[k] !== undefined && p[k] !== null ? p[k] : '';
       });
+      updateProductPricingPanels(p.pricingType === 'tiered' ? 'tiered' : 'fixed');
     }
   } else {
     f.querySelector('[data-field="stock"]').value = 50;
+    const cEl = f.querySelector('[data-field="category"]');
+    if (cEl) cEl.value = 'candy';
+    updateProductPricingPanels('fixed');
   }
   m.classList.add('show');
 }
-
 function openOwnerOfferModal(id) {
   const m = $('ownerOfferModal');
   const f = $('ownerOfferForm');
@@ -2736,12 +2541,7 @@ function openOwnerOfferModal(id) {
   }
   m.classList.add('show');
 }
-
-function openOwnerGalleryModal() {
-  $('ownerGalleryForm').reset();
-  $('ownerGalleryModal').classList.add('show');
-}
-
+function openOwnerGalleryModal() { $('ownerGalleryForm').reset(); $('ownerGalleryModal').classList.add('show'); }
 function openOwnerWeightModal(val) {
   const f = $('ownerWeightForm');
   f.reset();
@@ -2750,7 +2550,6 @@ function openOwnerWeightModal(val) {
   $('ownerWeightModalTitle').textContent = val ? 'Edit Weight' : 'Add Weight';
   $('ownerWeightModal').classList.add('show');
 }
-
 function openOwnerPackagingModal(id) {
   const f = $('ownerPackagingForm');
   f.reset();
@@ -2770,7 +2569,6 @@ function openOwnerPackagingModal(id) {
   }
   $('ownerPackagingModal').classList.add('show');
 }
-
 function openOwnerCandyTypeModal(id) {
   const f = $('ownerCandyTypeForm');
   f.reset();
@@ -2791,8 +2589,6 @@ function openOwnerCandyTypeModal(id) {
   }
   $('ownerCandyTypeModal').classList.add('show');
 }
-
-/* ===== NEW: Add-on modal ===== */
 function openOwnerAddonModal(id) {
   const f = $('ownerAddonForm');
   f.reset();
@@ -2818,7 +2614,6 @@ function openOwnerAddonModal(id) {
   }
   $('ownerAddonModal').classList.add('show');
 }
-
 function openOwnerZoneModal(id) {
   const f = $('ownerZoneForm');
   f.reset();
@@ -2840,7 +2635,7 @@ function openOwnerZoneModal(id) {
 }
 
 /* =====================================================
-   23. LANGUAGE APPLICATION
+   27. LANGUAGE APPLICATION
    ===================================================== */
 function applyLanguage(newLang) {
   lang = (newLang === 'ar') ? 'ar' : 'en';
@@ -2858,24 +2653,15 @@ function applyLanguage(newLang) {
   const bi = $('mixBackIcon');
   if (bi) bi.className = 'bx ' + (isAr ? 'bx-right-arrow-alt' : 'bx-left-arrow-alt');
 
-  renderOffers();
-  renderCandies();
-  renderGallery();
-  renderCart();
+  renderOffers(); renderCandies(); renderGallery(); renderCart();
 
   if ($('mixModal').classList.contains('show')) {
-    renderMixPackaging();
-    renderMixWeights();
-    renderMixSlots();
-    renderMixTypesGrid();
-    renderMixAddons();
+    renderMixPackaging(); renderMixWeights(); renderMixSlots(); renderMixTypesGrid(); renderMixAddons();
     $('mixCountNumber').textContent = mixState.typesCount;
-    if (mixState.step === 5) {
-      renderMixReview();
-      renderMixPayment();
-    }
+    if (mixState.step === 5) renderMixReview();
     updateMixStep();
   }
+  if ($('weightModal').classList.contains('show')) renderWeightModal();
   if ($('loginPanel').classList.contains('show') && !$('loginSuccess').classList.contains('show')) {
     if (checkoutIntent) {
       $('loginTitle').textContent = t('login.almost');
@@ -2891,13 +2677,12 @@ function applyLanguage(newLang) {
 }
 
 /* =====================================================
-   24. SIGNBOARD
+   28. SIGNBOARD
    ===================================================== */
 function updateSign(force) {
   const now = new Date();
   const h = now.getHours();
   const isOpen = h >= storeHours.open && h < storeHours.close;
-
   if (previousSignState !== isOpen || force) {
     $('sbBoard').textContent = isOpen ? t('sign.open') : t('sign.closed');
     document.body.classList.toggle('is-open', isOpen);
@@ -2913,7 +2698,7 @@ function updateSign(force) {
 }
 
 /* =====================================================
-   25. SCROLL UTILITIES
+   29. SCROLL UTILITIES
    ===================================================== */
 function revealOnScroll() {
   const wh = window.innerHeight;
@@ -2923,7 +2708,6 @@ function revealOnScroll() {
     }
   });
 }
-
 function smoothScrollTo(targetY, duration = 1200) {
   const startY = window.pageYOffset;
   const diff = targetY - startY;
@@ -2937,9 +2721,19 @@ function smoothScrollTo(targetY, duration = 1200) {
   }
   requestAnimationFrame(step);
 }
+function jumpToCandyCategory(cat) {
+  /* Scroll to #candies AND set the filter */
+  candyFilter = cat;
+  renderCandies();
+  const tgt = document.getElementById('candies');
+  if (!tgt) return;
+  const y = tgt.getBoundingClientRect().top + window.pageYOffset - 80;
+  const d = Math.abs(y - window.pageYOffset);
+  smoothScrollTo(y, Math.min(600 + d * 0.5, 1400));
+}
 
 /* =====================================================
-   26. EVENT WIRING
+   30. EVENT WIRING
    ===================================================== */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -2953,6 +2747,12 @@ document.addEventListener('DOMContentLoaded', () => {
     $('navLinks').classList.remove('active');
   }));
   window.addEventListener('scroll', () => $('header').classList.toggle('scrolled', window.scrollY > 50));
+
+  /* ==== NAV: Candies / Chocolate shortcuts ==== */
+  const navCandies = $('navCandiesLink');
+  const navChoc = $('navChocolateLink');
+  if (navCandies) navCandies.addEventListener('click', (e) => { e.preventDefault(); jumpToCandyCategory('candy'); });
+  if (navChoc) navChoc.addEventListener('click', (e) => { e.preventDefault(); jumpToCandyCategory('chocolate'); });
 
   /* ==== MOBILE ACCOUNT ==== */
   $('mobileAccountBtn').addEventListener('click', (e) => {
@@ -2989,7 +2789,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if ($('mixModal').classList.contains('show')) closeMixModal();
+      if ($('weightModal').classList.contains('show')) closeWeightModal();
+      else if ($('mixModal').classList.contains('show')) closeMixModal();
       else if ($('ownerPage').classList.contains('show')) closeOwnerPage();
       else if ($('adminPage').classList.contains('show')) closeAdminPage();
       else if ($('accountPage').classList.contains('show')) closeAccountPage();
@@ -2997,151 +2798,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  /* ==== MIX BUILDER ==== */
-  $('heroMixBtn').addEventListener('click', openMixModal);
-  $('bannerMixBtn').addEventListener('click', openMixModal);
-  $('mixClose').addEventListener('click', closeMixModal);
-  $('mixBackdrop').addEventListener('click', closeMixModal);
-
-  /* ----- Step 1: Packaging ----- */
-  $('mixPackGrid').addEventListener('click', (e) => {
-    const c = e.target.closest('.mix-pack-card');
-    if (!c) return;
-    mixState.packaging = mixPackaging.find(p => p.id === c.dataset.pack);
-    renderMixPackaging();
-    $('mixNextBtn').disabled = false;
-  });
-
-  /* ----- Step 2: Weight ----- */
-  $('mixWeightGrid').addEventListener('click', (e) => {
-    const p = e.target.closest('.mix-weight-pill');
-    if (!p) return;
-    mixState.weight = parseInt(p.dataset.weight);
-    renderMixWeights();
-    $('mixNextBtn').disabled = false;
-  });
-
-  /* ----- Step 3: Candy types ----- */
-  $('mixCountMinus').addEventListener('click', () => {
-    if (mixState.typesCount > 1) {
-      mixState.typesCount--;
-      mixState.selectedTypes = mixState.selectedTypes.slice(0, mixState.typesCount);
-      renderMixSlots();
-      renderMixTypesGrid();
-      $('mixCountNumber').textContent = mixState.typesCount;
-      $('mixCountMinus').disabled = mixState.typesCount <= 1;
-      $('mixCountPlus').disabled = mixState.typesCount >= 6;
-      updateMixStep();
-    }
-  });
-
-  $('mixCountPlus').addEventListener('click', () => {
-    if (mixState.typesCount < 6) {
-      mixState.typesCount++;
-      $('mixCountNumber').textContent = mixState.typesCount;
-      $('mixCountMinus').disabled = false;
-      $('mixCountPlus').disabled = mixState.typesCount >= 6;
-      renderMixSlots();
-      renderMixTypesGrid();
-      updateMixStep();
-    }
-  });
-
-  $('mixTypesGrid').addEventListener('click', (e) => {
-    const c = e.target.closest('.mix-type-card');
-    if (!c) return;
-    const id = c.dataset.type;
-    const i = mixState.selectedTypes.indexOf(id);
-    if (i !== -1) {
-      mixState.selectedTypes.splice(i, 1);
-    } else {
-      if (mixState.selectedTypes.length >= mixState.typesCount) {
-        showToast(t('toast.allSlots'), 'bx-info-circle');
-        return;
-      }
-      mixState.selectedTypes.push(id);
-    }
-    renderMixSlots();
-    renderMixTypesGrid();
-    updateMixStep();
-  });
-
-  /* ----- Step 4: Add-ons ----- */
-  $('mixAddonsGrid').addEventListener('click', (e) => {
-    const c = e.target.closest('.mix-addon-card');
-    if (!c) return;
-    const id = c.dataset.addon;
-    const i = mixState.selectedAddons.indexOf(id);
-    if (i !== -1) mixState.selectedAddons.splice(i, 1);
-    else mixState.selectedAddons.push(id);
-    renderMixAddons();
-  });
-
-  /* ----- Step 5: Payment toggle (mix) ----- */
-  document.querySelectorAll('.mix-payment-toggle .payment-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      mixState.payment = btn.dataset.mixPayment;
-      renderMixPayment();
+  /* ==== CATEGORY CIRCLES ==== */
+  const candyCategoriesEl = $('candyCategories');
+  if (candyCategoriesEl) {
+    candyCategoriesEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.cat-circle');
+      if (!btn) return;
+      const cat = btn.dataset.cat;
+      if (cat === candyFilter) return;
+      candyFilter = cat;
+      btn.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(.9)' }, { transform: 'scale(1)' }],
+        { duration: 320, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
+      );
+      renderCandies();
     });
-  });
+  }
 
-  /* ----- Back button ----- */
-  $('mixBackBtn').addEventListener('click', () => {
-    if (mixState.step > 1) goToMixStep(mixState.step - 1);
-  });
-
-  /* ----- Next / Complete ----- */
-  $('mixNextBtn').addEventListener('click', () => {
-    if (mixState.step < 5) {
-      goToMixStep(mixState.step + 1);
-      return;
-    }
-
-    /* Step 5 — validate payment (if card) then add to cart */
-    if (mixState.payment === 'card') {
-      const c = mixState.card;
-      if (!validateCardNumber(c.number)) { showToast(t('pay.invalidCard'), 'bx-error-circle'); return; }
-      if (!c.name || c.name.trim().length < 3) { showToast(t('pay.invalidName'), 'bx-error-circle'); return; }
-      if (!validateExpiry(c.expiry)) { showToast(t('pay.invalidExpiry'), 'bx-error-circle'); return; }
-      if (!/^\d{3,4}$/.test(c.cvv)) { showToast(t('pay.invalidCvv'), 'bx-error-circle'); return; }
-    }
-
-    const total = calcMixPrice();
-    const selectedAddons = getSelectedAddonsObjects();
-
-    cart.push({
-      id: 'mix-' + Date.now(),
-      isMix: true,
-      packaging: mixState.packaging,
-      weight: mixState.weight,
-      types: mixState.selectedTypes.map(id => candyTypes.find(c => c.id === id)),
-      addons: selectedAddons,
-      mixPayment: mixState.payment,
-      price: total,
-      qty: 1,
-      img: mixState.selectedTypes[0]
-        ? candyTypes.find(c => c.id === mixState.selectedTypes[0]).img
-        : (candyTypes[0] ? candyTypes[0].img : '')
-    });
-
-    renderCart();
-    showToast(t('toast.added', { name: t('mix.customMix') }), 'bx-party');
-    closeMixModal();
-    setTimeout(() => openPanel($('cartPanel')), 400);
-  });
-
-  /* ==== CART ACTIONS ==== */
+  /* ==== ADD TO CART / CART CONTROLS (delegated) ==== */
   document.addEventListener('click', (e) => {
     const ab = e.target.closest('.add-to-cart-btn');
     if (ab) {
-      addToCart(ab.dataset.id);
-      const orig = ab.innerHTML;
-      ab.classList.add('added');
-      ab.innerHTML = `<i class='bx bx-check'></i> ${t('candies.added')}`;
-      setTimeout(() => {
-        ab.classList.remove('added');
-        ab.innerHTML = orig;
-      }, 900);
+      const pid = ab.dataset.id;
+      /* Offer? Add directly */
+      const offer = offers.find(o => o.id === pid);
+      if (offer) {
+        const ex = cart.find(i => i.id === offer.id);
+        if (ex) ex.qty += 1; else cart.push({ id: offer.id, qty: 1, price: Number(offer.price) || 0 });
+        renderCart();
+        showToast(t('toast.added', { name: L(offer, 'name') }), 'bx-cart-add');
+        const orig = ab.innerHTML;
+        ab.classList.add('added');
+        ab.innerHTML = `<i class='bx bx-check'></i> ${t('candies.added')}`;
+        setTimeout(() => { ab.classList.remove('added'); ab.innerHTML = orig; }, 900);
+        return;
+      }
+      /* Product */
+      const p = products.find(x => x.id === pid);
+      if (p) {
+        if (p.pricingType === 'tiered') {
+          openWeightModal(p.id);
+        } else {
+          addFixedProductToCart(p);
+          const orig = ab.innerHTML;
+          ab.classList.add('added');
+          ab.innerHTML = `<i class='bx bx-check'></i> ${t('candies.added')}`;
+          setTimeout(() => { ab.classList.remove('added'); ab.innerHTML = orig; }, 900);
+        }
+      }
       return;
     }
     const ctrl = e.target.closest('[data-action]');
@@ -3153,6 +2857,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  /* ==== DELIVERY / PAYMENT in cart ==== */
   document.querySelectorAll('.delivery-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       cartDelivery.method = btn.dataset.deliveryMethod;
@@ -3163,12 +2868,147 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCart();
     });
   });
-
   document.querySelectorAll('.payment-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       cartPayment.method = btn.dataset.payment;
       renderPaymentSection();
     });
+  });
+
+  /* ==== WEIGHT MODAL ==== */
+  const wmClose = $('weightModalClose');
+  if (wmClose) wmClose.addEventListener('click', closeWeightModal);
+  const wmBackdrop = $('weightModalBackdrop');
+  if (wmBackdrop) wmBackdrop.addEventListener('click', closeWeightModal);
+
+  const wPresets = $('weightPresets');
+  if (wPresets) {
+    wPresets.addEventListener('click', (e) => {
+      const b = e.target.closest('.weight-preset');
+      if (!b) return;
+      weightModalState.weight = parseInt(b.dataset.w, 10);
+      renderWeightModal();
+    });
+  }
+
+  const wInput = $('weightInput');
+  if (wInput) {
+    wInput.addEventListener('input', (e) => {
+      let v = parseInt(e.target.value, 10);
+      if (isNaN(v) || v < 1) v = 0;
+      weightModalState.weight = v;
+      renderWeightModal();
+    });
+  }
+  const wMinus = $('weightMinus');
+  if (wMinus) wMinus.addEventListener('click', () => {
+    let v = weightModalState.weight - 50;
+    if (v < 50) v = 50;
+    weightModalState.weight = v;
+    renderWeightModal();
+  });
+  const wPlus = $('weightPlus');
+  if (wPlus) wPlus.addEventListener('click', () => {
+    weightModalState.weight += 50;
+    renderWeightModal();
+  });
+
+  const wqMinus = $('weightQtyMinus');
+  const wqPlus  = $('weightQtyPlus');
+  if (wqMinus) wqMinus.addEventListener('click', () => {
+    if (weightModalState.qty > 1) { weightModalState.qty--; renderWeightModal(); }
+  });
+  if (wqPlus) wqPlus.addEventListener('click', () => {
+    weightModalState.qty++;
+    renderWeightModal();
+  });
+
+  const wAddBtn = $('weightAddBtn');
+  if (wAddBtn) wAddBtn.addEventListener('click', addTieredProductToCart);
+
+  /* ==== MIX BUILDER ==== */
+  $('heroMixBtn').addEventListener('click', openMixModal);
+  $('bannerMixBtn').addEventListener('click', openMixModal);
+  $('mixClose').addEventListener('click', closeMixModal);
+  $('mixBackdrop').addEventListener('click', closeMixModal);
+
+  $('mixPackGrid').addEventListener('click', (e) => {
+    const c = e.target.closest('.mix-pack-card');
+    if (!c) return;
+    mixState.packaging = mixPackaging.find(p => p.id === c.dataset.pack);
+    renderMixPackaging();
+    $('mixNextBtn').disabled = false;
+  });
+  $('mixWeightGrid').addEventListener('click', (e) => {
+    const p = e.target.closest('.mix-weight-pill');
+    if (!p) return;
+    mixState.weight = parseInt(p.dataset.weight);
+    renderMixWeights();
+    $('mixNextBtn').disabled = false;
+  });
+  $('mixCountMinus').addEventListener('click', () => {
+    if (mixState.typesCount > 1) {
+      mixState.typesCount--;
+      mixState.selectedTypes = mixState.selectedTypes.slice(0, mixState.typesCount);
+      renderMixSlots(); renderMixTypesGrid();
+      $('mixCountNumber').textContent = mixState.typesCount;
+      $('mixCountMinus').disabled = mixState.typesCount <= 1;
+      $('mixCountPlus').disabled = mixState.typesCount >= 6;
+      updateMixStep();
+    }
+  });
+  $('mixCountPlus').addEventListener('click', () => {
+    if (mixState.typesCount < 6) {
+      mixState.typesCount++;
+      $('mixCountNumber').textContent = mixState.typesCount;
+      $('mixCountMinus').disabled = false;
+      $('mixCountPlus').disabled = mixState.typesCount >= 6;
+      renderMixSlots(); renderMixTypesGrid();
+      updateMixStep();
+    }
+  });
+  $('mixTypesGrid').addEventListener('click', (e) => {
+    const c = e.target.closest('.mix-type-card');
+    if (!c) return;
+    const id = c.dataset.type;
+    const i = mixState.selectedTypes.indexOf(id);
+    if (i !== -1) mixState.selectedTypes.splice(i, 1);
+    else {
+      if (mixState.selectedTypes.length >= mixState.typesCount) { showToast(t('toast.allSlots'), 'bx-info-circle'); return; }
+      mixState.selectedTypes.push(id);
+    }
+    renderMixSlots(); renderMixTypesGrid();
+    updateMixStep();
+  });
+  $('mixAddonsGrid').addEventListener('click', (e) => {
+    const c = e.target.closest('.mix-addon-card');
+    if (!c) return;
+    const id = c.dataset.addon;
+    const i = mixState.selectedAddons.indexOf(id);
+    if (i !== -1) mixState.selectedAddons.splice(i, 1);
+    else mixState.selectedAddons.push(id);
+    renderMixAddons();
+  });
+  $('mixBackBtn').addEventListener('click', () => { if (mixState.step > 1) goToMixStep(mixState.step - 1); });
+  $('mixNextBtn').addEventListener('click', () => {
+    if (mixState.step < 5) { goToMixStep(mixState.step + 1); return; }
+    const total = calcMixPrice();
+    const selectedAddons = getSelectedAddonsObjects();
+    cart.push({
+      id: 'mix-' + Date.now(),
+      isMix: true,
+      packaging: mixState.packaging,
+      weight: mixState.weight,
+      types: mixState.selectedTypes.map(id => candyTypes.find(c => c.id === id)),
+      addons: selectedAddons,
+      price: total,
+      qty: 1,
+      img: mixState.selectedTypes[0] ? candyTypes.find(c => c.id === mixState.selectedTypes[0]).img : (candyTypes[0] ? candyTypes[0].img : '')
+    });
+    renderCart();
+    showToast(t('toast.added', { name: t('mix.customMix') }), 'bx-party');
+    closeMixModal();
+    setTimeout(() => openPanel($('cartPanel')), 400);
   });
 
   /* ==== LOGIN FORM ==== */
@@ -3178,14 +3018,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const password = $('loginPassword').value.trim();
     const phone = $('loginPhone').value.trim();
 
-    /* Employee login redirect */
     if (email === 'user' && password === 'user') {
       const btn = $('loginSubmit');
       btn.innerHTML = `<i class="bx bx-loader-alt bx-spin"></i> Opening Employee Portal...`;
       btn.disabled = true;
-      setTimeout(() => {
-       window.location.href = './employee/index.html';
-      }, 900);
+      setTimeout(() => { window.location.href = './employee/index.html'; }, 900);
       return;
     }
 
@@ -3194,11 +3031,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const orig = btn.innerHTML;
       btn.innerHTML = `<i class="bx bx-loader-alt bx-spin"></i> ${t('login.signingIn')}`;
       btn.disabled = true;
-      setTimeout(() => {
-        btn.innerHTML = orig;
-        btn.disabled = false;
-        signInAsOwner();
-      }, 800);
+      setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; signInAsOwner(); }, 800);
       return;
     }
 
@@ -3207,11 +3040,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const orig = btn.innerHTML;
       btn.innerHTML = `<i class="bx bx-loader-alt bx-spin"></i> ${t('login.signingIn')}`;
       btn.disabled = true;
-      setTimeout(() => {
-        btn.innerHTML = orig;
-        btn.disabled = false;
-        signInAsAdmin();
-      }, 800);
+      setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; signInAsAdmin(); }, 800);
       return;
     }
 
@@ -3223,15 +3052,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const orig = btn.innerHTML;
     btn.innerHTML = `<i class="bx bx-loader-alt bx-spin"></i> ${t('login.signingIn')}`;
     btn.disabled = true;
-
     setTimeout(() => {
       btn.innerHTML = orig;
       btn.disabled = false;
-      onSignInSuccess({
-        name: email.split('@')[0],
-        email,
-        phone: '+962 ' + phone.replace(/\D/g, '')
-      });
+      onSignInSuccess({ name: email.split('@')[0], email, phone: '+962 ' + phone.replace(/\D/g, '') });
     }, 1200);
   });
 
@@ -3239,7 +3063,6 @@ document.addEventListener('DOMContentLoaded', () => {
   $('googleBtn').addEventListener('click', openGoogleChooser);
   $('gChooserBackdrop').addEventListener('click', closeGoogleChooser);
   $('gChooserCancel').addEventListener('click', closeGoogleChooser);
-
   $('gChooserUseOther').addEventListener('click', () => {
     closeGoogleChooser();
     const suffix = Date.now().toString().slice(-4);
@@ -3247,7 +3070,6 @@ document.addEventListener('DOMContentLoaded', () => {
     pendingGoogleAccount = newAcc;
     openGooglePhoneStep(newAcc);
   });
-
   $('gChooserList').addEventListener('click', (e) => {
     const removeBtn = e.target.closest('[data-google-remove]');
     if (removeBtn) {
@@ -3261,34 +3083,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = e.target.closest('[data-google-account]');
     if (item) handleGoogleAccountSelected(parseInt(item.dataset.googleAccount, 10));
   });
-
   $('gChooserList').addEventListener('keydown', (e) => {
     const item = e.target.closest('[data-google-account]');
-    if (item && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      handleGoogleAccountSelected(parseInt(item.dataset.googleAccount, 10));
-    }
+    if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleGoogleAccountSelected(parseInt(item.dataset.googleAccount, 10)); }
   });
-
   $('googleChange').addEventListener('click', resetGoogleSignInUI);
-
   $('googleContinue').addEventListener('click', () => {
     const phone = $('googlePhone').value.trim();
-    if (!phone) {
-      showToast(t('toast.enterPhone'), 'bx-error-circle');
-      $('googlePhone').focus();
-      return;
-    }
-    if (isOwnerPhone(phone)) {
-      resetGoogleSignInUI();
-      signInAsOwner();
-      return;
-    }
-    if (!validateJordanPhone(phone)) {
-      showToast(t('toast.validPhone'), 'bx-error-circle');
-      $('googlePhone').focus();
-      return;
-    }
+    if (!phone) { showToast(t('toast.enterPhone'), 'bx-error-circle'); $('googlePhone').focus(); return; }
+    if (isOwnerPhone(phone)) { resetGoogleSignInUI(); signInAsOwner(); return; }
+    if (!validateJordanPhone(phone)) { showToast(t('toast.validPhone'), 'bx-error-circle'); $('googlePhone').focus(); return; }
     const btn = $('googleContinue');
     const original = btn.innerHTML;
     btn.innerHTML = `<i class="bx bx-loader-alt bx-spin"></i> ${t('login.signingIn')}`;
@@ -3296,20 +3100,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       btn.innerHTML = original;
       btn.disabled = false;
-      const account = pendingGoogleAccount || {
-        name: $('googleName').textContent,
-        email: $('googleEmail').textContent
-      };
+      const account = pendingGoogleAccount || { name: $('googleName').textContent, email: $('googleEmail').textContent };
       rememberGoogleAccount(account);
-      onSignInSuccess({
-        name: account.name,
-        email: account.email,
-        phone: '+962 ' + phone.replace(/\D/g, '')
-      });
+      onSignInSuccess({ name: account.name, email: account.email, phone: '+962 ' + phone.replace(/\D/g, '') });
       setTimeout(resetGoogleSignInUI, 1800);
     }, 1100);
   });
-
   $('signupLink').addEventListener('click', (e) => { e.preventDefault(); closeAllPanels(); });
   $('forgotLink').addEventListener('click', (e) => { e.preventDefault(); showToast(t('toast.resetSent'), 'bx-envelope'); });
 
@@ -3324,10 +3120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!currentUser) {
       closeAllPanels();
-      setTimeout(() => {
-        resetLoginPanel('checkout');
-        openPanel($('loginPanel'));
-      }, 350);
+      setTimeout(() => { resetLoginPanel('checkout'); openPanel($('loginPanel')); }, 350);
       return;
     }
 
@@ -3342,12 +3135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cartPayment.method === 'card' && cartPayment.card.save && !cartPayment.card.savedId) {
       const num = cartPayment.card.number.replace(/\s/g, '');
       const b = detectCardBrand(num);
-      saveCardForCurrentUser({
-        brand: b.brand,
-        last4: num.slice(-4),
-        name: cartPayment.card.name,
-        expiry: cartPayment.card.expiry
-      });
+      saveCardForCurrentUser({ brand: b.brand, last4: num.slice(-4), name: cartPayment.card.name, expiry: cartPayment.card.expiry });
     }
 
     const subtotal = getCartSubtotal();
@@ -3357,17 +3145,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const defAddr = savedAddresses.find(a => a.isDefault) || savedAddresses[0];
     const today = new Date().toISOString().split('T')[0];
 
+    const itemsList = cart.map(i => {
+      if (i.isMix) return { name: 'Custom Mix', name_ar: 'خلطة خاصة', qty: i.qty, price: i.price };
+      const p = findCartItemProduct(i);
+      if (!p) return null;
+      const weightSuffix = i.weight ? ` (${i.weight}g)` : '';
+      return {
+        name: p.name + weightSuffix,
+        name_ar: (p.name_ar || p.name) + weightSuffix,
+        qty: i.qty,
+        price: i.price || Number(p.price) || 0
+      };
+    }).filter(Boolean);
+
     const newOrder = {
       id: 'HC-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
       customerId: currentUser.id || 'c-guest',
       date: today,
       status: 'processing',
       itemsCount: cart.reduce((s, i) => s + i.qty, 0),
-      itemsList: cart.map(i => {
-        if (i.isMix) return { name: 'Custom Mix', name_ar: 'خلطة خاصة', qty: i.qty, price: i.price };
-        const p = products.find(x => x.id === i.id) || chocolateProducts.find(x => x.id === i.id) || offers.find(x => x.id === i.id);
-        return p ? { name: p.name, name_ar: p.name_ar, qty: i.qty, price: p.price } : null;
-      }).filter(Boolean),
+      itemsList,
       subtotal, deliveryFee, total,
       deliveryMethod: cartDelivery.method,
       deliveryZone: zone ? zone.name : null,
@@ -3377,17 +3174,31 @@ document.addEventListener('DOMContentLoaded', () => {
       tracking: null, placedAt: today, packedAt: null, shippedAt: null, outAt: null, deliveredAt: null, eta: null,
       channel: 'online'
     };
-
     orderHistory.unshift(newOrder);
+    // بعد: orderHistory.unshift(newOrder);
+try {
+  const online = JSON.parse(localStorage.getItem('hatcandy-online-orders') || '[]');
+  online.unshift({
+    id: newOrder.id,
+    date: newOrder.date,
+    status: newOrder.status,
+    customerName: currentUser?.name || 'Guest',
+    customerPhone: currentUser?.phone || '',
+    address: newOrder.address,
+    itemsList: newOrder.itemsList,
+    subtotal: newOrder.subtotal,
+    deliveryFee: newOrder.deliveryFee || 0,
+    total: newOrder.total,
+    payment: newOrder.payment,
+    placedAt: new Date().toISOString()
+  });
+  localStorage.setItem('hatcandy-online-orders', JSON.stringify(online));
+} catch(e) {}
     showToast(t('toast.orderPlaced', { total: '$' + total.toFixed(2) }), 'bx-party');
     cart = [];
     cartPayment.card = { number: '', name: '', expiry: '', cvv: '', save: false, savedId: null };
     renderCart();
-
-    setTimeout(() => {
-      closeAllPanels();
-      setTimeout(openAccountPage, 300);
-    }, 900);
+    setTimeout(() => { closeAllPanels(); setTimeout(openAccountPage, 300); }, 900);
   });
 
   /* ==== CONTACT FORM ==== */
@@ -3397,19 +3208,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = $('email').value.trim();
     const message = $('message').value.trim();
     if (!name || !email || !message) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
-
     const btn = e.target.querySelector('button[type="submit"]');
     const orig = btn.textContent;
     btn.textContent = t('contact.sending');
     btn.disabled = true;
-
     setTimeout(() => {
-      contactMessages.unshift({
-        id: 'msg-' + Date.now(),
-        name, email, message,
-        date: new Date().toISOString().split('T')[0],
-        read: false
-      });
+      contactMessages.unshift({ id: 'msg-' + Date.now(), name, email, message, date: new Date().toISOString().split('T')[0], read: false });
       if ($('adminPage').classList.contains('show')) {
         renderAdmin();
         const tag = $('adminChartTag');
@@ -3422,8 +3226,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1200);
   });
 
-  /* ==== SMOOTH SCROLL ==== */
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
+  /* ==== SMOOTH SCROLL (fallback) ==== */
+  document.querySelectorAll('a[href^="#"]:not(#navCandiesLink):not(#navChocolateLink)').forEach(a => {
     a.addEventListener('click', function (e) {
       const href = this.getAttribute('href');
       if (!href || href === '#') return;
@@ -3437,32 +3241,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.documentElement.style.scrollBehavior = 'auto';
   window.addEventListener('scroll', revealOnScroll);
-
-  /* ==== PRODUCT ORBIT — floating circle selector ==== */
-  const goToSection = (sel) => {
-    const tgt = document.querySelector(sel);
-    if (!tgt) return;
-    const y = tgt.getBoundingClientRect().top + window.pageYOffset - 80;
-    smoothScrollTo(y, Math.min(600 + Math.abs(y - window.pageYOffset) * 0.5, 1600));
-  };
-  document.querySelectorAll('.orbit-bubble').forEach(b => {
-    b.addEventListener('click', () => goToSection('#' + b.dataset.target));
-  });
-  const syncOrbitActive = () => {
-    const probe = window.innerHeight * 0.35;
-    let activeId = null;
-    ['candies', 'chocolate', 'offers'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      if (r.top <= probe && r.bottom > probe) activeId = id;
-    });
-    document.querySelectorAll('.orbit-bubble').forEach(b =>
-      b.classList.toggle('is-active', b.dataset.target === activeId)
-    );
-  };
-  window.addEventListener('scroll', syncOrbitActive, { passive: true });
-  syncOrbitActive();
 
   /* ==== ACCOUNT ==== */
   document.querySelectorAll('#accountPage .account-tab').forEach(tb =>
@@ -3482,10 +3260,7 @@ document.addEventListener('DOMContentLoaded', () => {
       area: $('addressAreaInput').value.trim(),
       line: $('addressLineInput').value.trim()
     };
-    if (!data.name || !data.phone || !data.city || !data.area || !data.line) {
-      showToast(t('toast.fillFields'), 'bx-error-circle');
-      return;
-    }
+    if (!data.name || !data.phone || !data.city || !data.area || !data.line) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
     if (id) {
       const i = savedAddresses.findIndex(a => a.id === id);
       if (i !== -1) savedAddresses[i] = { ...savedAddresses[i], ...data };
@@ -3497,13 +3272,11 @@ document.addEventListener('DOMContentLoaded', () => {
     hideAddressForm();
     renderAccountPage();
   });
-
   $('addressCancel').addEventListener('click', hideAddressForm);
 
   $('addressesGrid').addEventListener('click', (e) => {
     const ed = e.target.closest('[data-edit-address]');
     if (ed) { showAddressForm(ed.dataset.editAddress); return; }
-
     const dl = e.target.closest('[data-delete-address]');
     if (dl) {
       if (savedAddresses.length <= 1) { showToast(t('toast.needOneAddress'), 'bx-info-circle'); return; }
@@ -3513,7 +3286,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(t('toast.addressDeleted'), 'bx-trash');
       return;
     }
-
     const df = e.target.closest('[data-default-address]');
     if (df) {
       savedAddresses.forEach(a => a.isDefault = a.id === df.dataset.defaultAddress);
@@ -3530,11 +3302,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const o = orderHistory.find(x => x.id === ro.dataset.reorder);
       if (!o) return;
       o.itemsList.forEach(it => {
-        const p = products.find(x => x.name === it.name) || chocolateProducts.find(x => x.name === it.name) || offers.find(x => x.name === it.name);
+        const p = products.find(x => x.name === it.name) || offers.find(x => x.name === it.name);
         if (p) {
           const ex = cart.find(c => c.id === p.id);
           if (ex) ex.qty += it.qty;
-          else cart.push({ id: p.id, qty: it.qty });
+          else cart.push({ id: p.id, qty: it.qty, price: Number(p.price) || 0 });
         }
       });
       renderCart();
@@ -3554,49 +3326,24 @@ document.addEventListener('DOMContentLoaded', () => {
   $('adminPage').addEventListener('click', (e) => {
     const tb = e.target.closest('[data-atab]');
     if (tb) { switchAdminTab(tb.dataset.atab); return; }
-
     const fl = e.target.closest('[data-ofilter]');
     if (fl) { adminOrderFilter = fl.dataset.ofilter; renderAdminOrders(); return; }
-
     const ad = e.target.closest('[data-advance]');
     if (ad) { advanceOrder(ad.dataset.advance); return; }
-
     const cn = e.target.closest('[data-cancel-order]');
     if (cn) { setOrderStatus(cn.dataset.cancelOrder, 'cancelled'); return; }
-
     const rd = e.target.closest('[data-msg-read]');
-    if (rd) {
-      const m = contactMessages.find(x => x.id === rd.dataset.msgRead);
-      if (m) { m.read = !m.read; renderAdmin(); }
-      return;
-    }
-
+    if (rd) { const m = contactMessages.find(x => x.id === rd.dataset.msgRead); if (m) { m.read = !m.read; renderAdmin(); } return; }
     const dm = e.target.closest('[data-msg-delete]');
-    if (dm) {
-      contactMessages = contactMessages.filter(x => x.id !== dm.dataset.msgDelete);
-      renderAdmin();
-      showToast(t('admin.msgDeleted'), 'bx-trash');
-      return;
-    }
-
+    if (dm) { contactMessages = contactMessages.filter(x => x.id !== dm.dataset.msgDelete); renderAdmin(); showToast(t('admin.msgDeleted'), 'bx-trash'); return; }
     const go = e.target.closest('[data-goto-orders]');
     if (go) { switchAdminTab('orders'); return; }
-
     const vc = e.target.closest('[data-view-customer]');
     if (vc) { openAdminCustomerModal(vc.dataset.viewCustomer); return; }
-
     const dc = e.target.closest('[data-del-customer]');
-    if (dc) {
-      if (!confirm('Delete this customer? Their orders will remain.')) return;
-      customers = customers.filter(x => x.id !== dc.dataset.delCustomer);
-      renderAdmin();
-      showToast('Customer deleted', 'bx-trash');
-      return;
-    }
-
+    if (dc) { if (!confirm('Delete this customer? Their orders will remain.')) return; customers = customers.filter(x => x.id !== dc.dataset.delCustomer); renderAdmin(); showToast('Customer deleted', 'bx-trash'); return; }
     const editEmp = e.target.closest('[data-edit-employee]');
     if (editEmp) { openAdminEmployeeModal(editEmp.dataset.editEmployee); return; }
-
     const delEmp = e.target.closest('[data-del-employee]');
     if (delEmp) {
       if (!confirm(t('admin.deleteEmployeeConfirm'))) return;
@@ -3607,12 +3354,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
   });
-
   $('adminPage').addEventListener('change', (e) => {
     const s = e.target.closest('[data-status-order]');
     if (s) setOrderStatus(s.dataset.statusOrder, s.value);
   });
-
   $('adminPage').addEventListener('input', (e) => {
     if (e.target.id === 'adminCustomerSearch') {
       adminCustomerSearch = e.target.value.trim();
@@ -3629,16 +3374,33 @@ document.addEventListener('DOMContentLoaded', () => {
   $('ownerAddWeight').addEventListener('click', () => openOwnerWeightModal());
   $('ownerAddPackaging').addEventListener('click', () => openOwnerPackagingModal());
   $('ownerAddCandyType').addEventListener('click', () => openOwnerCandyTypeModal());
-  $('ownerAddAddon').addEventListener('click', () => openOwnerAddonModal());      /* NEW */
+  $('ownerAddAddon').addEventListener('click', () => openOwnerAddonModal());
   $('ownerAddZone').addEventListener('click', () => openOwnerZoneModal());
+
+  /* Owner tabs scroll buttons */
+  const ownerTabsLeft = $('ownerTabsLeft');
+  const ownerTabsRight = $('ownerTabsRight');
+  const ownerTabsViewport = $('ownerTabsViewport');
+  if (ownerTabsLeft) ownerTabsLeft.addEventListener('click', () => ownerTabsViewport.scrollBy({ left: -220, behavior: 'smooth' }));
+  if (ownerTabsRight) ownerTabsRight.addEventListener('click', () => ownerTabsViewport.scrollBy({ left: 220, behavior: 'smooth' }));
+  if (ownerTabsViewport) ownerTabsViewport.addEventListener('scroll', updateOwnerTabsScrollBtns, { passive: true });
+  window.addEventListener('resize', updateOwnerTabsScrollBtns);
+
+  /* Owner pricing mode toggle */
+  document.querySelectorAll('#ownerProductModal .price-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => updateProductPricingPanels(btn.dataset.priceMode));
+  });
+  const ownerProductForm = $('ownerProductForm');
+  if (ownerProductForm) {
+    ownerProductForm.querySelectorAll('[data-field="price250"], [data-field="price500"], [data-field="price1000"]').forEach(inp => {
+      inp.addEventListener('input', updatePricePreview);
+    });
+  }
 
   $('ownerSaveHours').addEventListener('click', () => {
     const o = parseInt($('ownerOpenHour').value);
     const c = parseInt($('ownerCloseHour').value);
-    if (isNaN(o) || isNaN(c) || o < 0 || o > 23 || c < 0 || c > 23) {
-      showToast('Please enter valid hours (0–23)', 'bx-error-circle');
-      return;
-    }
+    if (isNaN(o) || isNaN(c) || o < 0 || o > 23 || c < 0 || c > 23) { showToast('Please enter valid hours (0–23)', 'bx-error-circle'); return; }
     storeHours = { open: o, close: c };
     saveAll();
     updateSign(true);
@@ -3661,14 +3423,10 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(lang);
     showToast(t('toast.contentSaved'), 'bx-check-circle');
   });
-
-  $('ownerResetContent').addEventListener('click', () => {
-    try { localStorage.removeItem(LS_KEYS.content); } catch (e) {}
-    location.reload();
-  });
+  $('ownerResetContent').addEventListener('click', () => { try { localStorage.removeItem(LS_KEYS.content); } catch (e) {} location.reload(); });
 
   $('ownerExportData').addEventListener('click', () => {
-    const data = { products, chocolateProducts, offers, galleryImages, contentOverrides, mixWeights, mixPackaging, candyTypes, addons, deliveryZones, storeHours, employees: loadEmployees() };
+    const data = { products, offers, galleryImages, contentOverrides, mixWeights, mixPackaging, candyTypes, addons, deliveryZones, storeHours, employees: loadEmployees() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -3682,7 +3440,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('ownerImportData').addEventListener('click', () => $('ownerImportFile').click());
-
   $('ownerImportFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -3691,13 +3448,12 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const data = JSON.parse(ev.target.result);
         if (Array.isArray(data.products)) products = data.products;
-        if (Array.isArray(data.chocolateProducts)) chocolateProducts = data.chocolateProducts;
         if (Array.isArray(data.offers)) offers = data.offers;
         if (Array.isArray(data.galleryImages)) galleryImages = data.galleryImages;
         if (Array.isArray(data.mixWeights)) mixWeights = data.mixWeights;
         if (Array.isArray(data.mixPackaging)) mixPackaging = data.mixPackaging;
         if (Array.isArray(data.candyTypes)) candyTypes = data.candyTypes;
-        if (Array.isArray(data.addons)) addons = data.addons;      /* NEW */
+        if (Array.isArray(data.addons)) addons = data.addons;
         if (Array.isArray(data.deliveryZones)) deliveryZones = data.deliveryZones;
         if (Array.isArray(data.employees)) saveEmployees(data.employees);
         if (data.storeHours) storeHours = data.storeHours;
@@ -3710,34 +3466,22 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
         saveAll();
-        renderOffers();
-        renderCandies();
-        renderGallery();
-        renderCart();
-        renderMixPackaging();
-        renderMixWeights();
-        renderMixTypesGrid();
-        renderMixAddons();
+        renderOffers(); renderCandies(); renderGallery(); renderCart();
+        renderMixPackaging(); renderMixWeights(); renderMixTypesGrid(); renderMixAddons();
         renderOwner();
         applyLanguage(lang);
         showToast(t('toast.dataImported'), 'bx-check-circle');
-      } catch (err) {
-        showToast(t('toast.dataInvalid'), 'bx-error-circle');
-      }
+      } catch (err) { showToast(t('toast.dataInvalid'), 'bx-error-circle'); }
     };
     reader.readAsText(file);
     e.target.value = '';
   });
-
   $('ownerResetAll').addEventListener('click', () => {
     if (!confirm('Reset all data to defaults? This cannot be undone.')) return;
     try { Object.values(LS_KEYS).forEach(k => localStorage.removeItem(k)); } catch (e) {}
     location.reload();
   });
-
-  document.querySelectorAll('[data-close-owner-modal]').forEach(el =>
-    el.addEventListener('click', closeOwnerModals)
-  );
+  document.querySelectorAll('[data-close-owner-modal]').forEach(el => el.addEventListener('click', closeOwnerModals));
 
   /* ==== OWNER FORMS ==== */
   $('ownerProductForm').addEventListener('submit', (e) => {
@@ -3752,14 +3496,25 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (el.type === 'checkbox') data[k] = el.checked;
       else data[k] = el.value.trim();
     });
-    if (!data.name || !data.name_ar || !data.price) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
-    if (id) {
-      const ci = chocolateProducts.findIndex(p => p.id === id);
-      if (ci !== -1) chocolateProducts[ci] = { ...chocolateProducts[ci], ...data };
-      else {
-        const i = products.findIndex(p => p.id === id);
-        if (i !== -1) products[i] = { ...products[i], ...data };
+    if (!data.name || !data.name_ar) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
+    if (!data.category) data.category = 'candy';
+
+    if (data.pricingType === 'tiered') {
+      if (!data.price250 || !data.price500 || !data.price1000) {
+        showToast('Please enter all 3 tier prices (250g / 500g / 1kg)', 'bx-error-circle');
+        return;
       }
+      delete data.price;
+    } else {
+      if (!data.price) { showToast('Please enter a price', 'bx-error-circle'); return; }
+      delete data.price250;
+      delete data.price500;
+      delete data.price1000;
+    }
+
+    if (id) {
+      const i = products.findIndex(p => p.id === id);
+      if (i !== -1) products[i] = { ...products[i], ...data };
     } else {
       data.id = 'p-' + Date.now();
       products.push(data);
@@ -3804,10 +3559,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const alt = e.target.querySelector('[data-field="alt"]').value.trim();
     if (!img) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
     galleryImages.push({ id: 'g-' + Date.now(), img, alt });
-    saveAll();
-    renderGallery();
-    renderOwner();
-    closeOwnerModals();
+    saveAll(); renderGallery(); renderOwner(); closeOwnerModals();
     showToast(t('toast.galleryAdded'), 'bx-image-add');
   });
 
@@ -3824,10 +3576,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (!mixWeights.includes(newV)) {
       mixWeights.push(newV);
     }
-    saveAll();
-    renderMixWeights();
-    renderOwner();
-    closeOwnerModals();
+    saveAll(); renderMixWeights(); renderOwner(); closeOwnerModals();
     showToast('Weight saved', 'bx-check-circle');
   });
 
@@ -3850,10 +3599,7 @@ document.addEventListener('DOMContentLoaded', () => {
       data.id = 'pack-' + Date.now();
       mixPackaging.push(data);
     }
-    saveAll();
-    renderMixPackaging();
-    renderOwner();
-    closeOwnerModals();
+    saveAll(); renderMixPackaging(); renderOwner(); closeOwnerModals();
     showToast('Packaging saved', 'bx-check-circle');
   });
 
@@ -3868,10 +3614,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (el.type === 'number') data[k] = parseFloat(el.value) || 0;
       else data[k] = el.value.trim();
     });
-    if (!data.name || !data.name_ar || !data.price_per_kg || !data.img) {
-      showToast(t('toast.fillFields'), 'bx-error-circle');
-      return;
-    }
+    if (!data.name || !data.name_ar || !data.price_per_kg || !data.img) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
     if (id) {
       const i = candyTypes.findIndex(c => c.id === id);
       if (i !== -1) candyTypes[i] = { ...candyTypes[i], ...data };
@@ -3879,18 +3622,12 @@ document.addEventListener('DOMContentLoaded', () => {
       data.id = 'candy-' + Date.now();
       candyTypes.push(data);
     }
-    saveAll();
-    renderMixTypesGrid();
-    renderOwner();
-    if ($('mixModal').classList.contains('show')) {
-      renderMixSlots();
-      if (mixState.step === 5) renderMixReview();
-    }
+    saveAll(); renderMixTypesGrid(); renderOwner();
+    if ($('mixModal').classList.contains('show')) { renderMixSlots(); if (mixState.step === 5) renderMixReview(); }
     closeOwnerModals();
     showToast('Candy type saved', 'bx-check-circle');
   });
 
-  /* ===== NEW: Add-on form ===== */
   $('ownerAddonForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const f = e.target;
@@ -3905,10 +3642,7 @@ document.addEventListener('DOMContentLoaded', () => {
       img: f.querySelector('[data-afield="img"]').value.trim(),
       active: f.querySelector('[data-afield="active"]').checked
     };
-    if (!data.name || !data.name_ar) {
-      showToast(t('toast.fillFields'), 'bx-error-circle');
-      return;
-    }
+    if (!data.name || !data.name_ar) { showToast(t('toast.fillFields'), 'bx-error-circle'); return; }
     if (id) {
       const i = addons.findIndex(a => a.id === id);
       if (i !== -1) addons[i] = { ...addons[i], ...data };
@@ -3916,9 +3650,7 @@ document.addEventListener('DOMContentLoaded', () => {
       data.id = 'addon-' + Date.now();
       addons.push(data);
     }
-    saveAll();
-    renderOwnerAddons();
-    renderMixAddons();
+    saveAll(); renderOwnerAddons(); renderMixAddons();
     if ($('mixModal').classList.contains('show') && mixState.step === 5) renderMixReview();
     closeOwnerModals();
     showToast(t('toast.addonSaved'), 'bx-check-circle');
@@ -3942,10 +3674,7 @@ document.addEventListener('DOMContentLoaded', () => {
       data.id = 'zone-' + Date.now();
       deliveryZones.push(data);
     }
-    saveAll();
-    renderOwner();
-    renderCart();
-    closeOwnerModals();
+    saveAll(); renderOwner(); renderCart(); closeOwnerModals();
     showToast('Zone saved', 'bx-check-circle');
   });
 
@@ -3955,18 +3684,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sw) {
       const lk = sw.dataset.lang;
       const parent = sw.closest('.owner-cms-section');
-      parent.querySelectorAll('[data-lang-switch] button').forEach(b =>
-        b.classList.toggle('active', b.dataset.lang === lk)
-      );
-      parent.querySelectorAll('[data-cms-lang]').forEach(f =>
-        f.style.display = (f.dataset.cmsLang === lk) ? 'block' : 'none'
-      );
+      parent.querySelectorAll('[data-lang-switch] button').forEach(b => b.classList.toggle('active', b.dataset.lang === lk));
+      parent.querySelectorAll('[data-cms-lang]').forEach(f => f.style.display = (f.dataset.cmsLang === lk) ? 'block' : 'none');
       return;
     }
-
     const tb = e.target.closest('[data-otab]');
     if (tb) { switchOwnerTab(tb.dataset.otab); return; }
-
     const add = e.target.closest('[data-owner-add]');
     if (add) {
       const k = add.dataset.ownerAdd;
@@ -3974,85 +3697,39 @@ document.addEventListener('DOMContentLoaded', () => {
       if (k === 'offer') openOwnerOfferModal();
       return;
     }
-
     const go = e.target.closest('[data-owner-goto]');
     if (go) { switchOwnerTab(go.dataset.ownerGoto); return; }
-
     const ep = e.target.closest('[data-edit-product]');
     if (ep) { openOwnerProductModal(ep.dataset.editProduct); return; }
-
     const dp = e.target.closest('[data-delete-product]');
     if (dp) { confirmDelete('product', dp.dataset.deleteProduct); return; }
-
     const eo = e.target.closest('[data-edit-offer]');
     if (eo) { openOwnerOfferModal(eo.dataset.editOffer); return; }
-
     const dof = e.target.closest('[data-delete-offer]');
     if (dof) { confirmDelete('offer', dof.dataset.deleteOffer); return; }
-
     const dg = e.target.closest('[data-delete-gallery]');
-    if (dg) {
-      galleryImages = galleryImages.filter(g => g.id !== dg.dataset.deleteGallery);
-      saveAll();
-      renderGallery();
-      renderOwner();
-      showToast(t('toast.galleryRemoved'), 'bx-trash');
-      return;
-    }
-
+    if (dg) { galleryImages = galleryImages.filter(g => g.id !== dg.dataset.deleteGallery); saveAll(); renderGallery(); renderOwner(); showToast(t('toast.galleryRemoved'), 'bx-trash'); return; }
     const ew = e.target.closest('[data-edit-weight]');
     if (ew) { openOwnerWeightModal(parseInt(ew.dataset.editWeight)); return; }
-
     const dw = e.target.closest('[data-del-weight]');
-    if (dw) {
-      const w = parseInt(dw.dataset.delWeight);
-      mixWeights = mixWeights.filter(x => x !== w);
-      saveAll();
-      renderMixWeights();
-      renderOwner();
-      showToast('Weight removed', 'bx-trash');
-      return;
-    }
-
+    if (dw) { const w = parseInt(dw.dataset.delWeight); mixWeights = mixWeights.filter(x => x !== w); saveAll(); renderMixWeights(); renderOwner(); showToast('Weight removed', 'bx-trash'); return; }
     const epk = e.target.closest('[data-edit-pack]');
     if (epk) { openOwnerPackagingModal(epk.dataset.editPack); return; }
-
     const dpk = e.target.closest('[data-del-pack]');
-    if (dpk) {
-      mixPackaging = mixPackaging.filter(x => x.id !== dpk.dataset.delPack);
-      saveAll();
-      renderMixPackaging();
-      renderOwner();
-      showToast('Packaging removed', 'bx-trash');
-      return;
-    }
-
+    if (dpk) { mixPackaging = mixPackaging.filter(x => x.id !== dpk.dataset.delPack); saveAll(); renderMixPackaging(); renderOwner(); showToast('Packaging removed', 'bx-trash'); return; }
     const ect = e.target.closest('[data-edit-candy]');
     if (ect) { openOwnerCandyTypeModal(ect.dataset.editCandy); return; }
-
     const dct = e.target.closest('[data-del-candy]');
-    if (dct) {
-      candyTypes = candyTypes.filter(x => x.id !== dct.dataset.delCandy);
-      saveAll();
-      renderMixTypesGrid();
-      renderOwner();
-      showToast('Candy type removed', 'bx-trash');
-      return;
-    }
-
-    /* ===== NEW: Add-on edit / delete ===== */
+    if (dct) { candyTypes = candyTypes.filter(x => x.id !== dct.dataset.delCandy); saveAll(); renderMixTypesGrid(); renderOwner(); showToast('Candy type removed', 'bx-trash'); return; }
     const ead = e.target.closest('[data-edit-addon]');
     if (ead) { openOwnerAddonModal(ead.dataset.editAddon); return; }
-
     const dad = e.target.closest('[data-del-addon]');
     if (dad) {
       const id = dad.dataset.delAddon;
       if (pendingAddonDeleteId === id) {
         addons = addons.filter(a => a.id !== id);
         pendingAddonDeleteId = null;
-        saveAll();
-        renderOwnerAddons();
-        renderMixAddons();
+        saveAll(); renderOwnerAddons(); renderMixAddons();
         showToast(t('toast.addonDeleted'), 'bx-trash');
       } else {
         pendingAddonDeleteId = id;
@@ -4061,28 +3738,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return;
     }
-
     const ez = e.target.closest('[data-edit-zone]');
     if (ez) { openOwnerZoneModal(ez.dataset.editZone); return; }
-
     const dz = e.target.closest('[data-del-zone]');
-    if (dz) {
-      deliveryZones = deliveryZones.filter(x => x.id !== dz.dataset.delZone);
-      saveAll();
-      renderOwner();
-      renderCart();
-      showToast('Zone removed', 'bx-trash');
-      return;
-    }
+    if (dz) { deliveryZones = deliveryZones.filter(x => x.id !== dz.dataset.delZone); saveAll(); renderOwner(); renderCart(); showToast('Zone removed', 'bx-trash'); return; }
   });
 
   /* ==== LANGUAGE TOGGLE ==== */
   $('langToggle').addEventListener('click', () => applyLanguage(lang === 'ar' ? 'en' : 'ar'));
 
   /* ==== iOS VH FIX ==== */
-  function setVH() {
-    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
-  }
+  function setVH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
   setVH();
   window.addEventListener('resize', setVH);
   window.addEventListener('orientationchange', () => setTimeout(setVH, 200));
@@ -4106,12 +3772,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dx = curX - startX;
       const rtl = document.documentElement.dir === 'rtl';
       const wrongDir = (!rtl && dx < 0) || (rtl && dx > 0);
-      if (dy > 40 || wrongDir) {
-        tracking = false;
-        el.style.transition = '';
-        el.style.transform = '';
-        return;
-      }
+      if (dy > 40 || wrongDir) { tracking = false; el.style.transition = ''; el.style.transform = ''; return; }
       el.style.transform = `translateX(${dx}px)`;
     }, { passive: true });
     el.addEventListener('touchend', () => {
@@ -4128,19 +3789,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ==== SECURED OVERVIEW ==== */
   $('overviewUnlockBtn').addEventListener('click', tryUnlockOverview);
-  $('overviewPassword').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); tryUnlockOverview(); }
-  });
+  $('overviewPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); tryUnlockOverview(); } });
   $('reportLockBtn').addEventListener('click', lockOverview);
   $('reportPrintBtn').addEventListener('click', printReport);
-
   $('reportFilters').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-range]');
     if (!btn) return;
     reportRange = btn.dataset.range;
-    document.querySelectorAll('.report-filter').forEach(b =>
-      b.classList.toggle('active', b.dataset.range === reportRange)
-    );
+    document.querySelectorAll('.report-filter').forEach(b => b.classList.toggle('active', b.dataset.range === reportRange));
     refreshOverviewReports();
   });
 
