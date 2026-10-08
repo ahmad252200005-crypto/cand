@@ -45,17 +45,17 @@ window.HAT_CONFIG = {
   },
 
   /* ============ BACKEND API (Google Apps Script) ============ */
-  api: {
-    provider: 'apps-script',
-    url: 'PASTE_YOUR_APPS_SCRIPT_URL_HERE',
-    adminToken: 'hatcandy-admin-2025-CHANGE-ME', // ⚠️ يجب تغييره في بيئة الإنتاج
-    timeout: 15000,
-    retries: 2,
-    cache: {
-      enabled: true,
-      ttl: 5 * 60 * 1000        // 5 minutes
-    }
-  },
+api: {
+  provider: 'apps-script',
+  url: 'https://script.google.com/macros/s/AKfycbw-AfF5nnrFPp4z8lCIZrn_lYvtAMARPIz0ZB9QKqIPzJFsQGTJ1eO00QTmZjSO866U/exec',
+  adminToken: 'hatcandy-admin-2025-CHANGE-ME', // ← يجب أن يطابق ADMIN_TOKEN في Code.gs
+  timeout: 15000,
+  retries: 2,
+  cache: {
+    enabled: true,
+    ttl: 5 * 60 * 1000        // 5 minutes
+  }
+},
 
   /* ============ FEATURE FLAGS ============ */
   features: {
